@@ -1277,6 +1277,41 @@
 
                     <div class="toolbar-divider"></div>
 
+                    <button class="figma-tool-btn" onclick="flipHorizontal()" title="가로 뒤집기">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 4v16" />
+                            <rect x="3" y="7" width="6" height="10" />
+                            <rect x="15" y="7" width="6" height="10" />
+                        </svg>
+                    </button>
+                    <button class="figma-tool-btn" onclick="flipVertical()" title="세로 뒤집기">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 12h16" />
+                            <rect x="7" y="3" width="10" height="6" />
+                            <rect x="7" y="15" width="10" height="6" />
+                        </svg>
+                    </button>
+                    <button class="figma-tool-btn" onclick="rotateCCW()" title="90° 반시계 회전">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 12a8 8 0 1 0 8-8" />
+                            <path d="M8 4H4v4" />
+                        </svg>
+                    </button>
+                    <button class="figma-tool-btn" onclick="rotateCW()" title="90° 시계 회전">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 12a8 8 0 1 1-8-8" />
+                            <path d="M16 4h4v4" />
+                        </svg>
+                    </button>
+                    <button class="figma-tool-btn" onclick="rotate180()" title="180° 회전">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M7 7a8 8 0 1 1 0 10" />
+                            <path d="M7 3v4H3" />
+                        </svg>
+                    </button>
+
+                    <div class="toolbar-divider"></div>
+
                     <button class="figma-tool-btn" onclick="lockSelectedAction()" title="잠금">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -3349,6 +3384,80 @@
             const isMulti = obj.type === 'activeSelection' && obj._objects && obj._objects.length === 2;
             document.getElementById('btn-mask').style.display = isMulti ? 'flex' : 'none';
             document.getElementById('btn-unmask').style.display = obj.isMaskGroup ? 'flex' : 'none';
+        }
+
+        function getTransformTargets(target) {
+            if (!target) return [];
+            if (target.type === 'activeSelection') {
+                return target.getObjects();
+            }
+            return [target];
+        }
+
+        function normalizeAngle(angle) {
+            const normalized = ((angle % 360) + 360) % 360;
+            return normalized;
+        }
+
+        function flipHorizontal(target) {
+            const active = target || canvas.getActiveObject();
+            const targets = getTransformTargets(active);
+            if (!targets.length) return;
+
+            targets.forEach(obj => {
+                const center = obj.getCenterPoint();
+                obj.set('scaleX', (obj.scaleX || 1) * -1);
+                obj.setPositionByOrigin(center, 'center', 'center');
+                obj.setCoords();
+            });
+
+            canvas.requestRenderAll();
+            saveHistory();
+        }
+
+        function flipVertical(target) {
+            const active = target || canvas.getActiveObject();
+            const targets = getTransformTargets(active);
+            if (!targets.length) return;
+
+            targets.forEach(obj => {
+                const center = obj.getCenterPoint();
+                obj.set('scaleY', (obj.scaleY || 1) * -1);
+                obj.setPositionByOrigin(center, 'center', 'center');
+                obj.setCoords();
+            });
+
+            canvas.requestRenderAll();
+            saveHistory();
+        }
+
+        function rotateCW(target) {
+            rotateBy(target, 90);
+        }
+
+        function rotateCCW(target) {
+            rotateBy(target, -90);
+        }
+
+        function rotate180(target) {
+            rotateBy(target, 180);
+        }
+
+        function rotateBy(target, delta) {
+            const active = target || canvas.getActiveObject();
+            const targets = getTransformTargets(active);
+            if (!targets.length) return;
+
+            targets.forEach(obj => {
+                const center = obj.getCenterPoint();
+                const nextAngle = normalizeAngle((obj.angle || 0) + delta);
+                obj.set('angle', nextAngle);
+                obj.setPositionByOrigin(center, 'center', 'center');
+                obj.setCoords();
+            });
+
+            canvas.requestRenderAll();
+            saveHistory();
         }
 
         function hideFloatingToolbar() {
