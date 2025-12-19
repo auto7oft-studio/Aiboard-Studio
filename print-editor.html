@@ -2444,6 +2444,7 @@
             document.getElementById('fill-swatch').style.background = val;
             document.getElementById('fill-color-hex').value = val.toUpperCase();
             canvas.renderAll();
+            saveHistory();
         }
 
         function toggleTransparentFill() {
@@ -2453,6 +2454,7 @@
             const color = isChecked ? 'transparent' : document.getElementById('fill-swatch').style.background;
             obj.set('fill', color);
             canvas.renderAll();
+            saveHistory();
         }
 
         function changeStrokeColor(val) {
@@ -2461,6 +2463,7 @@
                 obj.set('stroke', val);
                 document.getElementById('stroke-swatch').style.background = val;
                 canvas.renderAll();
+                saveHistory();
             }
         }
 
@@ -2468,7 +2471,7 @@
             const obj = canvas.getActiveObject();
             if (obj) {
                 const px = parseFloat(valPx);
-                obj.set('strokeWidth', px);
+                applyStrokeWidth(obj, px);
                 document.getElementById('stroke-width-val').innerText = px;
                 canvas.renderAll();
                 saveHistory();
@@ -2497,6 +2500,41 @@
             }
             canvas.renderAll();
             saveHistory();
+        }
+
+        function applyStrokeWidth(obj, px) {
+            if (!obj) return;
+            const strokePx = Math.max(0, px || 0);
+
+            const applyTo = (target) => {
+                target.set('strokeUniform', true);
+
+                if (target.type === 'rect' || target.type === 'triangle') {
+                    const baseWidth = target._strokeBaseWidth ?? (target.width - (target._strokeOutsideWidth || 0));
+                    const baseHeight = target._strokeBaseHeight ?? (target.height - (target._strokeOutsideWidth || 0));
+                    target._strokeBaseWidth = baseWidth;
+                    target._strokeBaseHeight = baseHeight;
+                    target._strokeOutsideWidth = strokePx;
+                    target.set({
+                        width: baseWidth + strokePx,
+                        height: baseHeight + strokePx
+                    });
+                } else if (target.type === 'circle') {
+                    const baseRadius = target._strokeBaseRadius ?? (target.radius - ((target._strokeOutsideWidth || 0) / 2));
+                    target._strokeBaseRadius = baseRadius;
+                    target._strokeOutsideWidth = strokePx;
+                    target.set('radius', baseRadius + strokePx / 2);
+                }
+
+                target.set('strokeWidth', strokePx);
+                target.setCoords();
+            };
+
+            if (obj.type === 'activeSelection') {
+                obj.forEachObject(o => applyTo(o));
+            } else {
+                applyTo(obj);
+            }
         }
 
         function changeCornerRadius(val) {
@@ -2786,58 +2824,61 @@
         // --- HISTORY ---
         function saveHistory() {
             if (isUndoing) return;
-            // Exclude artboard from history items
-            const objects = canvas.getObjects().filter(o => !o.excludeFromExport);
-            const json = {
-                objects: objects.map(o => o.toObject(['excludeFromExport', 'absolutePositioned', 'selectable', 'clipPath', 'opacity', 'gradientAngle']))
-            };
+            const json = canvas.toJSON([
+                'excludeFromExport',
+                'absolutePositioned',
+                'selectable',
+                'clipPath',
+                'opacity',
+                'gradientAngle',
+                'isArtboard',
+                'isArtboardClip',
+                '_userStrokeDashed',
+                '_dashLength',
+                '_dashGap',
+                '_strokeOutsideWidth',
+                '_strokeBaseWidth',
+                '_strokeBaseHeight',
+                '_strokeBaseRadius'
+            ]);
             history = history.slice(0, historyStep + 1);
             history.push(JSON.stringify(json));
             historyStep++;
         }
 
-        function undo() {
-            if (historyStep <= 0) return;
+        function restoreHistory(step) {
+            const data = JSON.parse(history[step]);
             isUndoing = true;
-            historyStep--;
-            const data = JSON.parse(history[historyStep]);
-
-            // Remove all non-artboard objects (create separate array to avoid modification during iteration)
-            const objectsToRemove = canvas.getObjects().filter(o => !o.excludeFromExport);
-            objectsToRemove.forEach(o => canvas.remove(o));
-
-            // Restore objects from history
-            fabric.util.enlivenObjects(data.objects, (enlivened) => {
-                enlivened.forEach(o => canvas.add(o));
+            canvas.loadFromJSON(data, () => {
+                artboard = canvas.getObjects().find(o => o.isArtboard);
+                if (artboard) {
+                    artboard.selectable = false;
+                    artboard.evented = false;
+                    artboard.absolutePositioned = true;
+                }
+                canvas.getObjects().forEach(o => {
+                    if (o.excludeFromExport) o.selectable = false;
+                });
                 canvas.discardActiveObject();
                 canvas.renderAll();
                 isUndoing = false;
+                canvas.getObjects().forEach(o => updateObjectClipping(o));
                 checkCanvasBoundaries();
                 hideFloatingToolbar();
                 renderLayerList();
             });
         }
 
+        function undo() {
+            if (historyStep <= 0) return;
+            historyStep--;
+            restoreHistory(historyStep);
+        }
+
         function redo() {
             if (historyStep >= history.length - 1) return;
-            isUndoing = true;
             historyStep++;
-            const data = JSON.parse(history[historyStep]);
-
-            // Remove all non-artboard objects (create separate array to avoid modification during iteration)
-            const objectsToRemove = canvas.getObjects().filter(o => !o.excludeFromExport);
-            objectsToRemove.forEach(o => canvas.remove(o));
-
-            // Restore objects from history
-            fabric.util.enlivenObjects(data.objects, (enlivened) => {
-                enlivened.forEach(o => canvas.add(o));
-                canvas.discardActiveObject();
-                canvas.renderAll();
-                isUndoing = false;
-                checkCanvasBoundaries();
-                hideFloatingToolbar();
-                renderLayerList();
-            });
+            restoreHistory(historyStep);
         }
 
         // --- EXPORT ---
