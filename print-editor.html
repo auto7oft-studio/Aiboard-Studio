@@ -1064,8 +1064,8 @@
             </div>
 
             <div id="canvas-size-display"
-                style="position: absolute; color: #6B7280; font-size: 12px; z-index: 100; pointer-events: none; font-weight: 500;">
-                <span id="canvas-size-label">90 × 50 mm</span>
+                style="position: absolute; color: #6B7280; font-size: 12px; z-index: 100; pointer-events: none; font-weight: 400;">
+                <span id="canvas-size-label">Size : 90 × 50 mm</span>
             </div>
 
 
@@ -1686,7 +1686,7 @@
             artboard.sendToBack();
 
             // Update UI Labels
-            document.getElementById('canvas-size-label').innerText = `캔버스 사이즈 : ${widthMm} × ${heightMm} mm`;
+            document.getElementById('canvas-size-label').innerText = `Size : ${widthMm} × ${heightMm} mm`;
             document.getElementById('custom-width-input').value = widthMm;
             document.getElementById('custom-height-input').value = heightMm;
 
@@ -1774,8 +1774,14 @@
                 });
             });
 
-            canvas.on('selection:created', (opt) => { updateColorPickers(); updateFloatingToolbar(opt); });
-            canvas.on('selection:updated', (opt) => { updateColorPickers(); updateFloatingToolbar(opt); });
+            canvas.on('selection:created', () => {
+                updateFloatingToolbar();
+                requestAnimationFrame(updateColorPickers);
+            });
+            canvas.on('selection:updated', () => {
+                updateFloatingToolbar();
+                requestAnimationFrame(updateColorPickers);
+            });
             canvas.on('selection:cleared', () => {
                 document.getElementById('prop-text').style.display = 'none';
                 document.getElementById('prop-corner').style.display = 'none';
@@ -1859,6 +1865,7 @@
 
             const ratioX = newW / oldW;
             const ratioY = newH / oldH;
+            const ratio = Math.min(ratioX, ratioY);
 
             // New artboard position (same logic as createArtboard)
             const nextArtLeft = (workspaceWidth - newW) / 2;
@@ -1872,10 +1879,10 @@
                 const dy = obj.top - artboard.top;
 
                 obj.set({
-                    left: nextArtLeft + dx * ratioX,
-                    top: nextArtTop + dy * ratioY,
-                    scaleX: obj.scaleX * ratioX,
-                    scaleY: obj.scaleY * ratioY
+                    left: nextArtLeft + dx * ratio,
+                    top: nextArtTop + dy * ratio,
+                    scaleX: obj.scaleX * ratio,
+                    scaleY: obj.scaleY * ratio
                 });
                 obj.setCoords();
             });
@@ -1898,32 +1905,31 @@
             }
         }
 
+        function getObjectBounds(obj) {
+            const rect = obj.getBoundingRect(true, true);
+            return {
+                left: rect.left,
+                top: rect.top,
+                right: rect.left + rect.width,
+                bottom: rect.top + rect.height,
+                width: rect.width,
+                height: rect.height
+            };
+        }
+
+        function rectsIntersect(a, b) {
+            return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+        }
+
         function checkCanvasBoundaries() {
             if (!artboard) return;
-            const objects = canvas.getObjects().filter(o => !o.excludeFromExport);
-
-            // Get artboard bounds
-            const artLeft = artboard.left;
-            const artTop = artboard.top;
-            const artRight = artLeft + artboard.width;
-            const artBottom = artTop + artboard.height;
+            const objects = canvas.getObjects().filter(o => !o.excludeFromExport && o.visible);
+            const artRect = getObjectBounds(artboard);
 
             let hasFullyOutside = false;
             objects.forEach(obj => {
-                const rect = obj.getBoundingRect(false, false);
-                const objLeft = rect.left;
-                const objTop = rect.top;
-                const objRight = objLeft + rect.width;
-                const objBottom = objTop + rect.height;
-
-                // Object is fully outside if there's no overlap
-                const isFullyOutside = (
-                    objRight < artLeft ||   // completely to the left
-                    objLeft > artRight ||    // completely to the right
-                    objBottom < artTop ||    // completely above
-                    objTop > artBottom       // completely below
-                );
-
+                const objRect = getObjectBounds(obj);
+                const isFullyOutside = !rectsIntersect(objRect, artRect);
                 if (isFullyOutside) hasFullyOutside = true;
             });
 
@@ -1938,6 +1944,7 @@
 
         function updateObjectClipping(obj) {
             if (!artboard || !obj || obj.isArtboard || obj.excludeFromExport) return;
+            const artRect = getObjectBounds(artboard);
 
             const process = (o) => {
                 if (o.type === 'activeSelection') {
@@ -1945,7 +1952,8 @@
                     return;
                 }
 
-                const isPartiallyInside = o.intersectsWithObject(artboard) || o.isContainedWithinObject(artboard);
+                const objRect = getObjectBounds(o);
+                const isPartiallyInside = rectsIntersect(objRect, artRect);
 
                 if (isPartiallyInside) {
                     if (o._wasOutOfBounds) {
@@ -2078,16 +2086,32 @@
         function updateCanvasSizeLabel() {
             if (!artboard) return;
             const display = document.getElementById('canvas-size-display');
+            if (!display) return;
             const zoom = canvas.getZoom();
             const vpt = canvas.viewportTransform;
 
             // Calculate artboard's top-left position in screen coordinates
             const left = artboard.left * zoom + vpt[4];
             const top = artboard.top * zoom + vpt[5];
+            const width = artboard.width * zoom;
+            const height = artboard.height * zoom;
+            const margin = 8;
 
-            // Position label at top-left of artboard with small offset
-            display.style.left = `${left + 12}px`;
-            display.style.top = `${top + 12}px`;
+            const labelWidth = display.offsetWidth;
+            const labelHeight = display.offsetHeight;
+
+            let labelLeft = left;
+            let labelTop = top - labelHeight - margin;
+
+            if (labelTop < margin) {
+                labelTop = top + height + margin;
+            }
+
+            const maxLeft = workspaceWidth - labelWidth - margin;
+            labelLeft = Math.max(margin, Math.min(labelLeft, maxLeft));
+
+            display.style.left = `${labelLeft}px`;
+            display.style.top = `${labelTop}px`;
         }
 
         // Collapsible sections (Figma style)
@@ -2115,6 +2139,9 @@
         window.addEventListener('load', () => {
             ['presets', 'custom-size', 'layers'].forEach(id => {
                 const content = document.getElementById(`content-${id}`);
+                const icon = document.getElementById(`icon-${id}`);
+                content.classList.remove('collapsed');
+                if (icon) icon.classList.remove('collapsed');
                 content.style.maxHeight = content.scrollHeight + 'px';
             });
         });
@@ -2368,7 +2395,6 @@
             document.getElementById('global-opacity-val').innerText = opacity;
 
             if (document.getElementById('tab-layers').style.display === 'block') renderLayerList();
-            updateFloatingToolbar();
         }
 
         function changeObjectOpacity(val) {
@@ -2964,20 +2990,36 @@
 
         // --- LAYERS ---
         function toggleLayerVisibility(i) {
-            const objects = canvas.getObjects().filter(o => !o.excludeFromExport).reverse();
-            const obj = objects[i];
+            const obj = canvas.getObjects()[i];
+            if (!obj || obj.excludeFromExport) return;
             obj.visible = !obj.visible;
             canvas.renderAll();
             renderLayerList();
         }
 
         function toggleLayerLock(i) {
-            const objects = canvas.getObjects().filter(o => !o.excludeFromExport).reverse();
-            const obj = objects[i];
+            const obj = canvas.getObjects()[i];
+            if (!obj || obj.excludeFromExport) return;
             obj.lockMovementX = obj.lockMovementY = obj.selectable = !obj.lockMovementX;
             obj.selectable = !obj.lockMovementX;
             canvas.renderAll();
             renderLayerList();
+        }
+
+        function getLayerLabel(obj) {
+            if (obj.name && typeof obj.name === 'string') return obj.name;
+            if (obj.type === 'i-text' || obj.type === 'textbox' || obj.type === 'text') {
+                const text = (obj.text || '').toString().trim();
+                return text ? text.slice(0, 24) : 'Text';
+            }
+            if (obj.type === 'image') return 'Image';
+            if (obj.type === 'rect') return 'Rectangle';
+            if (obj.type === 'circle') return 'Circle';
+            if (obj.type === 'triangle') return 'Triangle';
+            if (obj.type === 'line') return 'Line';
+            if (obj.type === 'path') return 'Path';
+            if (obj.type === 'group') return 'Group';
+            return obj.type || 'Layer';
         }
 
         function renderLayerList() {
@@ -3034,7 +3076,7 @@
 
                 item.innerHTML = `
                     <div class="layer-icon">${iconSvg}</div>
-                    <span class="layer-name">${obj.name || obj.type}</span>
+                    <span class="layer-name">${getLayerLabel(obj)}</span>
                     <div class="layer-actions">
                         <div class="layer-action-btn" title="${isLocked ? '잠금 해제' : '잠금'}" onclick="event.stopPropagation(); toggleLayerLock(${actualIndex})">${lockIcon}</div>
                         <div class="layer-action-btn" title="${isHidden ? '표시' : '숨기기'}" onclick="event.stopPropagation(); toggleLayerVisibility(${actualIndex})">${visibilityIcon}</div>
