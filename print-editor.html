@@ -1892,21 +1892,15 @@
             if (!artboard) return;
             const objects = canvas.getObjects().filter(o => !o.excludeFromExport);
 
-            // Get artboard coordinates
-            const artRect = artboard.getBoundingRect(false);
-
             let hasFullyOutside = false;
             objects.forEach(obj => {
-                const objRect = obj.getBoundingRect(false);
+                // Check if object intersects or is contained within artboard
+                const intersects = obj.intersectsWithObject(artboard);
+                const isContained = obj.isContainedWithinObject(artboard);
 
-                // Check if object is completely outside artboard (with small tolerance)
-                const tolerance = 1;
-                const isFullyOutside = (
-                    objRect.left + objRect.width < artRect.left - tolerance ||
-                    objRect.left > artRect.left + artRect.width + tolerance ||
-                    objRect.top + objRect.height < artRect.top - tolerance ||
-                    objRect.top > artRect.top + artRect.height + tolerance
-                );
+                // Object is fully outside if it neither intersects nor is contained
+                const isFullyOutside = !intersects && !isContained;
+
                 if (isFullyOutside) hasFullyOutside = true;
             });
 
@@ -2156,7 +2150,8 @@
                 stroke: '#1F2937',
                 strokeWidth: 0,
                 originX: 'center',
-                originY: 'center'
+                originY: 'center',
+                opacity: 1
             };
 
             if (type === 'rect') {
@@ -2219,7 +2214,8 @@
                 fontSize: dynamicFontSize,
                 fill: '#1F2937',
                 originX: 'center',
-                originY: 'center'
+                originY: 'center',
+                opacity: 1
             });
             canvas.add(text);
             canvas.setActiveObject(text);
@@ -2236,7 +2232,7 @@
                     const minDim = Math.min(artboard.width, artboard.height);
                     const targetWidth = minDim * 0.4; // 40% of artboard
 
-                    img.set({ left: center.x, top: center.y, originX: 'center', originY: 'center' });
+                    img.set({ left: center.x, top: center.y, originX: 'center', originY: 'center', opacity: 1 });
                     img.scaleToWidth(targetWidth);
                     canvas.add(img);
                     canvas.setActiveObject(img);
@@ -2698,10 +2694,9 @@
             historyStep--;
             const data = JSON.parse(history[historyStep]);
 
-            // Remove all non-artboard objects
-            canvas.getObjects().forEach(o => {
-                if (!o.excludeFromExport) canvas.remove(o);
-            });
+            // Remove all non-artboard objects (create separate array to avoid modification during iteration)
+            const objectsToRemove = canvas.getObjects().filter(o => !o.excludeFromExport);
+            objectsToRemove.forEach(o => canvas.remove(o));
 
             // Restore objects from history
             fabric.util.enlivenObjects(data.objects, (enlivened) => {
@@ -2721,10 +2716,9 @@
             historyStep++;
             const data = JSON.parse(history[historyStep]);
 
-            // Remove all non-artboard objects
-            canvas.getObjects().forEach(o => {
-                if (!o.excludeFromExport) canvas.remove(o);
-            });
+            // Remove all non-artboard objects (create separate array to avoid modification during iteration)
+            const objectsToRemove = canvas.getObjects().filter(o => !o.excludeFromExport);
+            objectsToRemove.forEach(o => canvas.remove(o));
 
             // Restore objects from history
             fabric.util.enlivenObjects(data.objects, (enlivened) => {
