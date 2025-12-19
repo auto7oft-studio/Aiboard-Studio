@@ -1634,10 +1634,45 @@
         function mmToPx(mm) { return mm * MM_TO_PX_SCREEN; }
 
         // --- INIT ---
+        let objectIdCounter = 0;
+
+        function ensureObjectId(obj) {
+            if (!obj) return;
+            if (!obj.customId) {
+                objectIdCounter += 1;
+                obj.customId = `obj_${Date.now()}_${objectIdCounter}`;
+            }
+        }
         function initCanvas() {
             const wrapper = document.getElementById('canvas-container');
             workspaceWidth = wrapper.clientWidth;
             workspaceHeight = wrapper.clientHeight;
+
+            const baseToObject = fabric.Object.prototype.toObject;
+            fabric.Object.prototype.toObject = function (propertiesToInclude) {
+                const obj = baseToObject.call(this, propertiesToInclude);
+                delete obj.clipPath;
+                return obj;
+            };
+
+            fabric.Image.prototype.toObject = (function (toObject) {
+                return function () {
+                    return fabric.util.object.extend(toObject.call(this), {
+                        src: this.src || (this._originalElement && this._originalElement.src) || null,
+                        customId: this.customId || null
+                    });
+                };
+            })(fabric.Image.prototype.toObject);
+
+            fabric.Image.fromObject = function (object, callback) {
+                const src = object.src;
+                fabric.util.loadImage(src, (img) => {
+                    const image = new fabric.Image(img, object);
+                    image.src = src;
+                    ensureObjectId(image);
+                    callback && callback(image);
+                }, null, object.crossOrigin || 'anonymous');
+            };
 
             canvas = new fabric.Canvas('editor-canvas', {
                 width: workspaceWidth,
@@ -2272,6 +2307,7 @@
             }
 
 
+            ensureObjectId(obj);
             canvas.add(obj);
             canvas.setActiveObject(obj);
             canvas.renderAll();
@@ -2292,6 +2328,7 @@
                 originY: 'center',
                 opacity: 1
             });
+            ensureObjectId(text);
             canvas.add(text);
             canvas.setActiveObject(text);
             canvas.renderAll();
@@ -2308,6 +2345,8 @@
                     const targetWidth = minDim * 0.4; // 40% of artboard
 
                     img.set({ left: center.x, top: center.y, originX: 'center', originY: 'center', opacity: 1 });
+                    img.src = e.target.result;
+                    ensureObjectId(img);
                     img.scaleToWidth(targetWidth);
                     canvas.add(img);
                     canvas.setActiveObject(img);
@@ -2828,13 +2867,14 @@
                 'excludeFromExport',
                 'absolutePositioned',
                 'selectable',
-                'clipPath',
                 'opacity',
                 'gradientAngle',
                 'isArtboard',
                 'isArtboardClip',
                 'isMask',
                 'isMaskGroup',
+                'maskTargetId',
+                'customId',
                 '_userStrokeDashed',
                 '_dashLength',
                 '_dashGap',
@@ -2860,9 +2900,11 @@
                 }
                 canvas.getObjects().forEach(o => {
                     if (o.excludeFromExport) o.selectable = false;
+                    ensureObjectId(o);
                 });
                 canvas.discardActiveObject();
                 canvas.renderAll();
+                rebuildAllMasks(canvas);
                 isUndoing = false;
                 canvas.getObjects().forEach(o => updateObjectClipping(o));
                 checkCanvasBoundaries();
@@ -3315,6 +3357,39 @@
             return { mask, target };
         }
 
+        function rebuildAllMasks(targetCanvas) {
+            const allObjects = targetCanvas.getObjects();
+            allObjects.forEach(obj => {
+                if (obj.isMaskGroup) {
+                    const mask = obj._objects.find(child => child.isMask) || obj._objects[0];
+                    const target = obj._objects.find(child => !child.isMask) || obj._objects[1];
+
+                    if (mask) {
+                        mask.set({
+                            isMask: true,
+                            selectable: false,
+                            evented: false,
+                            opacity: 0
+                        });
+                        mask.maskTargetId = obj.maskTargetId || (target && target.customId) || null;
+                    }
+
+                    if (target) {
+                        ensureObjectId(target);
+                        obj.maskTargetId = target.customId;
+                    }
+
+                    obj.clipPath = mask || null;
+                    if (obj.clipPath) {
+                        obj.clipPath.absolutePositioned = false;
+                        obj.clipPath.originX = 'center';
+                        obj.clipPath.originY = 'center';
+                    }
+                    obj.subTargetCheck = true;
+                }
+            });
+        }
+
         function maskWithShape(maskShape, targetObject) {
             if (!maskShape || !targetObject) {
                 const active = canvas.getActiveObject();
@@ -3346,12 +3421,19 @@
 
             canvas.discardActiveObject();
 
+            ensureObjectId(maskShape);
+            ensureObjectId(targetObject);
+
             maskShape.set({
                 isMask: true,
                 selectable: false,
                 evented: false,
                 opacity: 0
             });
+            maskShape.maskTargetId = targetObject.customId;
+
+            canvas.remove(maskShape);
+            canvas.remove(targetObject);
 
             const group = new fabric.Group([maskShape, targetObject], {
                 subTargetCheck: true,
@@ -3359,6 +3441,7 @@
                 evented: true
             });
             group.isMaskGroup = true;
+            group.maskTargetId = targetObject.customId;
             group.clipPath = maskShape;
             group.clipPath.absolutePositioned = false;
             group.clipPath.originX = 'center';
@@ -3390,7 +3473,9 @@
                         evented: true,
                         opacity: 1
                     });
+                    obj.maskTargetId = null;
                 }
+                ensureObjectId(obj);
                 canvas.add(obj);
             });
 
