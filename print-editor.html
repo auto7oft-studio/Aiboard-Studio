@@ -1065,6 +1065,7 @@
 
             <div id="canvas-size-display"
                 style="position: absolute; color: #6B7280; font-size: 12px; z-index: 100; pointer-events: none; font-weight: 500;">
+                <div id="object-info-label" style="display: none; color: #DC2626; margin-bottom: 2px;"></div>
                 <span id="canvas-size-label">90 × 50 mm</span>
             </div>
 
@@ -1507,6 +1508,18 @@
                             oninput="changeStrokeWidth(this.value)" style="flex:1">
                         <span id="stroke-width-val" style="font-size: 11px; width: 24px; text-align: right;">0</span>
                     </div>
+                    <div class="property-row">
+                        <label class="property-label">정렬</label>
+                        <select id="stroke-align" onchange="changeStrokeAlign(this.value)" style="flex:1; padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;">
+                            <option value="center">중앙</option>
+                            <option value="inside">내경</option>
+                            <option value="outside">외경</option>
+                        </select>
+                    </div>
+                    <div class="property-row">
+                        <label class="property-label">점선</label>
+                        <input type="checkbox" id="stroke-dashed" onchange="changeStrokeDashed(this.checked)" style="width: 16px; height: 16px;">
+                    </div>
                 </div>
 
                 <!-- 모서리 곡률 -->
@@ -1777,19 +1790,22 @@
             canvas.on('selection:created', () => {
                 updateFloatingToolbar();
                 requestAnimationFrame(updateColorPickers);
+                updateObjectInfoLabel();
             });
             canvas.on('selection:updated', () => {
                 updateFloatingToolbar();
                 requestAnimationFrame(updateColorPickers);
+                updateObjectInfoLabel();
             });
             canvas.on('selection:cleared', () => {
                 document.getElementById('prop-text').style.display = 'none';
                 document.getElementById('prop-corner').style.display = 'none';
                 hideFloatingToolbar();
+                hideObjectInfoLabel();
             });
 
             canvas.on('object:moving', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); });
-            canvas.on('object:scaling', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); });
+            canvas.on('object:scaling', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); updateObjectInfoLabel(); });
             canvas.on('object:rotating', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); });
 
             canvas.on('object:added', (opt) => { !isUndoing && saveHistory(); checkCanvasBoundaries(); updateObjectClipping(opt.target); });
@@ -2114,6 +2130,58 @@
             display.style.top = `${labelTop}px`;
         }
 
+        function updateObjectInfoLabel() {
+            const infoLabel = document.getElementById('object-info-label');
+            if (!infoLabel) return;
+
+            const obj = canvas.getActiveObject();
+            if (!obj || obj.excludeFromExport || obj.type === 'activeSelection') {
+                infoLabel.style.display = 'none';
+                return;
+            }
+
+            let infoText = '';
+
+            if (obj.type === 'image') {
+                // Calculate effective PPI
+                const originalWidth = obj.width; // Original image width in pixels
+                const originalHeight = obj.height; // Original image height in pixels
+                const printedWidthMm = (obj.width * obj.scaleX) / MM_TO_PX_SCREEN;
+                const printedHeightMm = (obj.height * obj.scaleY) / MM_TO_PX_SCREEN;
+
+                // PPI = original pixels / printed inches
+                // 1 inch = 25.4mm
+                const printedWidthInches = printedWidthMm / 25.4;
+                const printedHeightInches = printedHeightMm / 25.4;
+                const ppiX = Math.round(originalWidth / printedWidthInches);
+                const ppiY = Math.round(originalHeight / printedHeightInches);
+                const effectivePpi = Math.round((ppiX + ppiY) / 2);
+
+                // Size info
+                const sizeText = `Size : ${Math.round(printedWidthMm)} × ${Math.round(printedHeightMm)} mm`;
+                const ppiText = `Image : ${effectivePpi} ppi`;
+
+                infoText = `${ppiText}\n${sizeText}`;
+                infoLabel.style.whiteSpace = 'pre-line';
+            } else {
+                // For other objects, just show size
+                const widthMm = Math.round((obj.width * obj.scaleX) / MM_TO_PX_SCREEN);
+                const heightMm = Math.round((obj.height * obj.scaleY) / MM_TO_PX_SCREEN);
+                infoText = `Size : ${widthMm} × ${heightMm} mm`;
+                infoLabel.style.whiteSpace = 'normal';
+            }
+
+            infoLabel.innerText = infoText;
+            infoLabel.style.display = 'block';
+        }
+
+        function hideObjectInfoLabel() {
+            const infoLabel = document.getElementById('object-info-label');
+            if (infoLabel) {
+                infoLabel.style.display = 'none';
+            }
+        }
+
         // Collapsible sections (Figma style)
         function toggleSection(sectionId) {
             const content = document.getElementById(`content-${sectionId}`);
@@ -2386,6 +2454,14 @@
             document.getElementById('stroke-width').value = strokeMm;
             document.getElementById('stroke-width-val').innerText = strokeMm;
 
+            // Stroke alignment
+            const strokeAlign = obj.strokeAlign || 'center';
+            document.getElementById('stroke-align').value = strokeAlign;
+
+            // Stroke dashed
+            const isDashed = obj._userStrokeDashed || (obj.strokeDashArray && obj.strokeDashArray.length > 0 && !obj._wasOutOfBounds);
+            document.getElementById('stroke-dashed').checked = isDashed;
+
             // Opacity
             const opacity = Math.round((obj.opacity || 1) * 100);
             document.getElementById('global-opacity').value = opacity;
@@ -2448,6 +2524,69 @@
                 const px = parseFloat(valPx);
                 obj.set('strokeWidth', px);
                 document.getElementById('stroke-width-val').innerText = px;
+                applyStrokeAlignment(obj);
+                canvas.renderAll();
+                saveHistory();
+            }
+        }
+
+        function changeStrokeAlign(val) {
+            const obj = canvas.getActiveObject();
+            if (obj) {
+                obj.strokeAlign = val;
+                applyStrokeAlignment(obj);
+                canvas.renderAll();
+                saveHistory();
+            }
+        }
+
+        function applyStrokeAlignment(obj) {
+            if (!obj || !obj.strokeWidth) return;
+
+            const align = obj.strokeAlign || 'center';
+            const sw = obj.strokeWidth;
+
+            // Store original dimensions if not already stored
+            if (obj._originalWidth === undefined && obj.width) {
+                obj._originalWidth = obj.width;
+                obj._originalHeight = obj.height;
+            }
+
+            if (align === 'center') {
+                // Default Fabric.js behavior - stroke is centered on the edge
+                obj.set('strokeUniform', false);
+                if (obj._originalWidth !== undefined) {
+                    obj.set({
+                        width: obj._originalWidth,
+                        height: obj._originalHeight
+                    });
+                }
+            } else if (align === 'inside') {
+                // For inside stroke, we use paintFirst: 'stroke' and adjust
+                obj.set({
+                    paintFirst: 'stroke',
+                    strokeUniform: true
+                });
+            } else if (align === 'outside') {
+                // For outside stroke, we use paintFirst: 'fill'
+                obj.set({
+                    paintFirst: 'fill',
+                    strokeUniform: true
+                });
+            }
+
+            obj.setCoords();
+        }
+
+        function changeStrokeDashed(checked) {
+            const obj = canvas.getActiveObject();
+            if (obj) {
+                if (checked) {
+                    obj.set('strokeDashArray', [8, 4]);
+                } else {
+                    obj.set('strokeDashArray', null);
+                }
+                obj._userStrokeDashed = checked;
                 canvas.renderAll();
                 saveHistory();
             }
@@ -3208,21 +3347,70 @@
             const active = canvas.getActiveObject();
             if (!active || active.type !== 'activeSelection' || active._objects.length !== 2) return;
 
-            const target = active._objects[0];
-            const mask = active._objects[1];
+            // Determine which is target (image) and which is mask (shape)
+            let target, mask;
+            const obj0 = active._objects[0];
+            const obj1 = active._objects[1];
+
+            // If one is an image and one is a shape, use image as target
+            if (obj0.type === 'image' && obj1.type !== 'image') {
+                target = obj0;
+                mask = obj1;
+            } else if (obj1.type === 'image' && obj0.type !== 'image') {
+                target = obj1;
+                mask = obj0;
+            } else {
+                // Default: first object is target, second is mask
+                target = obj0;
+                mask = obj1;
+            }
+
+            // Deselect before modifying
+            canvas.discardActiveObject();
 
             mask.clone((clonedMask) => {
+                // Use relative positioning so mask moves with the object
                 clonedMask.isArtboardClip = false;
                 clonedMask.absolutePositioned = false;
 
+                // Get centers for coordinate transformation
                 const targetCenter = target.getCenterPoint();
                 const maskCenter = mask.getCenterPoint();
 
-                clonedMask.left = (maskCenter.x - targetCenter.x) / target.scaleX;
-                clonedMask.top = (maskCenter.y - targetCenter.y) / target.scaleY;
-                clonedMask.scaleX = mask.scaleX / target.scaleX;
-                clonedMask.scaleY = mask.scaleY / target.scaleY;
-                clonedMask.angle = mask.angle - target.angle;
+                // Calculate relative position from target's center
+                // When absolutePositioned is false, clipPath coordinates are relative to target's center
+                const relX = (maskCenter.x - targetCenter.x);
+                const relY = (maskCenter.y - targetCenter.y);
+
+                // Apply inverse scale and rotation of target to get local coordinates
+                const angle = -target.angle * Math.PI / 180;
+                const cos = Math.cos(angle);
+                const sin = Math.sin(angle);
+
+                const localX = (relX * cos - relY * sin) / target.scaleX;
+                const localY = (relX * sin + relY * cos) / target.scaleY;
+
+                clonedMask.set({
+                    left: localX,
+                    top: localY,
+                    scaleX: mask.scaleX / target.scaleX,
+                    scaleY: mask.scaleY / target.scaleY,
+                    angle: mask.angle - target.angle,
+                    originX: 'center',
+                    originY: 'center'
+                });
+
+                // Store original mask info for release
+                target._maskInfo = {
+                    originalLeft: mask.left,
+                    originalTop: mask.top,
+                    originalScaleX: mask.scaleX,
+                    originalScaleY: mask.scaleY,
+                    originalAngle: mask.angle,
+                    fill: mask.fill,
+                    stroke: mask.stroke,
+                    strokeWidth: mask.strokeWidth
+                };
 
                 target.set('clipPath', clonedMask);
                 canvas.remove(mask);
@@ -3236,17 +3424,46 @@
 
         function releaseMask() {
             const obj = canvas.getActiveObject();
-            if (!obj || !obj.clipPath) return;
+            if (!obj || !obj.clipPath || obj.clipPath.isArtboardClip) return;
 
-            const mask = obj.clipPath;
-            mask.clone((clonedMask) => {
-                // Convert relative back to absolute
+            const clipPath = obj.clipPath;
+            const maskInfo = obj._maskInfo || {};
+
+            clipPath.clone((clonedMask) => {
+                // Convert relative coordinates back to absolute canvas coordinates
                 const targetCenter = obj.getCenterPoint();
-                clonedMask.left += targetCenter.x;
-                clonedMask.top += targetCenter.y;
-                clonedMask.absolutePositioned = true; // usually shapes on canvas are absolute
+
+                // Get clipPath's local position
+                const localX = clipPath.left;
+                const localY = clipPath.top;
+
+                // Apply target's scale and rotation to get canvas coordinates
+                const angle = obj.angle * Math.PI / 180;
+                const cos = Math.cos(angle);
+                const sin = Math.sin(angle);
+
+                const scaledX = localX * obj.scaleX;
+                const scaledY = localY * obj.scaleY;
+
+                const absX = targetCenter.x + (scaledX * cos - scaledY * sin);
+                const absY = targetCenter.y + (scaledX * sin + scaledY * cos);
+
+                clonedMask.set({
+                    absolutePositioned: false,
+                    left: absX,
+                    top: absY,
+                    scaleX: clipPath.scaleX * obj.scaleX,
+                    scaleY: clipPath.scaleY * obj.scaleY,
+                    angle: clipPath.angle + obj.angle,
+                    originX: 'center',
+                    originY: 'center',
+                    fill: maskInfo.fill || '#cccccc',
+                    stroke: maskInfo.stroke || '#000000',
+                    strokeWidth: maskInfo.strokeWidth || 1
+                });
 
                 obj.set('clipPath', null);
+                delete obj._maskInfo;
                 canvas.add(clonedMask);
                 canvas.setActiveObject(clonedMask);
                 canvas.requestRenderAll();
