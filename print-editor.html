@@ -2132,6 +2132,7 @@
             // Auto-expand layers section and re-render
             if (sectionId === 'layers' && !content.classList.contains('collapsed')) {
                 renderLayerList();
+                content.style.maxHeight = content.scrollHeight + 'px';
             }
         }
 
@@ -2144,6 +2145,7 @@
                 if (icon) icon.classList.remove('collapsed');
                 content.style.maxHeight = content.scrollHeight + 'px';
             });
+            renderLayerList();
         });
 
         // Tool dropdown management
@@ -2394,7 +2396,8 @@
             document.getElementById('global-opacity').value = opacity;
             document.getElementById('global-opacity-val').innerText = opacity;
 
-            if (document.getElementById('tab-layers').style.display === 'block') renderLayerList();
+            const layerList = document.getElementById('layer-list');
+            if (layerList) renderLayerList();
         }
 
         function changeObjectOpacity(val) {
@@ -3091,6 +3094,11 @@
                 };
                 list.appendChild(item);
             });
+
+            const layersContent = document.getElementById('content-layers');
+            if (layersContent && !layersContent.classList.contains('collapsed')) {
+                layersContent.style.maxHeight = layersContent.scrollHeight + 'px';
+            }
         }
 
         function moveLayer(index, dir) {
