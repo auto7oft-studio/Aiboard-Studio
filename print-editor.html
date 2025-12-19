@@ -1129,6 +1129,14 @@
                             </svg>
                             <span>라인</span>
                         </div>
+                        <div class="tool-dropdown-item" onclick="selectLineTool('dashed')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                <line x1="5" y1="12" x2="9" y2="12" />
+                                <line x1="12" y1="12" x2="16" y2="12" />
+                                <line x1="19" y1="12" x2="19" y2="12" />
+                            </svg>
+                            <span>점선</span>
+                        </div>
                         <div class="tool-dropdown-item" onclick="selectLineTool('arrow')">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M5 12h14M13 5l7 7-7 7" />
@@ -2200,6 +2208,8 @@
             const iconContainer = document.getElementById('line-tool-icon');
             if (type === 'line') {
                 iconContainer.innerHTML = '<line x1="5" y1="12" x2="19" y2="12" />';
+            } else if (type === 'dashed') {
+                iconContainer.innerHTML = '<path d="M5 12h4M12 12h4M19 12h0" stroke-linecap="round" />';
             } else if (type === 'arrow') {
                 iconContainer.innerHTML = '<path d="M5 12h14M13 5l7 7-7 7" />';
             }
@@ -2265,6 +2275,16 @@
                     strokeWidth: 1 * MM_TO_PX_SCREEN, // 1mm default
                     fill: 'transparent',
                     stroke: '#000000'
+                });
+            } else if (type === 'dashed') {
+                obj = new fabric.Line([center.x - size / 2, center.y, center.x + size / 2, center.y], {
+                    ...props,
+                    left: center.x,
+                    top: center.y,
+                    strokeWidth: 1 * MM_TO_PX_SCREEN,
+                    fill: 'transparent',
+                    stroke: '#000000',
+                    strokeDashArray: [6, 4]
                 });
             } else if (type === 'arrow') {
                 // Line-based arrow
