@@ -1064,8 +1064,8 @@
             </div>
 
             <div
-                style="position: absolute; bottom: 20px; left: 20px; background: rgba(0,0,0,0.7); color: white; padding: 4px 12px; border-radius: 4px; font-size: 11px; z-index: 100; pointer-events: none;">
-                캔버스: <span id="canvas-size-label">90 × 50 mm</span>
+                style="position: absolute; top: 20px; left: 220px; color: #6B7280; font-size: 12px; z-index: 100; pointer-events: none; font-weight: 500;">
+                <span id="canvas-size-label">90 × 50 mm</span>
             </div>
 
             <div id="floating-toolbar" class="floating-toolbar">
@@ -3112,35 +3112,14 @@
             // Show toolbar immediately
             toolbar.classList.add('show');
 
-            // Calculate position immediately (no debounce)
-            const zoom = canvas.getZoom();
-            const vpt = canvas.viewportTransform;
-            const rect = obj.getBoundingRect(true, true);
-
-            // Calculate screen coordinates
-            const left = rect.left * zoom + vpt[4];
-            const top = rect.top * zoom + vpt[5];
-            const width = rect.width * zoom;
-            const height = rect.height * zoom;
-
-            // Get toolbar dimensions
+            // Position floating toolbar to the left of bottom toolbar
+            const bottomToolbar = document.querySelector('.bottom-toolbar');
+            const bottomToolbarRect = bottomToolbar.getBoundingClientRect();
             const toolbarWidth = toolbar.offsetWidth;
-            const toolbarHeight = toolbar.offsetHeight;
 
-            // Position toolbar below the object, centered horizontally
-            let targetLeft = left + (width / 2) - (toolbarWidth / 2);
-            let targetTop = top + height + 12;
-
-            // Keep toolbar within viewport bounds
-            const minLeft = 10;
-            const maxLeft = window.innerWidth - toolbarWidth - 10;
-            targetLeft = Math.max(minLeft, Math.min(targetLeft, maxLeft));
-
-            // Check if toolbar would go below viewport, position above if needed
-            const maxTop = window.innerHeight - toolbarHeight - 10;
-            if (targetTop > maxTop) {
-                targetTop = top - toolbarHeight - 12;
-            }
+            // Position to the left of bottom toolbar with a small gap
+            const targetLeft = bottomToolbarRect.left - toolbarWidth - 8;
+            const targetTop = window.innerHeight - 20 - toolbar.offsetHeight; // Same bottom position as bottom toolbar
 
             toolbar.style.left = `${targetLeft}px`;
             toolbar.style.top = `${targetTop}px`;
