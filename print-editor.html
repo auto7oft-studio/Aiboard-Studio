@@ -3322,22 +3322,16 @@
 
             mask.clone((clonedMask) => {
                 clonedMask.isArtboardClip = false;
-                clonedMask.absolutePositioned = false;
+                clonedMask.absolutePositioned = true;
                 clonedMask.originX = 'center';
                 clonedMask.originY = 'center';
 
-                const targetMatrix = target.calcTransformMatrix();
-                const invertedTargetMatrix = fabric.util.invertTransform(targetMatrix);
                 const maskCenter = mask.getCenterPoint();
-                const localCenter = fabric.util.transformPoint(maskCenter, invertedTargetMatrix);
-
-                const targetScaleX = target.scaleX || 1;
-                const targetScaleY = target.scaleY || 1;
-                clonedMask.left = localCenter.x;
-                clonedMask.top = localCenter.y;
-                clonedMask.scaleX = (mask.scaleX || 1) / targetScaleX;
-                clonedMask.scaleY = (mask.scaleY || 1) / targetScaleY;
-                clonedMask.angle = (mask.angle || 0) - (target.angle || 0);
+                clonedMask.left = maskCenter.x;
+                clonedMask.top = maskCenter.y;
+                clonedMask.scaleX = mask.scaleX || 1;
+                clonedMask.scaleY = mask.scaleY || 1;
+                clonedMask.angle = mask.angle || 0;
 
                 target.set('clipPath', clonedMask);
                 canvas.remove(mask);
@@ -3357,17 +3351,7 @@
             mask.clone((clonedMask) => {
                 clonedMask.originX = 'center';
                 clonedMask.originY = 'center';
-
-                const targetMatrix = obj.calcTransformMatrix();
-                const localCenter = new fabric.Point(clonedMask.left || 0, clonedMask.top || 0);
-                const absoluteCenter = fabric.util.transformPoint(localCenter, targetMatrix);
-
-                clonedMask.left = absoluteCenter.x;
-                clonedMask.top = absoluteCenter.y;
-                clonedMask.scaleX = (clonedMask.scaleX || 1) * (obj.scaleX || 1);
-                clonedMask.scaleY = (clonedMask.scaleY || 1) * (obj.scaleY || 1);
-                clonedMask.angle = (clonedMask.angle || 0) + (obj.angle || 0);
-                clonedMask.absolutePositioned = true; // usually shapes on canvas are absolute
+                clonedMask.absolutePositioned = true;
 
                 obj.set('clipPath', null);
                 canvas.add(clonedMask);
