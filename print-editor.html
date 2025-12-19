@@ -3062,28 +3062,7 @@
                 return;
             }
 
-            const zoom = canvas.getZoom();
-            const vpt = canvas.viewportTransform;
-            const rect = obj.getBoundingRect(true);
-
-            // Adjust rect for view
-            const left = rect.left * zoom + vpt[4];
-            const top = rect.top * zoom + vpt[5];
-            const width = rect.width * zoom;
-            const height = rect.height * zoom;
-
-            // Position toolbar below the object, centered horizontally
-            const toolbarWidth = toolbar.offsetWidth || 400; // Approximate width
-            let targetLeft = left + (width / 2) - (toolbarWidth / 2);
-            const targetTop = top + height + 12; // 12px below the object
-
-            // Keep toolbar within viewport bounds (horizontal)
-            const minLeft = 10;
-            const maxLeft = window.innerWidth - toolbarWidth - 10;
-            targetLeft = Math.max(minLeft, Math.min(targetLeft, maxLeft));
-
-            toolbar.style.left = `${targetLeft}px`;
-            toolbar.style.top = `${targetTop}px`;
+            // Show toolbar and update button visibility first
             toolbar.classList.add('show');
 
             // Toggle Group/Ungroup buttons
@@ -3091,9 +3070,50 @@
             document.getElementById('btn-ungroup').style.display = (obj.type === 'group') ? 'flex' : 'none';
 
             // Mask buttons
-            const isMulti = obj.type === 'activeSelection' && obj._objects.length === 2;
+            const isMulti = obj.type === 'activeSelection' && obj._objects && obj._objects.length === 2;
             document.getElementById('btn-mask').style.display = isMulti ? 'flex' : 'none';
             document.getElementById('btn-unmask').style.display = (obj.clipPath) ? 'flex' : 'none';
+
+            // Calculate position after DOM updates
+            requestAnimationFrame(() => {
+                const zoom = canvas.getZoom();
+                const vpt = canvas.viewportTransform;
+
+                // Get bounding rect - works for single objects and activeSelection
+                const rect = obj.getBoundingRect(true, true);
+
+                // Get canvas container offset
+                const canvasContainer = document.getElementById('canvas-container');
+                const containerRect = canvasContainer.getBoundingClientRect();
+
+                // Adjust rect for viewport and zoom
+                const left = rect.left * zoom + vpt[4] + containerRect.left;
+                const top = rect.top * zoom + vpt[5] + containerRect.top;
+                const width = rect.width * zoom;
+                const height = rect.height * zoom;
+
+                // Get actual toolbar dimensions after buttons are shown/hidden
+                const toolbarWidth = toolbar.offsetWidth;
+                const toolbarHeight = toolbar.offsetHeight;
+
+                // Position toolbar below the object, centered horizontally
+                let targetLeft = left + (width / 2) - (toolbarWidth / 2);
+                let targetTop = top + height + 12; // 12px below the object
+
+                // Keep toolbar within viewport bounds
+                const minLeft = 10;
+                const maxLeft = window.innerWidth - toolbarWidth - 10;
+                targetLeft = Math.max(minLeft, Math.min(targetLeft, maxLeft));
+
+                // Check if toolbar would go below viewport, position above if needed
+                const maxTop = window.innerHeight - toolbarHeight - 10;
+                if (targetTop > maxTop) {
+                    targetTop = top - toolbarHeight - 12; // Position above instead
+                }
+
+                toolbar.style.left = `${targetLeft}px`;
+                toolbar.style.top = `${targetTop}px`;
+            });
         }
 
         function hideFloatingToolbar() {
