@@ -895,15 +895,14 @@
         .floating-toolbar {
             position: absolute;
             display: none;
-            background: var(--bg-panel);
-            border: 1px solid var(--border);
-            padding: 4px;
+            background: white;
             border-radius: 8px;
-            box-shadow: var(--shadow-md);
+            padding: 6px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05);
             z-index: 200;
-            gap: 4px;
+            gap: 2px;
             pointer-events: auto;
-            flex-direction: column;
+            flex-direction: row;
         }
 
         .floating-toolbar.show {
@@ -911,7 +910,8 @@
         }
 
         .floating-btn {
-            padding: 6px;
+            width: 32px;
+            height: 32px;
             border-radius: 4px;
             border: none;
             background: transparent;
@@ -920,11 +920,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: 0.1s;
+            transition: all 0.15s;
         }
 
         .floating-btn:hover {
-            background: var(--selection);
+            background: var(--bg-app);
         }
 
         .floating-btn svg {
@@ -933,10 +933,10 @@
         }
 
         .floating-divider {
-            width: 16px;
-            height: 1px;
+            width: 1px;
+            height: 24px;
             background: var(--border);
-            margin: 4px auto;
+            margin: 0 4px;
         }
 
         /* --- Custom Scrollbar --- */
@@ -3070,15 +3070,20 @@
             const left = rect.left * zoom + vpt[4];
             const top = rect.top * zoom + vpt[5];
             const width = rect.width * zoom;
+            const height = rect.height * zoom;
 
-            let targetLeft = left + width + 20;
-            // Fallback to left side if right side is off-screen
-            if (targetLeft + toolbar.offsetWidth > window.innerWidth - 10) {
-                targetLeft = left - toolbar.offsetWidth - 20;
-            }
+            // Position toolbar below the object, centered horizontally
+            const toolbarWidth = toolbar.offsetWidth || 400; // Approximate width
+            let targetLeft = left + (width / 2) - (toolbarWidth / 2);
+            const targetTop = top + height + 12; // 12px below the object
+
+            // Keep toolbar within viewport bounds (horizontal)
+            const minLeft = 10;
+            const maxLeft = window.innerWidth - toolbarWidth - 10;
+            targetLeft = Math.max(minLeft, Math.min(targetLeft, maxLeft));
 
             toolbar.style.left = `${targetLeft}px`;
-            toolbar.style.top = `${top + (rect.height * zoom) / 2 - toolbar.offsetHeight / 2}px`;
+            toolbar.style.top = `${targetTop}px`;
             toolbar.classList.add('show');
 
             // Toggle Group/Ungroup buttons
