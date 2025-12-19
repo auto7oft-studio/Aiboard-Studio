@@ -2410,7 +2410,10 @@
             document.getElementById('global-opacity').value = opacity;
             document.getElementById('global-opacity-val').innerText = opacity;
 
-            if (document.getElementById('tab-layers').style.display === 'block') renderLayerList();
+            const layerTab = document.getElementById('tab-layers');
+            if (!layerTab || layerTab.style.display === 'block') {
+                renderLayerList();
+            }
         }
 
         function changeObjectOpacity(val) {
@@ -3098,6 +3101,13 @@
                 };
                 list.appendChild(item);
             });
+
+            const content = document.getElementById('content-layers');
+            if (content && !content.classList.contains('collapsed')) {
+                requestAnimationFrame(() => {
+                    content.style.maxHeight = content.scrollHeight + 'px';
+                });
+            }
         }
 
         function moveLayer(index, dir) {
@@ -3232,14 +3242,46 @@
 
         async function maskWithShape() {
             const active = canvas.getActiveObject();
-            if (!active || active.type !== 'activeSelection' || active._objects.length !== 2) return;
+            if (!active || active.type !== 'activeSelection') return;
 
-            const target = active._objects[0];
-            const mask = active._objects[1];
+            const selectionObjects = active.getObjects ? active.getObjects() : (active._objects || []);
+            if (selectionObjects.length !== 2) {
+                alert('마스크는 두 개의 개체(대상 + 도형)만 선택했을 때 적용됩니다.');
+                return;
+            }
+
+            const objectsWithOrder = selectionObjects.map(obj => ({
+                obj,
+                index: canvas.getObjects().indexOf(obj)
+            })).sort((a, b) => a.index - b.index);
+
+            const imageObjects = objectsWithOrder.filter(entry => entry.obj.type === 'image');
+            if (imageObjects.length > 1) {
+                alert('이미지 마스크는 하나의 이미지와 하나의 도형만 지원합니다.');
+                return;
+            }
+
+            let target = null;
+            let mask = null;
+            if (imageObjects.length === 1) {
+                target = imageObjects[0].obj;
+                mask = objectsWithOrder.find(entry => entry.obj !== target)?.obj || null;
+            } else {
+                target = objectsWithOrder[0].obj;
+                mask = objectsWithOrder[1].obj;
+            }
+
+            if (!target || !mask) return;
+            if (mask.type === 'image' || mask.type === 'line') {
+                alert('마스크는 선이나 이미지가 아닌 도형을 선택해주세요.');
+                return;
+            }
 
             mask.clone((clonedMask) => {
                 clonedMask.isArtboardClip = false;
                 clonedMask.absolutePositioned = false;
+                clonedMask.originX = 'center';
+                clonedMask.originY = 'center';
 
                 const targetCenter = target.getCenterPoint();
                 const maskCenter = mask.getCenterPoint();
