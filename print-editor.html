@@ -2833,6 +2833,8 @@
                 'gradientAngle',
                 'isArtboard',
                 'isArtboardClip',
+                'isMask',
+                'isMaskGroup',
                 '_userStrokeDashed',
                 '_dashLength',
                 '_dashGap',
@@ -3249,7 +3251,7 @@
             // Mask buttons
             const isMulti = obj.type === 'activeSelection' && obj._objects && obj._objects.length === 2;
             document.getElementById('btn-mask').style.display = isMulti ? 'flex' : 'none';
-            document.getElementById('btn-unmask').style.display = (obj.clipPath) ? 'flex' : 'none';
+            document.getElementById('btn-unmask').style.display = obj.isMaskGroup ? 'flex' : 'none';
         }
 
         function hideFloatingToolbar() {
@@ -3281,18 +3283,7 @@
             updateFloatingToolbar();
         }
 
-        async function maskWithShape() {
-            const active = canvas.getActiveObject();
-            if (!active || active.type !== 'activeSelection') return;
-
-            const selectionObjects = active.getObjects ? active.getObjects() : (active._objects || []);
-            if (selectionObjects.length !== 2) {
-                alert('마스크는 두 개의 개체(대상 + 도형)만 선택했을 때 적용됩니다.');
-                return;
-            }
-
-            canvas.discardActiveObject();
-
+        function resolveMaskPairFromSelection(selectionObjects) {
             const objectsWithOrder = selectionObjects.map(obj => ({
                 obj,
                 index: canvas.getObjects().indexOf(obj)
@@ -3301,66 +3292,113 @@
             const imageObjects = objectsWithOrder.filter(entry => entry.obj.type === 'image');
             if (imageObjects.length > 1) {
                 alert('이미지 마스크는 하나의 이미지와 하나의 도형만 지원합니다.');
-                return;
+                return null;
+            }
+
+            const maskCandidates = objectsWithOrder.filter(entry => !['image', 'line'].includes(entry.obj.type));
+            if (maskCandidates.length === 0) {
+                alert('마스크는 선이나 이미지가 아닌 도형을 선택해주세요.');
+                return null;
             }
 
             let target = null;
             let mask = null;
             if (imageObjects.length === 1) {
                 target = imageObjects[0].obj;
-                mask = objectsWithOrder.find(entry => entry.obj !== target)?.obj || null;
+                mask = maskCandidates.find(entry => entry.obj !== target)?.obj || null;
             } else {
-                target = objectsWithOrder[0].obj;
-                mask = objectsWithOrder[1].obj;
+                mask = maskCandidates[maskCandidates.length - 1].obj;
+                target = objectsWithOrder.find(entry => entry.obj !== mask)?.obj || null;
             }
 
-            if (!target || !mask) return;
-            if (mask.type === 'image' || mask.type === 'line') {
+            if (!target || !mask) return null;
+            return { mask, target };
+        }
+
+        function maskWithShape(maskShape, targetObject) {
+            if (!maskShape || !targetObject) {
+                const active = canvas.getActiveObject();
+                if (!active || active.type !== 'activeSelection') return;
+                const selectionObjects = active.getObjects ? active.getObjects() : (active._objects || []);
+                if (selectionObjects.length !== 2) {
+                    alert('마스크는 두 개의 개체(대상 + 도형)만 선택했을 때 적용됩니다.');
+                    return;
+                }
+
+                const resolved = resolveMaskPairFromSelection(selectionObjects);
+                if (!resolved) return;
+                maskShape = resolved.mask;
+                targetObject = resolved.target;
+            }
+
+            if (maskShape.group || targetObject.group) {
+                const group = maskShape.group || targetObject.group;
+                if (group && group.isMaskGroup) {
+                    alert('이미 마스크 그룹에 포함된 개체는 먼저 마스크를 해제해주세요.');
+                    return;
+                }
+            }
+
+            if (maskShape.type === 'image' || maskShape.type === 'line') {
                 alert('마스크는 선이나 이미지가 아닌 도형을 선택해주세요.');
                 return;
             }
 
-            mask.clone((clonedMask) => {
-                clonedMask.isArtboardClip = false;
-                clonedMask.absolutePositioned = true;
-                clonedMask.originX = 'center';
-                clonedMask.originY = 'center';
+            canvas.discardActiveObject();
 
-                const maskCenter = mask.getCenterPoint();
-                clonedMask.left = maskCenter.x;
-                clonedMask.top = maskCenter.y;
-                clonedMask.scaleX = mask.scaleX || 1;
-                clonedMask.scaleY = mask.scaleY || 1;
-                clonedMask.angle = mask.angle || 0;
+            maskShape.set({
+                isMask: true,
+                selectable: false,
+                evented: false,
+                opacity: 0
+            });
 
-                target.set('clipPath', clonedMask);
-                canvas.remove(mask);
-                canvas.setActiveObject(target);
-                canvas.requestRenderAll();
-                renderLayerList();
-                saveHistory();
-                updateFloatingToolbar();
-            }, ['isArtboard', 'excludeFromExport']);
+            const group = new fabric.Group([maskShape, targetObject], {
+                subTargetCheck: true,
+                selectable: true,
+                evented: true
+            });
+            group.isMaskGroup = true;
+            group.clipPath = maskShape;
+            group.clipPath.absolutePositioned = false;
+            group.clipPath.originX = 'center';
+            group.clipPath.originY = 'center';
+
+            canvas.add(group);
+            canvas.setActiveObject(group);
+            canvas.requestRenderAll();
+            renderLayerList();
+            saveHistory();
+            updateFloatingToolbar();
         }
 
-        function releaseMask() {
-            const obj = canvas.getActiveObject();
-            if (!obj || !obj.clipPath) return;
+        function releaseMask(maskGroup) {
+            const group = maskGroup || canvas.getActiveObject();
+            if (!group || !group.isMaskGroup) return;
 
-            const mask = obj.clipPath;
-            mask.clone((clonedMask) => {
-                clonedMask.originX = 'center';
-                clonedMask.originY = 'center';
-                clonedMask.absolutePositioned = true;
+            group.clipPath = null;
+            group._restoreObjectsState();
+            const objects = group._objects;
+            group._objects = [];
+            canvas.remove(group);
 
-                obj.set('clipPath', null);
-                canvas.add(clonedMask);
-                canvas.setActiveObject(clonedMask);
-                canvas.requestRenderAll();
-                renderLayerList();
-                saveHistory();
-                updateFloatingToolbar();
+            objects.forEach(obj => {
+                if (obj.isMask) {
+                    obj.set({
+                        isMask: false,
+                        selectable: true,
+                        evented: true,
+                        opacity: 1
+                    });
+                }
+                canvas.add(obj);
             });
+
+            canvas.discardActiveObject();
+            canvas.requestRenderAll();
+            renderLayerList();
+            saveHistory();
+            updateFloatingToolbar();
         }
 
         function lockSelectedAction() {
