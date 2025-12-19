@@ -3250,6 +3250,8 @@
                 return;
             }
 
+            canvas.discardActiveObject();
+
             const objectsWithOrder = selectionObjects.map(obj => ({
                 obj,
                 index: canvas.getObjects().indexOf(obj)
@@ -3286,11 +3288,13 @@
                 const targetCenter = target.getCenterPoint();
                 const maskCenter = mask.getCenterPoint();
 
-                clonedMask.left = (maskCenter.x - targetCenter.x) / target.scaleX;
-                clonedMask.top = (maskCenter.y - targetCenter.y) / target.scaleY;
-                clonedMask.scaleX = mask.scaleX / target.scaleX;
-                clonedMask.scaleY = mask.scaleY / target.scaleY;
-                clonedMask.angle = mask.angle - target.angle;
+                const targetScaleX = target.scaleX || 1;
+                const targetScaleY = target.scaleY || 1;
+                clonedMask.left = (maskCenter.x - targetCenter.x) / targetScaleX;
+                clonedMask.top = (maskCenter.y - targetCenter.y) / targetScaleY;
+                clonedMask.scaleX = (mask.scaleX || 1) / targetScaleX;
+                clonedMask.scaleY = (mask.scaleY || 1) / targetScaleY;
+                clonedMask.angle = (mask.angle || 0) - (target.angle || 0);
 
                 target.set('clipPath', clonedMask);
                 canvas.remove(mask);
