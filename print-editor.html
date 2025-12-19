@@ -1063,86 +1063,11 @@
                 <button class="warning-btn" onclick="selectOutsideObjects()">확인 및 선택</button>
             </div>
 
-            <div
-                style="position: absolute; top: 20px; left: 220px; color: #6B7280; font-size: 12px; z-index: 100; pointer-events: none; font-weight: 500;">
+            <div id="canvas-size-display"
+                style="position: absolute; color: #6B7280; font-size: 12px; z-index: 100; pointer-events: none; font-weight: 500;">
                 <span id="canvas-size-label">90 × 50 mm</span>
             </div>
 
-            <div id="floating-toolbar" class="floating-toolbar">
-                <button class="floating-btn" onclick="duplicateSelected()" title="복제">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                    </svg>
-                </button>
-                <div class="floating-divider"></div>
-                <button class="floating-btn" onclick="moveLayerAction('up')" title="앞으로">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 15l-6-6-6 6" />
-                    </svg>
-                </button>
-                <button class="floating-btn" onclick="moveLayerAction('down')" title="뒤로">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M6 9l6 6 6-6" />
-                    </svg>
-                </button>
-                <button class="floating-btn" onclick="moveLayerAction('front')" title="맨 앞으로">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 11l-5-5-5 5M17 18l-5-5-5 5" />
-                    </svg>
-                </button>
-                <button class="floating-btn" onclick="moveLayerAction('back')" title="맨 뒤로">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M7 13l5 5 5-5M7 6l5 5 5-5" />
-                    </svg>
-                </button>
-                <div class="floating-divider"></div>
-                <button class="floating-btn" id="btn-group" onclick="groupSelected()" title="그룹화" style="display:none;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" />
-                    </svg>
-                </button>
-                <button class="floating-btn" id="btn-ungroup" onclick="ungroupSelected()" title="그룹 해제"
-                    style="display:none;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 3v18M3 12h18" />
-                    </svg>
-                </button>
-                <button class="floating-btn" id="btn-mask" onclick="maskWithShape()" title="마스크 적용"
-                    style="display:none;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" />
-                        <circle cx="12" cy="12" r="5" />
-                    </svg>
-                </button>
-                <button class="floating-btn" id="btn-unmask" onclick="releaseMask()" title="마스크 해제"
-                    style="display:none;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M7 21v-2a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                    </svg>
-                </button>
-                <div class="floating-divider"></div>
-                <button class="floating-btn" onclick="lockSelectedAction()" title="잠금">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                </button>
-                <button class="floating-btn" onclick="unlockSelectedAction()" title="잠금 해제">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                        <path d="M7 11V7a5 5 0 0 1 9.9-1" />
-                    </svg>
-                </button>
-                <div class="floating-divider"></div>
-                <button class="floating-btn" onclick="deleteSelected()" title="삭제" style="color:#DC2626">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path
-                            d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    </svg>
-                </button>
-            </div>
 
             <div class="canvas-wrapper" id="canvas-container">
                 <canvas id="editor-canvas"></canvas>
@@ -1266,6 +1191,89 @@
                         <path d="M21 15l-5-5L5 21" />
                     </svg>
                 </button>
+
+                <!-- Object Context Actions (shown when object is selected) -->
+                <div id="object-context-tools" style="display: none;">
+                    <div class="toolbar-divider"></div>
+
+                    <button class="figma-tool-btn" onclick="duplicateSelected()" title="복제">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                    </button>
+
+                    <div class="toolbar-divider"></div>
+
+                    <button class="figma-tool-btn" onclick="moveLayerAction('up')" title="앞으로">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 15l-6-6-6 6" />
+                        </svg>
+                    </button>
+                    <button class="figma-tool-btn" onclick="moveLayerAction('down')" title="뒤로">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M6 9l6 6 6-6" />
+                        </svg>
+                    </button>
+                    <button class="figma-tool-btn" onclick="moveLayerAction('front')" title="맨 앞으로">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 11l-5-5-5 5M17 18l-5-5-5 5" />
+                        </svg>
+                    </button>
+                    <button class="figma-tool-btn" onclick="moveLayerAction('back')" title="맨 뒤로">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M7 13l5 5 5-5M7 6l5 5 5-5" />
+                        </svg>
+                    </button>
+
+                    <div class="toolbar-divider"></div>
+
+                    <button class="figma-tool-btn" id="btn-group" onclick="groupSelected()" title="그룹화" style="display:none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" />
+                        </svg>
+                    </button>
+                    <button class="figma-tool-btn" id="btn-ungroup" onclick="ungroupSelected()" title="그룹 해제" style="display:none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 3v18M3 12h18" />
+                        </svg>
+                    </button>
+                    <button class="figma-tool-btn" id="btn-mask" onclick="maskWithShape()" title="마스크 적용" style="display:none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <circle cx="12" cy="12" r="5" />
+                        </svg>
+                    </button>
+                    <button class="figma-tool-btn" id="btn-unmask" onclick="releaseMask()" title="마스크 해제" style="display:none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M7 21v-2a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                    </button>
+
+                    <div class="toolbar-divider"></div>
+
+                    <button class="figma-tool-btn" onclick="lockSelectedAction()" title="잠금">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                    </button>
+                    <button class="figma-tool-btn" onclick="unlockSelectedAction()" title="잠금 해제">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+                        </svg>
+                    </button>
+
+                    <div class="toolbar-divider"></div>
+
+                    <button class="figma-tool-btn" onclick="deleteSelected()" title="삭제" style="color:#DC2626">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                    </button>
+                </div>
 
                 <div class="toolbar-divider"></div>
 
@@ -1678,7 +1686,7 @@
             artboard.sendToBack();
 
             // Update UI Labels
-            document.getElementById('canvas-size-label').innerText = `${widthMm} × ${heightMm} mm`;
+            document.getElementById('canvas-size-label').innerText = `캔버스 사이즈 : ${widthMm} × ${heightMm} mm`;
             document.getElementById('custom-width-input').value = widthMm;
             document.getElementById('custom-height-input').value = heightMm;
 
@@ -1722,6 +1730,7 @@
                 opt.e.preventDefault();
                 opt.e.stopPropagation();
                 updateZoomDisplay();
+                updateCanvasSizeLabel();
             });
 
             canvas.on('mouse:down', function (opt) {
@@ -1744,6 +1753,7 @@
                     this.requestRenderAll();
                     this.lastPosX = e.clientX;
                     this.lastPosY = e.clientY;
+                    updateCanvasSizeLabel();
                 }
             });
 
@@ -1892,14 +1902,27 @@
             if (!artboard) return;
             const objects = canvas.getObjects().filter(o => !o.excludeFromExport);
 
+            // Get artboard bounds
+            const artLeft = artboard.left;
+            const artTop = artboard.top;
+            const artRight = artLeft + artboard.width;
+            const artBottom = artTop + artboard.height;
+
             let hasFullyOutside = false;
             objects.forEach(obj => {
-                // Check if object intersects or is contained within artboard
-                const intersects = obj.intersectsWithObject(artboard);
-                const isContained = obj.isContainedWithinObject(artboard);
+                const rect = obj.getBoundingRect(false, false);
+                const objLeft = rect.left;
+                const objTop = rect.top;
+                const objRight = objLeft + rect.width;
+                const objBottom = objTop + rect.height;
 
-                // Object is fully outside if it neither intersects nor is contained
-                const isFullyOutside = !intersects && !isContained;
+                // Object is fully outside if there's no overlap
+                const isFullyOutside = (
+                    objRight < artLeft ||   // completely to the left
+                    objLeft > artRight ||    // completely to the right
+                    objBottom < artTop ||    // completely above
+                    objTop > artBottom       // completely below
+                );
 
                 if (isFullyOutside) hasFullyOutside = true;
             });
@@ -2049,6 +2072,22 @@
             vpt[5] = workspaceHeight / 2 - (artboard.top + h / 2) * scale;
             canvas.requestRenderAll();
             updateZoomDisplay();
+            updateCanvasSizeLabel();
+        }
+
+        function updateCanvasSizeLabel() {
+            if (!artboard) return;
+            const display = document.getElementById('canvas-size-display');
+            const zoom = canvas.getZoom();
+            const vpt = canvas.viewportTransform;
+
+            // Calculate artboard's top-left position in screen coordinates
+            const left = artboard.left * zoom + vpt[4];
+            const top = artboard.top * zoom + vpt[5];
+
+            // Position label at top-left of artboard with small offset
+            display.style.left = `${left + 12}px`;
+            display.style.top = `${top + 12}px`;
         }
 
         // Collapsible sections (Figma style)
@@ -3093,12 +3132,15 @@
         // --- UX ENHANCEMENTS ---
         function updateFloatingToolbar() {
             const obj = canvas.getActiveObject();
-            const toolbar = document.getElementById('floating-toolbar');
+            const contextTools = document.getElementById('object-context-tools');
 
             if (!obj) {
-                toolbar.classList.remove('show');
+                contextTools.style.display = 'none';
                 return;
             }
+
+            // Show context tools
+            contextTools.style.display = 'flex';
 
             // Toggle Group/Ungroup buttons
             document.getElementById('btn-group').style.display = (obj.type === 'activeSelection') ? 'flex' : 'none';
@@ -3108,25 +3150,10 @@
             const isMulti = obj.type === 'activeSelection' && obj._objects && obj._objects.length === 2;
             document.getElementById('btn-mask').style.display = isMulti ? 'flex' : 'none';
             document.getElementById('btn-unmask').style.display = (obj.clipPath) ? 'flex' : 'none';
-
-            // Show toolbar immediately
-            toolbar.classList.add('show');
-
-            // Position floating toolbar to the left of bottom toolbar
-            const bottomToolbar = document.querySelector('.bottom-toolbar');
-            const bottomToolbarRect = bottomToolbar.getBoundingClientRect();
-            const toolbarWidth = toolbar.offsetWidth;
-
-            // Position to the left of bottom toolbar with a small gap
-            const targetLeft = bottomToolbarRect.left - toolbarWidth - 8;
-            const targetTop = window.innerHeight - 20 - toolbar.offsetHeight; // Same bottom position as bottom toolbar
-
-            toolbar.style.left = `${targetLeft}px`;
-            toolbar.style.top = `${targetTop}px`;
         }
 
         function hideFloatingToolbar() {
-            document.getElementById('floating-toolbar').classList.remove('show');
+            document.getElementById('object-context-tools').style.display = 'none';
         }
 
         function moveLayerAction(dir) {
