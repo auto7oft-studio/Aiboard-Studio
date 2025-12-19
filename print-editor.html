@@ -1066,6 +1066,7 @@
             <div id="canvas-size-display"
                 style="position: absolute; color: #6B7280; font-size: 12px; z-index: 100; pointer-events: none; font-weight: 400;">
                 <span id="canvas-size-label">Size : 90 × 50 mm</span>
+                <span id="image-ppi-label" style="display:none; margin-top: 2px; font-size: 11px; color: #9CA3AF;">Image : 300 ppi</span>
             </div>
 
 
@@ -1787,6 +1788,7 @@
                 document.getElementById('prop-text').style.display = 'none';
                 document.getElementById('prop-corner').style.display = 'none';
                 hideFloatingToolbar();
+                updateImagePpiLabel();
             });
 
             canvas.on('object:moving', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); });
@@ -2399,6 +2401,31 @@
 
             const layerList = document.getElementById('layer-list');
             if (layerList) renderLayerList();
+            updateImagePpiLabel();
+        }
+
+        function updateImagePpiLabel() {
+            const label = document.getElementById('image-ppi-label');
+            if (!label) return;
+            const obj = canvas.getActiveObject();
+            if (!obj || obj.type !== 'image') {
+                label.style.display = 'none';
+                return;
+            }
+            const element = obj._element;
+            const pixelWidth = element?.naturalWidth || obj.width || 0;
+            const pixelHeight = element?.naturalHeight || obj.height || 0;
+            const widthIn = (obj.getScaledWidth() / MM_TO_PX_SCREEN) / 25.4;
+            const heightIn = (obj.getScaledHeight() / MM_TO_PX_SCREEN) / 25.4;
+            if (!pixelWidth || !pixelHeight || !widthIn || !heightIn) {
+                label.style.display = 'none';
+                return;
+            }
+            const ppiW = pixelWidth / widthIn;
+            const ppiH = pixelHeight / heightIn;
+            const ppi = Math.round(Math.min(ppiW, ppiH));
+            label.innerText = `Image : ${ppi} ppi`;
+            label.style.display = 'block';
         }
 
         function changeObjectOpacity(val) {
@@ -3243,11 +3270,17 @@
             const target = mask === first ? second : first;
 
             isBatchingHistory = true;
+            const maskSnapshot = mask.toObject(['excludeFromExport', 'absolutePositioned', 'selectable', 'opacity', 'strokeWidth', 'stroke', 'strokeDashArray', 'fill', 'rx', 'ry']);
             mask.clone((clonedMask) => {
                 clonedMask.isArtboardClip = false;
                 clonedMask.absolutePositioned = false;
                 clonedMask.originX = 'center';
                 clonedMask.originY = 'center';
+                clonedMask.stroke = null;
+                clonedMask.strokeWidth = 0;
+                clonedMask.shadow = null;
+                clonedMask.objectCaching = false;
+                clonedMask.fill = '#ffffff';
 
                 const targetCenter = target.getCenterPoint();
                 const maskCenter = mask.getCenterPoint();
@@ -3258,6 +3291,7 @@
                 clonedMask.scaleY = mask.scaleY / target.scaleY;
                 clonedMask.angle = mask.angle - target.angle;
 
+                target._maskRestore = maskSnapshot;
                 target.set('clipPath', clonedMask);
                 canvas.remove(mask);
                 canvas.setActiveObject(target);
@@ -3285,13 +3319,30 @@
                 clonedMask.originY = 'center';
 
                 obj.set('clipPath', null);
-                canvas.add(clonedMask);
-                canvas.setActiveObject(clonedMask);
-                canvas.requestRenderAll();
-                renderLayerList();
-                isBatchingHistory = false;
-                saveHistory();
-                updateFloatingToolbar();
+                if (obj._maskRestore) {
+                    fabric.util.enlivenObjects([obj._maskRestore], (restored) => {
+                        const restoredMask = restored[0];
+                        if (restoredMask) {
+                            restoredMask.absolutePositioned = true;
+                            canvas.add(restoredMask);
+                            canvas.setActiveObject(restoredMask);
+                        }
+                        delete obj._maskRestore;
+                        canvas.requestRenderAll();
+                        renderLayerList();
+                        isBatchingHistory = false;
+                        saveHistory();
+                        updateFloatingToolbar();
+                    });
+                } else {
+                    canvas.add(clonedMask);
+                    canvas.setActiveObject(clonedMask);
+                    canvas.requestRenderAll();
+                    renderLayerList();
+                    isBatchingHistory = false;
+                    saveHistory();
+                    updateFloatingToolbar();
+                }
             });
         }
 
