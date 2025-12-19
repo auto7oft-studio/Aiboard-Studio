@@ -2491,18 +2491,24 @@
 
         function changeStrokeAlign(val) {
             const obj = canvas.getActiveObject();
-            if (obj) {
-                obj.strokeAlign = val;
-                if (val === 'center') {
-                    obj.set({ strokeUniform: false, paintFirst: 'fill' });
-                } else if (val === 'inside') {
-                    obj.set({ strokeUniform: true, paintFirst: 'stroke' });
-                } else if (val === 'outside') {
-                    obj.set({ strokeUniform: true, paintFirst: 'fill' });
-                }
-                canvas.renderAll();
-                saveHistory();
+            if (!obj) return;
+
+            const prevAlign = obj.strokeAlign || 'center';
+            obj.strokeAlign = val;
+
+            // Note: True inside/outside stroke requires dimension adjustment
+            // Inside: stroke goes inward from edge (object visually same size)
+            // Outside: stroke goes outward from edge (object visually same size)
+            // This is a simplified visual approximation using strokeUniform
+
+            if (val === 'center') {
+                obj.set({ strokeUniform: false });
+            } else {
+                obj.set({ strokeUniform: true });
             }
+
+            canvas.renderAll();
+            saveHistory();
         }
 
         function changeStrokeDashed(checked) {
