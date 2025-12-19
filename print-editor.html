@@ -1065,7 +1065,7 @@
 
             <div id="canvas-size-display"
                 style="position: absolute; color: #6B7280; font-size: 12px; z-index: 100; pointer-events: none; font-weight: 500;">
-                <span id="canvas-size-label">90 × 50 mm</span>
+                <span id="canvas-size-label">Size : 90 × 50 mm</span><span id="image-info-label" style="margin-left: 12px;"></span>
             </div>
 
 
@@ -1507,6 +1507,18 @@
                             oninput="changeStrokeWidth(this.value)" style="flex:1">
                         <span id="stroke-width-val" style="font-size: 11px; width: 24px; text-align: right;">0</span>
                     </div>
+                    <div class="property-row">
+                        <label class="property-label">정렬</label>
+                        <select id="stroke-align" onchange="changeStrokeAlign(this.value)" style="flex:1; padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;">
+                            <option value="center">중앙</option>
+                            <option value="inside">내경</option>
+                            <option value="outside">외경</option>
+                        </select>
+                    </div>
+                    <div class="property-row">
+                        <label class="property-label">점선</label>
+                        <input type="checkbox" id="stroke-dashed" onchange="changeStrokeDashed(this.checked)" style="width: 16px; height: 16px;">
+                    </div>
                 </div>
 
                 <!-- 모서리 곡률 -->
@@ -1686,7 +1698,7 @@
             artboard.sendToBack();
 
             // Update UI Labels
-            document.getElementById('canvas-size-label').innerText = `캔버스 사이즈 : ${widthMm} × ${heightMm} mm`;
+            document.getElementById('canvas-size-label').innerText = `Size : ${widthMm} × ${heightMm} mm`;
             document.getElementById('custom-width-input').value = widthMm;
             document.getElementById('custom-height-input').value = heightMm;
 
@@ -1777,19 +1789,22 @@
             canvas.on('selection:created', () => {
                 updateFloatingToolbar();
                 requestAnimationFrame(updateColorPickers);
+                updateImageInfoLabel();
             });
             canvas.on('selection:updated', () => {
                 updateFloatingToolbar();
                 requestAnimationFrame(updateColorPickers);
+                updateImageInfoLabel();
             });
             canvas.on('selection:cleared', () => {
+                updateImageInfoLabel();
                 document.getElementById('prop-text').style.display = 'none';
                 document.getElementById('prop-corner').style.display = 'none';
                 hideFloatingToolbar();
             });
 
             canvas.on('object:moving', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); });
-            canvas.on('object:scaling', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); });
+            canvas.on('object:scaling', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); updateImageInfoLabel(); });
             canvas.on('object:rotating', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); });
 
             canvas.on('object:added', (opt) => { !isUndoing && saveHistory(); checkCanvasBoundaries(); updateObjectClipping(opt.target); });
@@ -2114,6 +2129,25 @@
             display.style.top = `${labelTop}px`;
         }
 
+        function updateImageInfoLabel() {
+            const label = document.getElementById('image-info-label');
+            if (!label) return;
+
+            const obj = canvas.getActiveObject();
+            if (!obj || obj.type !== 'image' || obj.excludeFromExport) {
+                label.innerText = '';
+                return;
+            }
+
+            // Calculate effective PPI
+            const printedWidthMm = (obj.width * obj.scaleX) / MM_TO_PX_SCREEN;
+            const printedHeightMm = (obj.height * obj.scaleY) / MM_TO_PX_SCREEN;
+            const printedWidthInches = printedWidthMm / 25.4;
+            const ppi = Math.round(obj.width / printedWidthInches);
+
+            label.innerText = `| Image : ${ppi} ppi`;
+        }
+
         // Collapsible sections (Figma style)
         function toggleSection(sectionId) {
             const content = document.getElementById(`content-${sectionId}`);
@@ -2385,6 +2419,8 @@
             const strokeMm = obj.strokeWidth ? Math.round(obj.strokeWidth / MM_TO_PX_SCREEN) : 0;
             document.getElementById('stroke-width').value = strokeMm;
             document.getElementById('stroke-width-val').innerText = strokeMm;
+            document.getElementById('stroke-align').value = obj.strokeAlign || 'center';
+            document.getElementById('stroke-dashed').checked = obj._userStrokeDashed || false;
 
             // Opacity
             const opacity = Math.round((obj.opacity || 1) * 100);
@@ -2448,6 +2484,32 @@
                 const px = parseFloat(valPx);
                 obj.set('strokeWidth', px);
                 document.getElementById('stroke-width-val').innerText = px;
+                canvas.renderAll();
+                saveHistory();
+            }
+        }
+
+        function changeStrokeAlign(val) {
+            const obj = canvas.getActiveObject();
+            if (obj) {
+                obj.strokeAlign = val;
+                if (val === 'center') {
+                    obj.set({ strokeUniform: false, paintFirst: 'fill' });
+                } else if (val === 'inside') {
+                    obj.set({ strokeUniform: true, paintFirst: 'stroke' });
+                } else if (val === 'outside') {
+                    obj.set({ strokeUniform: true, paintFirst: 'fill' });
+                }
+                canvas.renderAll();
+                saveHistory();
+            }
+        }
+
+        function changeStrokeDashed(checked) {
+            const obj = canvas.getActiveObject();
+            if (obj) {
+                obj.set('strokeDashArray', checked ? [8, 4] : null);
+                obj._userStrokeDashed = checked;
                 canvas.renderAll();
                 saveHistory();
             }
