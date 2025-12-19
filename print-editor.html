@@ -1064,9 +1064,8 @@
             </div>
 
             <div id="canvas-info-bar"
-                style="position: absolute; top: 8px; left: 8px; background: #1F2937; color: #fff; font-size: 11px; z-index: 100; pointer-events: none; font-weight: 500; padding: 6px 12px; border-radius: 6px; display: flex; gap: 12px;">
-                <span id="canvas-size-label"><b>s</b> 90 × 50 mm</span>
-                <span id="image-info-label" style="display: none;"></span>
+                style="position: absolute; top: 8px; left: 8px; background: #1F2937; color: #fff; font-size: 11px; z-index: 100; pointer-events: none; font-weight: 500; padding: 6px 12px; border-radius: 6px;">
+                <span id="canvas-size-label">Size : 90 × 50 mm</span><span id="image-info-label"></span>
             </div>
 
 
@@ -1691,7 +1690,7 @@
             artboard.sendToBack();
 
             // Update UI Labels
-            document.getElementById('canvas-size-label').innerHTML = `<b>s</b> ${widthMm} × ${heightMm} mm`;
+            document.getElementById('canvas-size-label').innerText = `Size : ${widthMm} × ${heightMm} mm`;
             document.getElementById('custom-width-input').value = widthMm;
             document.getElementById('custom-height-input').value = heightMm;
 
@@ -2101,7 +2100,7 @@
 
             const obj = canvas.getActiveObject();
             if (!obj || obj.type !== 'image' || obj.excludeFromExport) {
-                label.style.display = 'none';
+                label.innerText = '';
                 return;
             }
 
@@ -2110,8 +2109,7 @@
             const printedWidthInches = printedWidthMm / 25.4;
             const ppi = Math.round(obj.width / printedWidthInches);
 
-            label.innerHTML = `<b>i</b> ${ppi} ppi`;
-            label.style.display = 'inline';
+            label.innerText = ` - Image : ${ppi} ppi`;
         }
 
         // Collapsible sections (Figma style)
