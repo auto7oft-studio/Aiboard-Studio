@@ -1538,6 +1538,11 @@
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
+                    <div class="property-row" id="stroke-dash-row" style="display: none;">
+                        <label class="property-label">간격 (px)</label>
+                        <input type="number" id="stroke-dash-gap" min="1" max="100" value="4" step="1"
+                            onchange="updateStrokeDashGap(this.value)" style="width: 60px;">
+                    </div>
                 </div>
 
                 <!-- 모서리 곡률 -->
@@ -2470,6 +2475,7 @@
             if (dashToggle) {
                 const hasDash = Array.isArray(obj.strokeDashArray) && obj.strokeDashArray.length > 0;
                 dashToggle.checked = hasDash;
+                updateStrokeDashControls(hasDash, obj);
             }
 
             // Opacity
@@ -2577,14 +2583,44 @@
         function toggleStrokeDash(isDashed) {
             const obj = canvas.getActiveObject();
             if (!obj) return;
-            const dash = isDashed ? [6, 4] : null;
+            const gapInput = document.getElementById('stroke-dash-gap');
+            const gap = gapInput ? parseFloat(gapInput.value) || 4 : 4;
+            const dash = isDashed ? [6, gap] : null;
             if (obj.type === 'activeSelection') {
                 obj.forEachObject(o => o.set('strokeDashArray', dash));
             } else {
                 obj.set('strokeDashArray', dash);
             }
+            updateStrokeDashControls(isDashed, obj);
             canvas.renderAll();
             saveHistory();
+        }
+
+        function updateStrokeDashGap(val) {
+            const obj = canvas.getActiveObject();
+            if (!obj) return;
+            const gap = Math.max(1, parseFloat(val) || 1);
+            if (obj.type === 'activeSelection') {
+                obj.forEachObject(o => {
+                    const dash = Array.isArray(o.strokeDashArray) ? o.strokeDashArray[0] || 6 : 6;
+                    o.set('strokeDashArray', [dash, gap]);
+                });
+            } else {
+                const dash = Array.isArray(obj.strokeDashArray) ? obj.strokeDashArray[0] || 6 : 6;
+                obj.set('strokeDashArray', [dash, gap]);
+            }
+            canvas.renderAll();
+            saveHistory();
+        }
+
+        function updateStrokeDashControls(isDashed, obj) {
+            const row = document.getElementById('stroke-dash-row');
+            const gapInput = document.getElementById('stroke-dash-gap');
+            if (!row || !gapInput) return;
+            row.style.display = isDashed ? 'flex' : 'none';
+            if (isDashed && obj && Array.isArray(obj.strokeDashArray)) {
+                gapInput.value = Math.round(obj.strokeDashArray[1] || 4);
+            }
         }
 
         function applyStrokeOutside(obj) {
