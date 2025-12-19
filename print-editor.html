@@ -482,16 +482,68 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
 
-        /* --- Layers --- */
+        /* --- Collapsible Sections (Figma Style) --- */
+        .collapsible-section {
+            margin-bottom: 16px;
+        }
+
+        .collapsible-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.15s;
+            user-select: none;
+        }
+
+        .collapsible-header:hover {
+            background: var(--bg-app);
+        }
+
+        .collapsible-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-sub);
+        }
+
+        .collapsible-icon {
+            width: 12px;
+            height: 12px;
+            transition: transform 0.2s;
+            color: var(--text-sub);
+        }
+
+        .collapsible-icon.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .collapsible-content {
+            padding: 8px 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+        }
+
+        .collapsible-content.collapsed {
+            max-height: 0 !important;
+            opacity: 0;
+            padding: 0;
+        }
+
+        /* --- Layers (Figma Style) --- */
         .layer-item {
             display: flex;
             align-items: center;
-            padding: 10px 12px;
-            border-radius: 6px;
+            padding: 6px 8px;
+            border-radius: 4px;
             cursor: pointer;
-            margin-bottom: 4px;
-            font-size: 12px;
-            transition: all 0.2s;
+            margin-bottom: 2px;
+            font-size: 11px;
+            transition: all 0.15s;
+            gap: 8px;
         }
 
         .layer-item:hover {
@@ -499,9 +551,8 @@
         }
 
         .layer-item.active {
-            background: var(--selection);
+            background: #E3F2FD;
             color: var(--primary);
-            font-weight: 600;
         }
 
         .layer-name {
@@ -509,35 +560,157 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            font-size: 11px;
         }
 
         .layer-icon {
-            margin-right: 10px;
-            opacity: 0.7;
-            font-size: 14px;
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            color: var(--text-sub);
+        }
+
+        .layer-icon svg {
+            width: 100%;
+            height: 100%;
         }
 
         .layer-actions {
             display: flex;
-            gap: 8px;
+            gap: 4px;
             opacity: 0;
-            transition: opacity 0.2s;
+            transition: opacity 0.15s;
         }
 
-        .layer-item:hover .layer-actions {
+        .layer-item:hover .layer-actions,
+        .layer-item.active .layer-actions {
             opacity: 1;
         }
 
         .layer-action-btn {
-            padding: 4px;
-            border-radius: 4px;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 3px;
             color: var(--text-sub);
             cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .layer-action-btn svg {
+            width: 14px;
+            height: 14px;
         }
 
         .layer-action-btn:hover {
             color: var(--primary);
             background: var(--bg-panel);
+        }
+
+        /* --- Bottom Toolbar (Figma Style) --- */
+        .bottom-toolbar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            background: white;
+            border-radius: 8px;
+            padding: 6px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05);
+            z-index: 100;
+        }
+
+        .figma-tool-btn {
+            position: relative;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--text-main);
+            transition: all 0.15s;
+        }
+
+        .figma-tool-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .figma-tool-btn:hover {
+            background: var(--bg-app);
+        }
+
+        .figma-tool-btn.active {
+            background: var(--selection);
+            color: var(--primary);
+        }
+
+        .figma-tool-btn .dropdown-indicator {
+            position: absolute;
+            bottom: 3px;
+            right: 3px;
+            width: 0;
+            height: 0;
+            border-left: 3px solid transparent;
+            border-right: 3px solid transparent;
+            border-top: 3px solid currentColor;
+        }
+
+        .tool-dropdown {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            margin-bottom: 4px;
+            background: white;
+            border-radius: 6px;
+            padding: 4px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+            display: none;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 140px;
+            z-index: 1000;
+        }
+
+        .tool-dropdown.show {
+            display: flex;
+        }
+
+        .tool-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.15s;
+            color: var(--text-main);
+        }
+
+        .tool-dropdown-item svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .tool-dropdown-item:hover {
+            background: var(--bg-app);
+        }
+
+        .toolbar-divider {
+            width: 1px;
+            height: 24px;
+            background: var(--border);
+            margin: 0 4px;
         }
 
         .loading {
@@ -806,120 +979,75 @@
                 </div>
             </div>
 
-            <div class="tab-buttons">
-                <button class="tab-btn active" id="btn-tab-insert" onclick="switchTab('insert')">삽입</button>
-                <button class="tab-btn" id="btn-tab-layers" onclick="switchTab('layers')">레이어</button>
-            </div>
-
-            <div id="tab-insert" class="sidebar-content">
-                <div class="section-title">규격 프리셋</div>
-                <div class="size-presets">
-                    <div class="preset-card active" onclick="setCanvasSize(90, 50, '명함')">
-                        <span class="preset-name">명함</span>
-                        <span class="preset-dim">90 × 50mm</span>
+            <div class="sidebar-content">
+                <!-- Canvas Size Presets -->
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleSection('presets')">
+                        <span class="collapsible-title">규격 프리셋</span>
+                        <svg class="collapsible-icon" id="icon-presets" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
                     </div>
-                    <div class="preset-card" onclick="setCanvasSize(210, 297, '전단지 A4')">
-                        <span class="preset-name">전단지 A4</span>
-                        <span class="preset-dim">210 × 297mm</span>
-                    </div>
-                    <div class="preset-card" onclick="setCanvasSize(5000, 900, '현수막')">
-                        <span class="preset-name">현수막</span>
-                        <span class="preset-dim">5000 × 900mm</span>
-                    </div>
-                    <div class="preset-card" onclick="setCanvasSize(600, 1800, '배너')">
-                        <span class="preset-name">배너</span>
-                        <span class="preset-dim">600 × 1800mm</span>
-                    </div>
-                </div>
-
-                <div class="section-title">사용자 정의 크기</div>
-                <div class="custom-size-group">
-                    <div style="flex:1">
-                        <label style="font-size: 10px; color: var(--text-sub); margin-bottom: 4px; display: block;">가로
-                            (mm)</label>
-                        <input type="number" id="custom-width-input" class="size-input" value="90"
-                            onchange="applyCustomSize()">
-                    </div>
-                    <span style="font-size: 12px; margin-top: 14px;">×</span>
-                    <div style="flex:1">
-                        <label style="font-size: 10px; color: var(--text-sub); margin-bottom: 4px; display: block;">세로
-                            (mm)</label>
-                        <input type="number" id="custom-height-input" class="size-input" value="50"
-                            onchange="applyCustomSize()">
+                    <div class="collapsible-content" id="content-presets">
+                        <div class="size-presets">
+                            <div class="preset-card active" onclick="setCanvasSize(90, 50, '명함')">
+                                <span class="preset-name">명함</span>
+                                <span class="preset-dim">90 × 50mm</span>
+                            </div>
+                            <div class="preset-card" onclick="setCanvasSize(210, 297, '전단지 A4')">
+                                <span class="preset-name">전단지 A4</span>
+                                <span class="preset-dim">210 × 297mm</span>
+                            </div>
+                            <div class="preset-card" onclick="setCanvasSize(5000, 900, '현수막')">
+                                <span class="preset-name">현수막</span>
+                                <span class="preset-dim">5000 × 900mm</span>
+                            </div>
+                            <div class="preset-card" onclick="setCanvasSize(600, 1800, '배너')">
+                                <span class="preset-name">배너</span>
+                                <span class="preset-dim">600 × 1800mm</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="section-title">도구</div>
-                <div class="tool-grid">
-                    <button class="tool-btn" onclick="addShape('rect')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                <!-- Custom Size -->
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleSection('custom-size')">
+                        <span class="collapsible-title">사용자 정의 크기</span>
+                        <svg class="collapsible-icon" id="icon-custom-size" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
-                        <span>사각형</span>
-                    </button>
-                    <button class="tool-btn" onclick="addShape('circle')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10" />
-                        </svg>
-                        <span>원형</span>
-                    </button>
-                    <button class="tool-btn" onclick="addShape('triangle')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 3l9 18H3L12 3z" />
-                        </svg>
-                        <span>삼각형</span>
-                    </button>
-                    <button class="tool-btn" onclick="addShape('star')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path
-                                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                        </svg>
-                        <span>별형</span>
-                    </button>
-                    <button class="tool-btn" onclick="addShape('heart')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path
-                                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                        </svg>
-                        <span>하트</span>
-                    </button>
-                    <button class="tool-btn" onclick="addShape('line')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                        </svg>
-                        <span>라인</span>
-                    </button>
-                    <button class="tool-btn" onclick="addShape('arrow')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M5 12h14M13 5l7 7-7 7" />
-                        </svg>
-                        <span>화살표</span>
-                    </button>
-                    <button class="tool-btn" onclick="addText()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M4 7V4h16v3M9 20h6M12 4v16" />
-                        </svg>
-                        <span>텍스트</span>
-                    </button>
+                    </div>
+                    <div class="collapsible-content" id="content-custom-size">
+                        <div class="custom-size-group">
+                            <div style="flex:1">
+                                <label style="font-size: 10px; color: var(--text-sub); margin-bottom: 4px; display: block;">가로 (mm)</label>
+                                <input type="number" id="custom-width-input" class="size-input" value="90" onchange="applyCustomSize()">
+                            </div>
+                            <span style="font-size: 12px; margin-top: 14px;">×</span>
+                            <div style="flex:1">
+                                <label style="font-size: 10px; color: var(--text-sub); margin-bottom: 4px; display: block;">세로 (mm)</label>
+                                <input type="number" id="custom-height-input" class="size-input" value="50" onchange="applyCustomSize()">
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="section-title">이미지</div>
-                <button class="tool-btn" onclick="document.getElementById('img-upload').click()"
-                    style="width: 100%; flex-direction: row; gap: 8px; padding: 12px;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" />
-                        <circle cx="8.5" cy="8.5" r="1.5" />
-                        <path d="M21 15l-5-5L5 21" />
-                    </svg>
-                    <span>이미지 업로드</span>
-                </button>
-                <input type="file" id="img-upload" style="display: none;" accept="image/*"
-                    onchange="handleImageUpload(this)">
+                <!-- Layers -->
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleSection('layers')">
+                        <span class="collapsible-title">레이어</span>
+                        <svg class="collapsible-icon" id="icon-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                    <div class="collapsible-content" id="content-layers">
+                        <div id="layer-list"></div>
+                    </div>
+                </div>
             </div>
 
-            <div id="tab-layers" class="sidebar-content" style="display: none;">
-                <div id="layer-list"></div>
-            </div>
+            <input type="file" id="img-upload" style="display: none;" accept="image/*" onchange="handleImageUpload(this)">
         </aside>
 
         <!-- 2. 중앙 캔버스 영역 -->
@@ -1044,6 +1172,97 @@
 
             <div class="canvas-wrapper" id="canvas-container">
                 <canvas id="editor-canvas"></canvas>
+            </div>
+
+            <!-- Bottom Toolbar (Figma Style) -->
+            <div class="bottom-toolbar">
+                <!-- Text Tool -->
+                <button class="figma-tool-btn" onclick="addText()" title="텍스트 (T)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 7V4h16v3M9 20h6M12 4v16" />
+                    </svg>
+                </button>
+
+                <div class="toolbar-divider"></div>
+
+                <!-- Line Tool (with dropdown) -->
+                <div style="position: relative;">
+                    <button class="figma-tool-btn" id="line-tool-btn" onclick="toggleToolDropdown('line')" title="라인 (L)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="line-tool-icon">
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        <span class="dropdown-indicator"></span>
+                    </button>
+                    <div class="tool-dropdown" id="line-dropdown">
+                        <div class="tool-dropdown-item" onclick="selectLineTool('line')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                            <span>라인</span>
+                        </div>
+                        <div class="tool-dropdown-item" onclick="selectLineTool('arrow')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M13 5l7 7-7 7" />
+                            </svg>
+                            <span>화살표</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="toolbar-divider"></div>
+
+                <!-- Shape Tool (with dropdown) -->
+                <div style="position: relative;">
+                    <button class="figma-tool-btn" id="shape-tool-btn" onclick="toggleToolDropdown('shape')" title="모양 (R)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="shape-tool-icon">
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                        </svg>
+                        <span class="dropdown-indicator"></span>
+                    </button>
+                    <div class="tool-dropdown" id="shape-dropdown">
+                        <div class="tool-dropdown-item" onclick="selectShapeTool('rect')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" />
+                            </svg>
+                            <span>사각형</span>
+                        </div>
+                        <div class="tool-dropdown-item" onclick="selectShapeTool('circle')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" />
+                            </svg>
+                            <span>원형</span>
+                        </div>
+                        <div class="tool-dropdown-item" onclick="selectShapeTool('triangle')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 3l9 18H3L12 3z" />
+                            </svg>
+                            <span>삼각형</span>
+                        </div>
+                        <div class="tool-dropdown-item" onclick="selectShapeTool('star')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                            </svg>
+                            <span>별형</span>
+                        </div>
+                        <div class="tool-dropdown-item" onclick="selectShapeTool('heart')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                            </svg>
+                            <span>하트</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="toolbar-divider"></div>
+
+                <!-- Image Upload Tool -->
+                <button class="figma-tool-btn" onclick="document.getElementById('img-upload').click()" title="이미지 (I)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <path d="M21 15l-5-5L5 21" />
+                    </svg>
+                </button>
             </div>
         </main>
 
@@ -1811,12 +2030,90 @@
             updateZoomDisplay();
         }
 
-        function switchTab(tab) {
-            document.getElementById('tab-insert').style.display = tab === 'insert' ? 'block' : 'none';
-            document.getElementById('tab-layers').style.display = tab === 'layers' ? 'block' : 'none';
-            document.getElementById('btn-tab-insert').classList.toggle('active', tab === 'insert');
-            document.getElementById('btn-tab-layers').classList.toggle('active', tab === 'layers');
-            if (tab === 'layers') renderLayerList();
+        // Collapsible sections (Figma style)
+        function toggleSection(sectionId) {
+            const content = document.getElementById(`content-${sectionId}`);
+            const icon = document.getElementById(`icon-${sectionId}`);
+
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+                icon.classList.remove('collapsed');
+                content.style.maxHeight = content.scrollHeight + 'px';
+            } else {
+                content.classList.add('collapsed');
+                icon.classList.add('collapsed');
+                content.style.maxHeight = '0';
+            }
+
+            // Auto-expand layers section and re-render
+            if (sectionId === 'layers' && !content.classList.contains('collapsed')) {
+                renderLayerList();
+            }
+        }
+
+        // Initialize sections (set initial max-height)
+        window.addEventListener('load', () => {
+            ['presets', 'custom-size', 'layers'].forEach(id => {
+                const content = document.getElementById(`content-${id}`);
+                content.style.maxHeight = content.scrollHeight + 'px';
+            });
+        });
+
+        // Tool dropdown management
+        let currentDropdown = null;
+
+        function toggleToolDropdown(toolType) {
+            const dropdown = document.getElementById(`${toolType}-dropdown`);
+
+            // Close other dropdowns
+            if (currentDropdown && currentDropdown !== dropdown) {
+                currentDropdown.classList.remove('show');
+            }
+
+            // Toggle current dropdown
+            dropdown.classList.toggle('show');
+            currentDropdown = dropdown.classList.contains('show') ? dropdown : null;
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.figma-tool-btn') && !e.target.closest('.tool-dropdown')) {
+                document.querySelectorAll('.tool-dropdown').forEach(d => d.classList.remove('show'));
+                currentDropdown = null;
+            }
+        });
+
+        // Line tool selection
+        function selectLineTool(type) {
+            addShape(type);
+            document.getElementById('line-dropdown').classList.remove('show');
+            currentDropdown = null;
+
+            // Update icon
+            const iconContainer = document.getElementById('line-tool-icon');
+            if (type === 'line') {
+                iconContainer.innerHTML = '<line x1="5" y1="12" x2="19" y2="12" />';
+            } else if (type === 'arrow') {
+                iconContainer.innerHTML = '<path d="M5 12h14M13 5l7 7-7 7" />';
+            }
+        }
+
+        // Shape tool selection
+        function selectShapeTool(type) {
+            addShape(type);
+            document.getElementById('shape-dropdown').classList.remove('show');
+            currentDropdown = null;
+
+            // Update icon
+            const iconContainer = document.getElementById('shape-tool-icon');
+            const icons = {
+                'rect': '<rect x="3" y="3" width="18" height="18" rx="2" />',
+                'circle': '<circle cx="12" cy="12" r="10" />',
+                'triangle': '<path d="M12 3l9 18H3L12 3z" />',
+                'star': '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />',
+                'heart': '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />'
+            };
+            iconContainer.innerHTML = icons[type] || icons['rect'];
         }
 
         function addShape(type) {
@@ -2624,23 +2921,47 @@
                 item.className = 'layer-item';
                 if (canvas.getActiveObject() === obj) item.classList.add('active');
 
-                const icon = obj.type === 'i-text' ? 'T' : (obj.type === 'image' ? '🖼️' : '■');
                 const isHidden = !obj.visible;
                 const isLocked = obj.lockMovementX;
-                const isMasked = !!obj.clipPath;
+
+                // Get SVG icon based on type (Figma style)
+                let iconSvg = '';
+                if (obj.type === 'i-text' || obj.type === 'textbox' || obj.type === 'text') {
+                    iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>';
+                } else if (obj.type === 'image') {
+                    iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
+                } else if (obj.type === 'rect') {
+                    iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>';
+                } else if (obj.type === 'circle') {
+                    iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>';
+                } else if (obj.type === 'triangle') {
+                    iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9 18H3L12 3z"/></svg>';
+                } else if (obj.type === 'line') {
+                    iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+                } else if (obj.type === 'path') {
+                    iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 14l-6-6m-8 0l6 6m0-6v12"/></svg>';
+                } else if (obj.type === 'group') {
+                    iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>';
+                } else {
+                    iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18"/></svg>';
+                }
+
+                // Lock icon
+                const lockIcon = isLocked
+                    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
+                    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>';
+
+                // Visibility icon
+                const visibilityIcon = isHidden
+                    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+                    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
 
                 item.innerHTML = `
-                    <span class="layer-icon" style="width:16px; text-align:center;">${isMasked ? '🎭' : icon}</span>
+                    <div class="layer-icon">${iconSvg}</div>
                     <span class="layer-name">${obj.name || obj.type}</span>
                     <div class="layer-actions">
-                        <div class="layer-action-btn" title="앞으로" onclick="event.stopPropagation(); moveLayer(${actualIndex}, 'up')">↑</div>
-                        <div class="layer-action-btn" title="뒤로" onclick="event.stopPropagation(); moveLayer(${actualIndex}, 'down')">↓</div>
-                        <div class="layer-action-btn" title="맨 앞으로" onclick="event.stopPropagation(); moveLayer(${actualIndex}, 'front')">⇈</div>
-                        <div class="layer-action-btn" title="맨 뒤로" onclick="event.stopPropagation(); moveLayer(${actualIndex}, 'back')">⇊</div>
-                        <div class="layer-action-btn" title="복제" onclick="event.stopPropagation(); duplicateLayer(${actualIndex})">❐</div>
-                        <div class="layer-action-btn" title="${isLocked ? '잠금 해제' : '잠금'}" onclick="event.stopPropagation(); toggleLayerLock(${actualIndex})">${isLocked ? '🔒' : '🔓'}</div>
-                        <div class="layer-action-btn" title="${isHidden ? '표시' : '숨기기'}" onclick="event.stopPropagation(); toggleLayerVisibility(${actualIndex})">${isHidden ? '👁️‍🗨️' : '👁️'}</div>
-                        <div class="layer-action-btn" title="삭제" onclick="event.stopPropagation(); deleteLayer(${actualIndex})" style="color:#DC2626">✕</div>
+                        <div class="layer-action-btn" title="${isLocked ? '잠금 해제' : '잠금'}" onclick="event.stopPropagation(); toggleLayerLock(${actualIndex})">${lockIcon}</div>
+                        <div class="layer-action-btn" title="${isHidden ? '표시' : '숨기기'}" onclick="event.stopPropagation(); toggleLayerVisibility(${actualIndex})">${visibilityIcon}</div>
                     </div>
                 `;
                 item.onclick = () => {
