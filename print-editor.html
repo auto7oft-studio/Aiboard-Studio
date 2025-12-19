@@ -1047,7 +1047,7 @@
                 </div>
             </div>
 
-            <input type="file" id="img-upload" style="display: none;" accept="image/*" onchange="handleImageUpload(this)">
+            <input type="file" id="img-upload" style="display: none;" accept="image/*,.svg" onchange="handleImageUpload(this)">
         </aside>
 
         <!-- 2. 중앙 캔버스 영역 -->
@@ -1065,8 +1065,8 @@
 
             <div id="canvas-size-display"
                 style="position: absolute; color: #6B7280; font-size: 12px; z-index: 100; pointer-events: none; font-weight: 400;">
+                <span id="image-ppi-label" style="display:none; margin-bottom: 2px; font-size: 11px; color: #9CA3AF;">Image : 300 ppi</span>
                 <span id="canvas-size-label">Size : 90 × 50 mm</span>
-                <span id="image-ppi-label" style="display:none; margin-top: 2px; font-size: 11px; color: #9CA3AF;">Image : 300 ppi</span>
             </div>
 
 
@@ -2297,20 +2297,49 @@
             const file = input.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function (e) {
-                fabric.Image.fromURL(e.target.result, (img) => {
-                    const center = artboard.getCenterPoint();
-                    const minDim = Math.min(artboard.width, artboard.height);
-                    const targetWidth = minDim * 0.4; // 40% of artboard
+            const fileName = file.name.toLowerCase();
+            const isSvg = file.type === 'image/svg+xml' || fileName.endsWith('.svg');
 
-                    img.set({ left: center.x, top: center.y, originX: 'center', originY: 'center', opacity: 1 });
-                    img.scaleToWidth(targetWidth);
-                    canvas.add(img);
-                    canvas.setActiveObject(img);
-                    canvas.renderAll();
-                });
+            reader.onload = function (e) {
+                if (isSvg) {
+                    fabric.loadSVGFromString(e.target.result, (objects, options) => {
+                        const svg = fabric.util.groupSVGElements(objects, options);
+                        const center = artboard.getCenterPoint();
+                        const minDim = Math.min(artboard.width, artboard.height);
+                        const targetWidth = minDim * 0.4;
+                        svg.set({ left: center.x, top: center.y, originX: 'center', originY: 'center' });
+                        svg.scaleToWidth(targetWidth);
+                        canvas.add(svg);
+                        canvas.setActiveObject(svg);
+                        canvas.renderAll();
+                        renderLayerList();
+                        updateImagePpiLabel();
+                    });
+                } else if (file.type.startsWith('image/')) {
+                    fabric.Image.fromURL(e.target.result, (img) => {
+                        const center = artboard.getCenterPoint();
+                        const minDim = Math.min(artboard.width, artboard.height);
+                        const targetWidth = minDim * 0.4; // 40% of artboard
+
+                        img.set({ left: center.x, top: center.y, originX: 'center', originY: 'center', opacity: 1 });
+                        img.scaleToWidth(targetWidth);
+                        canvas.add(img);
+                        canvas.setActiveObject(img);
+                        canvas.renderAll();
+                        renderLayerList();
+                        updateImagePpiLabel();
+                    });
+                } else {
+                    alert('현재 지원 형식: JPG, PNG, GIF, WEBP, SVG. AI/PDF/EPS/PSD는 변환 후 업로드해주세요.');
+                }
+                input.value = '';
             };
-            reader.readAsDataURL(file);
+
+            if (isSvg) {
+                reader.readAsText(file);
+            } else {
+                reader.readAsDataURL(file);
+            }
         }
 
         // --- PROPERTIES ---
