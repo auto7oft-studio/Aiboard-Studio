@@ -1053,26 +1053,6 @@
         <!-- 2. 중앙 캔버스 영역 -->
         <main class="canvas-area">
             <div class="top-toolbar">
-                <button class="action-btn" onclick="undo()" title="실행 취소 (Ctrl+Z)">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 7v6h6M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
-                    </svg>
-                </button>
-                <button class="action-btn" onclick="redo()" title="다시 실행 (Ctrl+Shift+Z)">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 7v6h-6M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7" />
-                    </svg>
-                </button>
-                <div style="width: 1px; height: 16px; background: var(--border);"></div>
-                <div class="zoom-container"
-                    style="display: flex; align-items: center; background: var(--bg-app); border-radius: 20px; padding: 2px 12px; border: 1px solid var(--border);">
-                    <input type="text" id="zoom-input" value="100%"
-                        style="width: 55px; border: none; background: transparent; font-size: 13px; font-weight: 700; text-align: center; color: var(--text-main); outline: none;"
-                        onkeydown="if(event.key === 'Enter') handleZoomInput(this.value)"
-                        onblur="handleZoomInput(this.value)">
-                </div>
-                <button class="action-btn" onclick="fitToScreen()">맞춤</button>
-                <div style="width: 1px; height: 16px; background: var(--border);"></div>
                 <button class="action-btn"
                     style="color: white; background: var(--primary); padding: 6px 16px; font-size: 13px; font-weight: 600; border-radius: 20px;"
                     onclick="handleExportRequest()">PDF 내보내기</button>
@@ -1176,6 +1156,35 @@
 
             <!-- Bottom Toolbar (Figma Style) -->
             <div class="bottom-toolbar">
+                <!-- Undo/Redo -->
+                <button class="figma-tool-btn" onclick="undo()" title="실행 취소 (Ctrl+Z)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 7v6h6M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+                    </svg>
+                </button>
+                <button class="figma-tool-btn" onclick="redo()" title="다시 실행 (Ctrl+Shift+Z)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 7v6h-6M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7" />
+                    </svg>
+                </button>
+
+                <div class="toolbar-divider"></div>
+
+                <!-- Zoom Controls -->
+                <div style="position: relative; display: flex; align-items: center; background: var(--bg-app); border-radius: 6px; padding: 4px 12px; border: 1px solid var(--border);">
+                    <input type="text" id="zoom-input-bottom" value="100%"
+                        style="width: 50px; border: none; background: transparent; font-size: 12px; font-weight: 600; text-align: center; color: var(--text-main); outline: none;"
+                        onkeydown="if(event.key === 'Enter') handleZoomInput(this.value)"
+                        onblur="handleZoomInput(this.value)">
+                </div>
+                <button class="figma-tool-btn" onclick="fitToScreen()" title="화면에 맞춤">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                    </svg>
+                </button>
+
+                <div class="toolbar-divider"></div>
+
                 <!-- Text Tool -->
                 <button class="figma-tool-btn" onclick="addText()" title="텍스트 (T)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1966,8 +1975,13 @@
 
         function updateZoomDisplay() {
             const zoom = Math.round(canvas.getZoom() * 100);
-            const input = document.getElementById('zoom-input');
-            if (input) input.value = zoom + '%';
+            const zoomValue = zoom + '%';
+
+            // Update both zoom inputs (top and bottom)
+            const inputTop = document.getElementById('zoom-input');
+            const inputBottom = document.getElementById('zoom-input-bottom');
+            if (inputTop) inputTop.value = zoomValue;
+            if (inputBottom) inputBottom.value = zoomValue;
         }
 
         function handleZoomInput(val) {
@@ -2670,13 +2684,21 @@
             isUndoing = true;
             historyStep--;
             const data = JSON.parse(history[historyStep]);
-            canvas.getObjects().forEach(o => { if (!o.excludeFromExport) canvas.remove(o); });
+
+            // Remove all non-artboard objects
+            canvas.getObjects().forEach(o => {
+                if (!o.excludeFromExport) canvas.remove(o);
+            });
+
+            // Restore objects from history
             fabric.util.enlivenObjects(data.objects, (enlivened) => {
                 enlivened.forEach(o => canvas.add(o));
+                canvas.discardActiveObject();
                 canvas.renderAll();
                 isUndoing = false;
                 checkCanvasBoundaries();
                 hideFloatingToolbar();
+                renderLayerList();
             });
         }
 
@@ -2685,13 +2707,21 @@
             isUndoing = true;
             historyStep++;
             const data = JSON.parse(history[historyStep]);
-            canvas.getObjects().forEach(o => { if (!o.excludeFromExport) canvas.remove(o); });
+
+            // Remove all non-artboard objects
+            canvas.getObjects().forEach(o => {
+                if (!o.excludeFromExport) canvas.remove(o);
+            });
+
+            // Restore objects from history
             fabric.util.enlivenObjects(data.objects, (enlivened) => {
                 enlivened.forEach(o => canvas.add(o));
+                canvas.discardActiveObject();
                 canvas.renderAll();
                 isUndoing = false;
                 checkCanvasBoundaries();
                 hideFloatingToolbar();
+                renderLayerList();
             });
         }
 
