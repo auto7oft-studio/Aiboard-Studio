@@ -1514,7 +1514,13 @@
                     </div>
                     <div class="property-row">
                         <label class="property-label">점선</label>
-                        <input type="checkbox" id="stroke-dashed" onchange="changeStrokeDashed(this.checked)" style="width: 16px; height: 16px;">
+                        <input type="checkbox" id="stroke-dashed" onchange="changeStrokeDashed()" style="width: 16px; height: 16px;">
+                    </div>
+                    <div id="dash-settings" class="property-row" style="display: none;">
+                        <label class="property-label">길이/간격</label>
+                        <input type="number" id="dash-length" value="8" min="1" max="100" style="width: 45px; padding: 2px 4px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;" oninput="changeStrokeDashed()">
+                        <span style="font-size: 11px; margin: 0 4px;">/</span>
+                        <input type="number" id="dash-gap" value="4" min="1" max="100" style="width: 45px; padding: 2px 4px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;" oninput="changeStrokeDashed()">
                     </div>
                 </div>
 
@@ -1787,24 +1793,27 @@
                 updateFloatingToolbar();
                 requestAnimationFrame(updateColorPickers);
                 updateImageInfoLabel();
+                renderLayerList();
             });
             canvas.on('selection:updated', () => {
                 updateFloatingToolbar();
                 requestAnimationFrame(updateColorPickers);
                 updateImageInfoLabel();
+                renderLayerList();
             });
             canvas.on('selection:cleared', () => {
                 updateImageInfoLabel();
                 document.getElementById('prop-text').style.display = 'none';
                 document.getElementById('prop-corner').style.display = 'none';
                 hideFloatingToolbar();
+                renderLayerList();
             });
 
             canvas.on('object:moving', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); });
             canvas.on('object:scaling', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); updateImageInfoLabel(); });
             canvas.on('object:rotating', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); });
 
-            canvas.on('object:added', (opt) => { !isUndoing && saveHistory(); checkCanvasBoundaries(); updateObjectClipping(opt.target); });
+            canvas.on('object:added', (opt) => { !isUndoing && saveHistory(); checkCanvasBoundaries(); updateObjectClipping(opt.target); renderLayerList(); });
             canvas.on('object:modified', (opt) => { !isUndoing && saveHistory(); checkCanvasBoundaries(); updateObjectClipping(opt.target); });
             canvas.on('object:removed', () => { !isUndoing && saveHistory(); checkCanvasBoundaries(); });
 
@@ -2388,7 +2397,13 @@
             const strokePx = obj.strokeWidth ? Math.round(obj.strokeWidth) : 0;
             document.getElementById('stroke-width').value = strokePx;
             document.getElementById('stroke-width-val').innerText = strokePx;
-            document.getElementById('stroke-dashed').checked = obj._userStrokeDashed || false;
+            const isDashed = obj._userStrokeDashed || false;
+            document.getElementById('stroke-dashed').checked = isDashed;
+            document.getElementById('dash-settings').style.display = isDashed ? 'flex' : 'none';
+            if (isDashed) {
+                document.getElementById('dash-length').value = obj._dashLength || 8;
+                document.getElementById('dash-gap').value = obj._dashGap || 4;
+            }
 
             // Opacity
             const opacity = Math.round((obj.opacity || 1) * 100);
@@ -2457,14 +2472,28 @@
             }
         }
 
-        function changeStrokeDashed(checked) {
+        function changeStrokeDashed() {
             const obj = canvas.getActiveObject();
-            if (obj) {
-                obj.set('strokeDashArray', checked ? [8, 4] : null);
-                obj._userStrokeDashed = checked;
-                canvas.renderAll();
-                saveHistory();
+            if (!obj) return;
+
+            const checked = document.getElementById('stroke-dashed').checked;
+            const dashSettings = document.getElementById('dash-settings');
+
+            if (checked) {
+                const dashLen = parseInt(document.getElementById('dash-length').value) || 8;
+                const dashGap = parseInt(document.getElementById('dash-gap').value) || 4;
+                obj.set('strokeDashArray', [dashLen, dashGap]);
+                obj._userStrokeDashed = true;
+                obj._dashLength = dashLen;
+                obj._dashGap = dashGap;
+                dashSettings.style.display = 'flex';
+            } else {
+                obj.set('strokeDashArray', null);
+                obj._userStrokeDashed = false;
+                dashSettings.style.display = 'none';
             }
+            canvas.renderAll();
+            saveHistory();
         }
 
         function changeCornerRadius(val) {
