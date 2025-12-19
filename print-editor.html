@@ -2285,6 +2285,7 @@
 
             canvas.add(obj);
             canvas.setActiveObject(obj);
+            applyStrokeOutside(obj);
             canvas.renderAll();
         }
 
@@ -2305,6 +2306,7 @@
             });
             canvas.add(text);
             canvas.setActiveObject(text);
+            applyStrokeOutside(text);
             canvas.renderAll();
         }
 
@@ -2515,6 +2517,7 @@
             const obj = canvas.getActiveObject();
             if (obj) {
                 obj.set('stroke', val);
+                applyStrokeOutside(obj);
                 document.getElementById('stroke-swatch').style.background = val;
                 canvas.renderAll();
             }
@@ -2524,10 +2527,26 @@
             const obj = canvas.getActiveObject();
             if (obj) {
                 const px = parseFloat(valPx);
-                obj.set('strokeWidth', px);
+                if (obj.type === 'activeSelection') {
+                    obj.forEachObject(o => {
+                        o.set('strokeWidth', px);
+                        applyStrokeOutside(o);
+                    });
+                } else {
+                    obj.set('strokeWidth', px);
+                    applyStrokeOutside(obj);
+                }
                 document.getElementById('stroke-width-val').innerText = px;
                 canvas.renderAll();
                 saveHistory();
+            }
+        }
+
+        function applyStrokeOutside(obj) {
+            if (!obj || !obj.set) return;
+            const hasFill = obj.fill && obj.fill !== 'transparent';
+            if (hasFill && obj.type !== 'line') {
+                obj.set({ paintFirst: 'stroke' });
             }
         }
 
