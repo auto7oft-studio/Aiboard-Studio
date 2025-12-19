@@ -1531,6 +1531,13 @@
                             oninput="changeStrokeWidth(this.value)" style="flex:1">
                         <span id="stroke-width-val" style="font-size: 11px; width: 24px; text-align: right;">0</span>
                     </div>
+                    <div class="property-row">
+                        <label class="property-label">점선</label>
+                        <label class="toggle" style="margin-left:auto;">
+                            <input type="checkbox" id="stroke-dash-toggle" onchange="toggleStrokeDash(this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                 </div>
 
                 <!-- 모서리 곡률 -->
@@ -2459,6 +2466,11 @@
             const strokeMm = obj.strokeWidth ? Math.round(obj.strokeWidth / MM_TO_PX_SCREEN) : 0;
             document.getElementById('stroke-width').value = strokeMm;
             document.getElementById('stroke-width-val').innerText = strokeMm;
+            const dashToggle = document.getElementById('stroke-dash-toggle');
+            if (dashToggle) {
+                const hasDash = Array.isArray(obj.strokeDashArray) && obj.strokeDashArray.length > 0;
+                dashToggle.checked = hasDash;
+            }
 
             // Opacity
             const opacity = Math.round((obj.opacity || 1) * 100);
@@ -2560,6 +2572,19 @@
                 canvas.renderAll();
                 saveHistory();
             }
+        }
+
+        function toggleStrokeDash(isDashed) {
+            const obj = canvas.getActiveObject();
+            if (!obj) return;
+            const dash = isDashed ? [6, 4] : null;
+            if (obj.type === 'activeSelection') {
+                obj.forEachObject(o => o.set('strokeDashArray', dash));
+            } else {
+                obj.set('strokeDashArray', dash);
+            }
+            canvas.renderAll();
+            saveHistory();
         }
 
         function applyStrokeOutside(obj) {
