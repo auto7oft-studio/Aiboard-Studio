@@ -833,6 +833,25 @@
             text-align: center;
         }
 
+        .cmyk-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .cmyk-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .cmyk-input-group label {
+            font-size: 10px;
+            color: var(--text-sub);
+            text-transform: uppercase;
+        }
+
         .color-palette {
             display: flex;
             flex-wrap: wrap;
@@ -1581,6 +1600,24 @@
                 <input type="text" id="picker-opacity" class="picker-input" spellcheck="false">
             </div>
         </div>
+        <div class="cmyk-grid">
+            <div class="cmyk-input-group">
+                <label>C</label>
+                <input type="number" id="picker-cmyk-c" class="picker-input" min="0" max="100" value="0">
+            </div>
+            <div class="cmyk-input-group">
+                <label>M</label>
+                <input type="number" id="picker-cmyk-m" class="picker-input" min="0" max="100" value="0">
+            </div>
+            <div class="cmyk-input-group">
+                <label>Y</label>
+                <input type="number" id="picker-cmyk-y" class="picker-input" min="0" max="100" value="0">
+            </div>
+            <div class="cmyk-input-group">
+                <label>K</label>
+                <input type="number" id="picker-cmyk-k" class="picker-input" min="0" max="100" value="0">
+            </div>
+        </div>
         <div id="doc-colors" class="color-palette">
             <div class="palette-title">문서 색상</div>
         </div>
@@ -1629,6 +1666,7 @@
         let pickerHue = 0;
         let pickerSaturation = 1;
         let pickerAlpha = 1;
+        let pickerCmyk = { c: 0, m: 0, y: 0, k: 0 };
         let recentColors = [];
 
         function mmToPx(mm) { return mm * MM_TO_PX_SCREEN; }
@@ -2483,6 +2521,7 @@
             document.getElementById('fill-swatch').style.background = val;
             document.getElementById('fill-color-hex').value = val.toUpperCase();
             canvas.renderAll();
+            setObjectColorData(obj, 'fill', val);
             saveHistory();
         }
 
@@ -2493,6 +2532,7 @@
             const color = isChecked ? 'transparent' : document.getElementById('fill-swatch').style.background;
             obj.set('fill', color);
             canvas.renderAll();
+            if (color !== 'transparent') setObjectColorData(obj, 'fill', color);
             saveHistory();
         }
 
@@ -2502,6 +2542,7 @@
                 obj.set('stroke', val);
                 document.getElementById('stroke-swatch').style.background = val;
                 canvas.renderAll();
+                setObjectColorData(obj, 'stroke', val);
                 saveHistory();
             }
         }
@@ -2574,6 +2615,18 @@
             } else {
                 applyTo(obj);
             }
+        }
+
+        function setObjectColorData(obj, target, color) {
+            if (!obj || !color || color === 'transparent') return;
+            const rgba = colorToRgba(color);
+            const cmyk = rgbToCmyk(rgba.r, rgba.g, rgba.b);
+            const data = {
+                colorMode: 'cmyk',
+                cmyk: { ...cmyk },
+                rgb: { r: rgba.r, g: rgba.g, b: rgba.b }
+            };
+            obj[`${target}ColorData`] = data;
         }
 
         function changeCornerRadius(val) {
@@ -2875,6 +2928,8 @@
                 'isMaskGroup',
                 'maskTargetId',
                 'customId',
+                'fillColorData',
+                'strokeColorData',
                 '_userStrokeDashed',
                 '_dashLength',
                 '_dashGap',
@@ -3558,19 +3613,19 @@
                 const rect = sbArea.getBoundingClientRect();
                 pickerSaturation = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
                 pickerBrightness = Math.max(0, Math.min(1, 1 - (e.clientY - rect.top) / rect.height));
-                updatePickerUI();
+                updatePickerUI(true);
             };
 
             const handleHue = (e) => {
                 const rect = hueArea.getBoundingClientRect();
                 pickerHue = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * 360;
-                updatePickerUI();
+                updatePickerUI(true);
             };
 
             const handleAlpha = (e) => {
                 const rect = alphaArea.getBoundingClientRect();
                 pickerAlpha = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-                updatePickerUI();
+                updatePickerUI(true);
             };
 
             const setupDrag = (el, fn) => {
@@ -3596,7 +3651,30 @@
 
             document.getElementById('picker-opacity').addEventListener('change', (e) => {
                 pickerAlpha = parseFloat(e.target.value) / 100;
-                updatePickerUI();
+                updatePickerUI(true);
+            });
+
+            ['c', 'm', 'y', 'k'].forEach((channel) => {
+                document.getElementById(`picker-cmyk-${channel}`).addEventListener('change', () => {
+                    const c = parseFloat(document.getElementById('picker-cmyk-c').value) || 0;
+                    const m = parseFloat(document.getElementById('picker-cmyk-m').value) || 0;
+                    const y = parseFloat(document.getElementById('picker-cmyk-y').value) || 0;
+                    const k = parseFloat(document.getElementById('picker-cmyk-k').value) || 0;
+                    pickerCmyk = {
+                        c: Math.max(0, Math.min(100, c)),
+                        m: Math.max(0, Math.min(100, m)),
+                        y: Math.max(0, Math.min(100, y)),
+                        k: Math.max(0, Math.min(100, k))
+                    };
+                    const rgb = cmykToRgb(pickerCmyk.c, pickerCmyk.m, pickerCmyk.y, pickerCmyk.k);
+                    const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+                    pickerHue = hsv.h;
+                    pickerSaturation = hsv.s;
+                    pickerBrightness = hsv.v;
+                    updatePickerUI(false);
+                    const rgbaStr = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${pickerAlpha})`;
+                    applyColorToTarget(rgbaStr, pickerCmyk);
+                });
             });
 
             window.addEventListener('mousedown', (e) => {
@@ -3617,12 +3695,22 @@
             picker.classList.add('show');
 
             const color = el.style.background || '#ffffff';
-            setPickerColor(color);
+            const activeObj = canvas.getActiveObject();
+            if (activeObj && (pickerTarget === 'fill' || pickerTarget === 'stroke')) {
+                const colorData = activeObj[`${pickerTarget}ColorData`];
+                if (colorData && colorData.cmyk) {
+                    setPickerFromCmyk(colorData.cmyk);
+                } else {
+                    setPickerColor(color, { apply: false });
+                }
+            } else {
+                setPickerColor(color, { apply: false });
+            }
             renderPalette('doc-colors', getDocumentColors());
             renderPalette('recent-colors', recentColors);
         }
 
-        function setPickerColor(color) {
+        function setPickerColor(color, options = {}) {
             if (color === 'transparent') color = 'rgba(0,0,0,0)';
             const rgba = colorToRgba(color);
             const hsv = rgbToHsv(rgba.r, rgba.g, rgba.b);
@@ -3630,16 +3718,20 @@
             pickerSaturation = hsv.s;
             pickerBrightness = hsv.v;
             pickerAlpha = rgba.a;
-            updatePickerUI();
+            pickerCmyk = rgbToCmyk(rgba.r, rgba.g, rgba.b);
+            updatePickerUI(false);
+            if (options.apply !== false) {
+                const rgbaStr = `rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, ${pickerAlpha})`;
+                applyColorToTarget(rgbaStr, pickerCmyk);
+            }
         }
 
-        function updatePickerUI() {
+        function updatePickerUI(apply) {
             drawSbCanvas();
             drawAlphaCanvas();
 
             const rgb = hsvToRgb(pickerHue, pickerSaturation, pickerBrightness);
             const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
-            const rgbaStr = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${pickerAlpha})`;
 
             document.getElementById('picker-sb-cursor').style.left = `${pickerSaturation * 100}%`;
             document.getElementById('picker-sb-cursor').style.top = `${(1 - pickerBrightness) * 100}%`;
@@ -3648,15 +3740,28 @@
 
             document.getElementById('picker-hex').value = hex.toUpperCase();
             document.getElementById('picker-opacity').value = Math.round(pickerAlpha * 100);
+            pickerCmyk = rgbToCmyk(rgb.r, rgb.g, rgb.b);
+            updateCmykInputs(pickerCmyk);
 
-            applyColorToTarget(rgbaStr);
+            if (apply) {
+                const rgbaStr = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${pickerAlpha})`;
+                applyColorToTarget(rgbaStr, pickerCmyk);
+            }
         }
 
-        function applyColorToTarget(color) {
+        function applyColorToTarget(color, cmyk) {
             if (!pickerTarget) return;
+            const activeObj = canvas.getActiveObject();
+            const rgba = colorToRgba(color);
+            const effectiveCmyk = cmyk || rgbToCmyk(rgba.r, rgba.g, rgba.b);
 
-            if (pickerTarget === 'fill') changeFillColor(color);
-            else if (pickerTarget === 'stroke') changeStrokeColor(color);
+            if (pickerTarget === 'fill') {
+                changeFillColor(color);
+                if (activeObj) activeObj.fillColorData = { colorMode: 'cmyk', cmyk: { ...effectiveCmyk }, rgb: { r: rgba.r, g: rgba.g, b: rgba.b } };
+            } else if (pickerTarget === 'stroke') {
+                changeStrokeColor(color);
+                if (activeObj) activeObj.strokeColorData = { colorMode: 'cmyk', cmyk: { ...effectiveCmyk }, rgb: { r: rgba.r, g: rgba.g, b: rgba.b } };
+            }
             else if (pickerTarget === 'grad-start' || pickerTarget === 'grad-end') {
                 document.getElementById(pickerTarget + '-swatch').style.background = color;
                 updateGradient();
@@ -3666,6 +3771,28 @@
                 recentColors.unshift(color);
                 if (recentColors.length > 10) recentColors.pop();
             }
+        }
+
+        function setPickerFromCmyk(cmyk) {
+            pickerCmyk = {
+                c: Math.max(0, Math.min(100, cmyk.c || 0)),
+                m: Math.max(0, Math.min(100, cmyk.m || 0)),
+                y: Math.max(0, Math.min(100, cmyk.y || 0)),
+                k: Math.max(0, Math.min(100, cmyk.k || 0))
+            };
+            const rgb = cmykToRgb(pickerCmyk.c, pickerCmyk.m, pickerCmyk.y, pickerCmyk.k);
+            const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+            pickerHue = hsv.h;
+            pickerSaturation = hsv.s;
+            pickerBrightness = hsv.v;
+            updatePickerUI(false);
+        }
+
+        function updateCmykInputs(cmyk) {
+            document.getElementById('picker-cmyk-c').value = cmyk.c;
+            document.getElementById('picker-cmyk-m').value = cmyk.m;
+            document.getElementById('picker-cmyk-y').value = cmyk.y;
+            document.getElementById('picker-cmyk-k').value = cmyk.k;
         }
 
         function drawSbCanvas() {
@@ -3714,6 +3841,35 @@
         }
 
         // --- COLOR HELPERS ---
+        function rgbToCmyk(r, g, b) {
+            const rNorm = r / 255;
+            const gNorm = g / 255;
+            const bNorm = b / 255;
+            const k = 1 - Math.max(rNorm, gNorm, bNorm);
+            if (k === 1) return { c: 0, m: 0, y: 0, k: 100 };
+            const c = (1 - rNorm - k) / (1 - k);
+            const m = (1 - gNorm - k) / (1 - k);
+            const y = (1 - bNorm - k) / (1 - k);
+            return {
+                c: Math.round(c * 100),
+                m: Math.round(m * 100),
+                y: Math.round(y * 100),
+                k: Math.round(k * 100)
+            };
+        }
+
+        function cmykToRgb(c, m, y, k) {
+            const cNorm = c / 100;
+            const mNorm = m / 100;
+            const yNorm = y / 100;
+            const kNorm = k / 100;
+            return {
+                r: Math.round(255 * (1 - cNorm) * (1 - kNorm)),
+                g: Math.round(255 * (1 - mNorm) * (1 - kNorm)),
+                b: Math.round(255 * (1 - yNorm) * (1 - kNorm))
+            };
+        }
+
         function colorToRgba(color) {
             const canvas = document.createElement('canvas');
             canvas.width = canvas.height = 1;
