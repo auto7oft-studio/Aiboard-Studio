@@ -1659,6 +1659,7 @@
             createArtboard(currentWidth, currentHeight);
             setupEvents();
             saveHistory();
+            renderLayerList();
         }
 
         function createArtboard(widthMm, heightMm) {
@@ -2148,7 +2149,6 @@
                 if (icon) icon.classList.remove('collapsed');
                 content.style.maxHeight = content.scrollHeight + 'px';
             });
-            renderLayerList();
         });
 
         // Tool dropdown management
@@ -3055,6 +3055,7 @@
 
         function renderLayerList() {
             const list = document.getElementById('layer-list');
+            if (!list || !canvas) return;
             list.innerHTML = '';
             // Exclude artboard
             const objects = canvas.getObjects().filter(o => !o.excludeFromExport).reverse();
@@ -3179,34 +3180,6 @@
             }
         }
 
-        function toggleLayerVisibility(index) {
-            const obj = canvas.getObjects()[index];
-            if (obj) {
-                obj.visible = !obj.visible;
-                canvas.renderAll();
-                renderLayerList();
-            }
-        }
-
-        function toggleLayerLock(index) {
-            const obj = canvas.getObjects()[index];
-            if (obj) {
-                const isLocked = !obj.lockMovementX;
-                obj.set({
-                    lockMovementX: isLocked,
-                    lockMovementY: isLocked,
-                    lockScalingX: isLocked,
-                    lockScalingY: isLocked,
-                    lockRotation: isLocked,
-                    selectable: !isLocked,
-                    hasControls: !isLocked
-                });
-                if (isLocked && canvas.getActiveObject() === obj) canvas.discardActiveObject();
-                canvas.renderAll();
-                renderLayerList();
-            }
-        }
-
         // --- UX ENHANCEMENTS ---
         function updateFloatingToolbar() {
             const obj = canvas.getActiveObject();
@@ -3293,6 +3266,8 @@
 
                 target._maskRestore = maskSnapshot;
                 target.set('clipPath', clonedMask);
+                target.objectCaching = false;
+                target.dirty = true;
                 canvas.remove(mask);
                 canvas.setActiveObject(target);
                 canvas.requestRenderAll();
