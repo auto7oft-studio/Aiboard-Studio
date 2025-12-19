@@ -1608,6 +1608,7 @@
         let history = [];
         let historyStep = -1;
         let isUndoing = false;
+        let isBatchingHistory = false;
 
         // Color Picker State
         let pickerTarget = null;
@@ -1792,9 +1793,9 @@
             canvas.on('object:scaling', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); });
             canvas.on('object:rotating', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); });
 
-            canvas.on('object:added', (opt) => { !isUndoing && saveHistory(); checkCanvasBoundaries(); updateObjectClipping(opt.target); });
-            canvas.on('object:modified', (opt) => { !isUndoing && saveHistory(); checkCanvasBoundaries(); updateObjectClipping(opt.target); });
-            canvas.on('object:removed', () => { !isUndoing && saveHistory(); checkCanvasBoundaries(); });
+            canvas.on('object:added', (opt) => { !isUndoing && !isBatchingHistory && saveHistory(); checkCanvasBoundaries(); updateObjectClipping(opt.target); });
+            canvas.on('object:modified', (opt) => { !isUndoing && !isBatchingHistory && saveHistory(); checkCanvasBoundaries(); updateObjectClipping(opt.target); });
+            canvas.on('object:removed', () => { !isUndoing && !isBatchingHistory && saveHistory(); checkCanvasBoundaries(); });
 
             window.addEventListener('keydown', handleKeydown);
             window.addEventListener('keyup', handleKeyup);
@@ -3235,12 +3236,18 @@
             const active = canvas.getActiveObject();
             if (!active || active.type !== 'activeSelection' || active._objects.length !== 2) return;
 
-            const target = active._objects[0];
-            const mask = active._objects[1];
+            const [first, second] = active._objects;
+            const firstIndex = canvas.getObjects().indexOf(first);
+            const secondIndex = canvas.getObjects().indexOf(second);
+            const mask = firstIndex > secondIndex ? first : second;
+            const target = mask === first ? second : first;
 
+            isBatchingHistory = true;
             mask.clone((clonedMask) => {
                 clonedMask.isArtboardClip = false;
                 clonedMask.absolutePositioned = false;
+                clonedMask.originX = 'center';
+                clonedMask.originY = 'center';
 
                 const targetCenter = target.getCenterPoint();
                 const maskCenter = mask.getCenterPoint();
@@ -3256,6 +3263,7 @@
                 canvas.setActiveObject(target);
                 canvas.requestRenderAll();
                 renderLayerList();
+                isBatchingHistory = false;
                 saveHistory();
                 updateFloatingToolbar();
             }, ['isArtboard', 'excludeFromExport']);
@@ -3266,18 +3274,22 @@
             if (!obj || !obj.clipPath) return;
 
             const mask = obj.clipPath;
+            isBatchingHistory = true;
             mask.clone((clonedMask) => {
                 // Convert relative back to absolute
                 const targetCenter = obj.getCenterPoint();
                 clonedMask.left += targetCenter.x;
                 clonedMask.top += targetCenter.y;
                 clonedMask.absolutePositioned = true; // usually shapes on canvas are absolute
+                clonedMask.originX = 'center';
+                clonedMask.originY = 'center';
 
                 obj.set('clipPath', null);
                 canvas.add(clonedMask);
                 canvas.setActiveObject(clonedMask);
                 canvas.requestRenderAll();
                 renderLayerList();
+                isBatchingHistory = false;
                 saveHistory();
                 updateFloatingToolbar();
             });
