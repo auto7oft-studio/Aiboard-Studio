@@ -2284,7 +2284,7 @@
                     ...props,
                     left: center.x,
                     top: center.y,
-                    strokeWidth: 1 * MM_TO_PX_SCREEN, // 1mm default
+                    strokeWidth: 1,
                     fill: 'transparent',
                     stroke: '#000000'
                 });
@@ -2293,7 +2293,7 @@
                     ...props,
                     left: center.x,
                     top: center.y,
-                    strokeWidth: 1 * MM_TO_PX_SCREEN,
+                    strokeWidth: 1,
                     fill: 'transparent',
                     stroke: '#000000',
                     strokeDashArray: [6, 4]
@@ -2308,7 +2308,7 @@
                     ...props,
                     fill: 'transparent',
                     stroke: '#000000',
-                    strokeWidth: 1 * MM_TO_PX_SCREEN, // 1mm default
+                    strokeWidth: 1,
                     strokeLineCap: 'round',
                     strokeLineJoin: 'round'
                 });
@@ -2468,9 +2468,9 @@
 
             const stroke = obj.stroke || '#000000';
             document.getElementById('stroke-swatch').style.background = stroke;
-            const strokeMm = obj.strokeWidth ? Math.round(obj.strokeWidth / MM_TO_PX_SCREEN) : 0;
-            document.getElementById('stroke-width').value = strokeMm;
-            document.getElementById('stroke-width-val').innerText = strokeMm;
+            const strokePx = obj.strokeWidth ? Math.round(obj.strokeWidth) : 0;
+            document.getElementById('stroke-width').value = strokePx;
+            document.getElementById('stroke-width-val').innerText = strokePx;
             const dashToggle = document.getElementById('stroke-dash-toggle');
             if (dashToggle) {
                 const hasDash = Array.isArray(obj.strokeDashArray) && obj.strokeDashArray.length > 0;
