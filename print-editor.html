@@ -1052,12 +1052,6 @@
 
         <!-- 2. 중앙 캔버스 영역 -->
         <main class="canvas-area">
-            <div class="top-toolbar">
-                <button class="action-btn"
-                    style="color: white; background: var(--primary); padding: 6px 16px; font-size: 13px; font-weight: 600; border-radius: 20px;"
-                    onclick="handleExportRequest()">PDF 내보내기</button>
-            </div>
-
             <div id="boundary-warning" class="boundary-warning">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                     <path
@@ -1171,9 +1165,9 @@
                 <div class="toolbar-divider"></div>
 
                 <!-- Zoom Controls -->
-                <div style="position: relative; display: flex; align-items: center; background: var(--bg-app); border-radius: 6px; padding: 4px 12px; border: 1px solid var(--border);">
+                <div style="position: relative; display: flex; align-items: center; background: var(--bg-app); border-radius: 6px; padding: 4px 10px; border: 1px solid var(--border);">
                     <input type="text" id="zoom-input-bottom" value="100%"
-                        style="width: 50px; border: none; background: transparent; font-size: 12px; font-weight: 600; text-align: center; color: var(--text-main); outline: none;"
+                        style="width: 55px; border: none; background: transparent; font-size: 12px; font-weight: 600; text-align: center; color: var(--text-main); outline: none;"
                         onkeydown="if(event.key === 'Enter') handleZoomInput(this.value)"
                         onblur="handleZoomInput(this.value)">
                 </div>
@@ -1270,6 +1264,15 @@
                         <rect x="3" y="3" width="18" height="18" rx="2" />
                         <circle cx="8.5" cy="8.5" r="1.5" />
                         <path d="M21 15l-5-5L5 21" />
+                    </svg>
+                </button>
+
+                <div class="toolbar-divider"></div>
+
+                <!-- PDF Export -->
+                <button class="figma-tool-btn" onclick="handleExportRequest()" title="PDF 내보내기" style="color: white; background: var(--primary);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
                     </svg>
                 </button>
             </div>
@@ -3084,16 +3087,15 @@
         }
 
         // --- UX ENHANCEMENTS ---
+        let toolbarUpdateTimeout;
         function updateFloatingToolbar() {
             const obj = canvas.getActiveObject();
             const toolbar = document.getElementById('floating-toolbar');
+
             if (!obj) {
                 toolbar.classList.remove('show');
                 return;
             }
-
-            // Show toolbar and update button visibility first
-            toolbar.classList.add('show');
 
             // Toggle Group/Ungroup buttons
             document.getElementById('btn-group').style.display = (obj.type === 'activeSelection') ? 'flex' : 'none';
@@ -3104,31 +3106,31 @@
             document.getElementById('btn-mask').style.display = isMulti ? 'flex' : 'none';
             document.getElementById('btn-unmask').style.display = (obj.clipPath) ? 'flex' : 'none';
 
-            // Calculate position after DOM updates
-            requestAnimationFrame(() => {
+            // Clear previous timeout
+            if (toolbarUpdateTimeout) {
+                clearTimeout(toolbarUpdateTimeout);
+            }
+
+            // Debounce toolbar positioning slightly to reduce jank
+            toolbarUpdateTimeout = setTimeout(() => {
                 const zoom = canvas.getZoom();
                 const vpt = canvas.viewportTransform;
-
-                // Get bounding rect - works for single objects and activeSelection
                 const rect = obj.getBoundingRect(true, true);
 
-                // Get canvas container offset
-                const canvasContainer = document.getElementById('canvas-container');
-                const containerRect = canvasContainer.getBoundingClientRect();
-
-                // Adjust rect for viewport and zoom
-                const left = rect.left * zoom + vpt[4] + containerRect.left;
-                const top = rect.top * zoom + vpt[5] + containerRect.top;
+                // Calculate screen coordinates
+                const left = rect.left * zoom + vpt[4];
+                const top = rect.top * zoom + vpt[5];
                 const width = rect.width * zoom;
                 const height = rect.height * zoom;
 
-                // Get actual toolbar dimensions after buttons are shown/hidden
+                // Show toolbar to get dimensions
+                toolbar.classList.add('show');
                 const toolbarWidth = toolbar.offsetWidth;
                 const toolbarHeight = toolbar.offsetHeight;
 
                 // Position toolbar below the object, centered horizontally
                 let targetLeft = left + (width / 2) - (toolbarWidth / 2);
-                let targetTop = top + height + 12; // 12px below the object
+                let targetTop = top + height + 12;
 
                 // Keep toolbar within viewport bounds
                 const minLeft = 10;
@@ -3138,12 +3140,12 @@
                 // Check if toolbar would go below viewport, position above if needed
                 const maxTop = window.innerHeight - toolbarHeight - 10;
                 if (targetTop > maxTop) {
-                    targetTop = top - toolbarHeight - 12; // Position above instead
+                    targetTop = top - toolbarHeight - 12;
                 }
 
                 toolbar.style.left = `${targetLeft}px`;
                 toolbar.style.top = `${targetTop}px`;
-            });
+            }, 10); // 10ms debounce
         }
 
         function hideFloatingToolbar() {
