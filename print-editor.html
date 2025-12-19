@@ -1063,9 +1063,10 @@
                 <button class="warning-btn" onclick="selectOutsideObjects()">확인 및 선택</button>
             </div>
 
-            <div id="canvas-size-display"
-                style="position: absolute; color: #6B7280; font-size: 12px; z-index: 100; pointer-events: none; font-weight: 500;">
-                <span id="canvas-size-label">Size : 90 × 50 mm</span><span id="image-info-label" style="margin-left: 12px;"></span>
+            <div id="canvas-info-bar"
+                style="position: absolute; top: 8px; left: 8px; background: #1F2937; color: #fff; font-size: 11px; z-index: 100; pointer-events: none; font-weight: 500; padding: 6px 12px; border-radius: 6px; display: flex; gap: 12px;">
+                <span id="canvas-size-label"><b>s</b> 90 × 50 mm</span>
+                <span id="image-info-label" style="display: none;"></span>
             </div>
 
 
@@ -1690,7 +1691,7 @@
             artboard.sendToBack();
 
             // Update UI Labels
-            document.getElementById('canvas-size-label').innerText = `Size : ${widthMm} × ${heightMm} mm`;
+            document.getElementById('canvas-size-label').innerHTML = `<b>s</b> ${widthMm} × ${heightMm} mm`;
             document.getElementById('custom-width-input').value = widthMm;
             document.getElementById('custom-height-input').value = heightMm;
 
@@ -2091,34 +2092,7 @@
         }
 
         function updateCanvasSizeLabel() {
-            if (!artboard) return;
-            const display = document.getElementById('canvas-size-display');
-            if (!display) return;
-            const zoom = canvas.getZoom();
-            const vpt = canvas.viewportTransform;
-
-            // Calculate artboard's top-left position in screen coordinates
-            const left = artboard.left * zoom + vpt[4];
-            const top = artboard.top * zoom + vpt[5];
-            const width = artboard.width * zoom;
-            const height = artboard.height * zoom;
-            const margin = 8;
-
-            const labelWidth = display.offsetWidth;
-            const labelHeight = display.offsetHeight;
-
-            let labelLeft = left;
-            let labelTop = top - labelHeight - margin;
-
-            if (labelTop < margin) {
-                labelTop = top + height + margin;
-            }
-
-            const maxLeft = workspaceWidth - labelWidth - margin;
-            labelLeft = Math.max(margin, Math.min(labelLeft, maxLeft));
-
-            display.style.left = `${labelLeft}px`;
-            display.style.top = `${labelTop}px`;
+            // Fixed position - no update needed
         }
 
         function updateImageInfoLabel() {
@@ -2127,17 +2101,17 @@
 
             const obj = canvas.getActiveObject();
             if (!obj || obj.type !== 'image' || obj.excludeFromExport) {
-                label.innerText = '';
+                label.style.display = 'none';
                 return;
             }
 
             // Calculate effective PPI
             const printedWidthMm = (obj.width * obj.scaleX) / MM_TO_PX_SCREEN;
-            const printedHeightMm = (obj.height * obj.scaleY) / MM_TO_PX_SCREEN;
             const printedWidthInches = printedWidthMm / 25.4;
             const ppi = Math.round(obj.width / printedWidthInches);
 
-            label.innerText = `| Image : ${ppi} ppi`;
+            label.innerHTML = `<b>i</b> ${ppi} ppi`;
+            label.style.display = 'inline';
         }
 
         // Collapsible sections (Figma style)
