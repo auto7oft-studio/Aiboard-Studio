@@ -3491,9 +3491,22 @@
             const picker = document.getElementById('color-picker');
             const rect = el.getBoundingClientRect();
 
-            picker.style.left = `${rect.left - 250}px`;
-            picker.style.top = `${Math.min(window.innerHeight - 400, rect.top)}px`;
             picker.classList.add('show');
+            const pickerWidth = picker.offsetWidth || 240;
+            const pickerHeight = picker.offsetHeight || 400;
+            const padding = 8;
+
+            const preferRight = rect.right + 12;
+            const preferLeft = rect.left - pickerWidth - 12;
+            let left = preferRight + pickerWidth <= window.innerWidth ? preferRight : preferLeft;
+            if (Number.isNaN(left)) left = rect.left;
+            left = Math.max(padding, Math.min(left, window.innerWidth - pickerWidth - padding));
+
+            let top = rect.top;
+            top = Math.max(padding, Math.min(top, window.innerHeight - pickerHeight - padding));
+
+            picker.style.left = `${left}px`;
+            picker.style.top = `${top}px`;
 
             const color = el.style.background || '#ffffff';
             setPickerColor(color);
