@@ -855,7 +855,7 @@
         /* --- Boundary Warning --- */
         .boundary-warning {
             position: absolute;
-            bottom: 20px;
+            top: 20px;
             left: 50%;
             transform: translateX(-50%);
             background: var(--warning-bg);
@@ -1622,7 +1622,13 @@
                 backgroundColor: 'transparent',
                 preserveObjectStacking: true,
                 fireRightClick: true,
-                stopContextMenu: true
+                stopContextMenu: true,
+                selection: true,
+                selectionColor: 'rgba(59, 130, 246, 0.1)',
+                selectionBorderColor: '#3B82F6',
+                selectionLineWidth: 1.5,
+                enableRetinaScaling: true,
+                renderOnAddRemove: true
             });
 
             // Set Professional Selection Styles
@@ -1885,17 +1891,21 @@
         function checkCanvasBoundaries() {
             if (!artboard) return;
             const objects = canvas.getObjects().filter(o => !o.excludeFromExport);
-            // Get absolute artboard rect (zoom-independent)
-            const artRect = artboard.getBoundingRect(true);
+
+            // Get artboard coordinates
+            const artRect = artboard.getBoundingRect(false);
 
             let hasFullyOutside = false;
             objects.forEach(obj => {
-                const objRect = obj.getBoundingRect(true);
+                const objRect = obj.getBoundingRect(false);
+
+                // Check if object is completely outside artboard (with small tolerance)
+                const tolerance = 1;
                 const isFullyOutside = (
-                    objRect.left + objRect.width < artRect.left - 0.1 ||
-                    objRect.left > artRect.left + artRect.width + 0.1 ||
-                    objRect.top + objRect.height < artRect.top - 0.1 ||
-                    objRect.top > artRect.top + artRect.height + 0.1
+                    objRect.left + objRect.width < artRect.left - tolerance ||
+                    objRect.left > artRect.left + artRect.width + tolerance ||
+                    objRect.top + objRect.height < artRect.top - tolerance ||
+                    objRect.top > artRect.top + artRect.height + tolerance
                 );
                 if (isFullyOutside) hasFullyOutside = true;
             });
@@ -1903,7 +1913,7 @@
             const warning = document.getElementById('boundary-warning');
             if (warning) {
                 const warningSpan = warning.querySelector('span');
-                if (warningSpan) warningSpan.innerText = "이 개체는 인쇄되지 않습니다 (범위 완전히 벗어남)";
+                if (warningSpan) warningSpan.innerText = "인쇄 영역을 벗어난 개체가 있습니다.";
                 warning.classList.toggle('show', hasFullyOutside);
             }
             return hasFullyOutside;
@@ -3087,7 +3097,6 @@
         }
 
         // --- UX ENHANCEMENTS ---
-        let toolbarUpdateTimeout;
         function updateFloatingToolbar() {
             const obj = canvas.getActiveObject();
             const toolbar = document.getElementById('floating-toolbar');
@@ -3106,46 +3115,41 @@
             document.getElementById('btn-mask').style.display = isMulti ? 'flex' : 'none';
             document.getElementById('btn-unmask').style.display = (obj.clipPath) ? 'flex' : 'none';
 
-            // Clear previous timeout
-            if (toolbarUpdateTimeout) {
-                clearTimeout(toolbarUpdateTimeout);
+            // Show toolbar immediately
+            toolbar.classList.add('show');
+
+            // Calculate position immediately (no debounce)
+            const zoom = canvas.getZoom();
+            const vpt = canvas.viewportTransform;
+            const rect = obj.getBoundingRect(true, true);
+
+            // Calculate screen coordinates
+            const left = rect.left * zoom + vpt[4];
+            const top = rect.top * zoom + vpt[5];
+            const width = rect.width * zoom;
+            const height = rect.height * zoom;
+
+            // Get toolbar dimensions
+            const toolbarWidth = toolbar.offsetWidth;
+            const toolbarHeight = toolbar.offsetHeight;
+
+            // Position toolbar below the object, centered horizontally
+            let targetLeft = left + (width / 2) - (toolbarWidth / 2);
+            let targetTop = top + height + 12;
+
+            // Keep toolbar within viewport bounds
+            const minLeft = 10;
+            const maxLeft = window.innerWidth - toolbarWidth - 10;
+            targetLeft = Math.max(minLeft, Math.min(targetLeft, maxLeft));
+
+            // Check if toolbar would go below viewport, position above if needed
+            const maxTop = window.innerHeight - toolbarHeight - 10;
+            if (targetTop > maxTop) {
+                targetTop = top - toolbarHeight - 12;
             }
 
-            // Debounce toolbar positioning slightly to reduce jank
-            toolbarUpdateTimeout = setTimeout(() => {
-                const zoom = canvas.getZoom();
-                const vpt = canvas.viewportTransform;
-                const rect = obj.getBoundingRect(true, true);
-
-                // Calculate screen coordinates
-                const left = rect.left * zoom + vpt[4];
-                const top = rect.top * zoom + vpt[5];
-                const width = rect.width * zoom;
-                const height = rect.height * zoom;
-
-                // Show toolbar to get dimensions
-                toolbar.classList.add('show');
-                const toolbarWidth = toolbar.offsetWidth;
-                const toolbarHeight = toolbar.offsetHeight;
-
-                // Position toolbar below the object, centered horizontally
-                let targetLeft = left + (width / 2) - (toolbarWidth / 2);
-                let targetTop = top + height + 12;
-
-                // Keep toolbar within viewport bounds
-                const minLeft = 10;
-                const maxLeft = window.innerWidth - toolbarWidth - 10;
-                targetLeft = Math.max(minLeft, Math.min(targetLeft, maxLeft));
-
-                // Check if toolbar would go below viewport, position above if needed
-                const maxTop = window.innerHeight - toolbarHeight - 10;
-                if (targetTop > maxTop) {
-                    targetTop = top - toolbarHeight - 12;
-                }
-
-                toolbar.style.left = `${targetLeft}px`;
-                toolbar.style.top = `${targetTop}px`;
-            }, 10); // 10ms debounce
+            toolbar.style.left = `${targetLeft}px`;
+            toolbar.style.top = `${targetTop}px`;
         }
 
         function hideFloatingToolbar() {
