@@ -3843,13 +3843,19 @@
         }
 
         function createMaskGroup(maskShape, targetObject) {
-            normalizeObjectToCenter(maskShape);
-            normalizeObjectToCenter(targetObject);
-            const maskCenter = maskShape.getCenterPoint();
-            const targetCenter = targetObject.getCenterPoint();
+            // 1) Capture world center BEFORE removing anything from canvas.
+            const worldCenter = targetObject.getCenterPoint();
 
-            // Build a mask group that preserves world positions and uses the mask bounds.
+            // 2) Normalize to local coordinates (centered at 0,0) before grouping.
+            maskShape.set({ left: 0, top: 0, originX: 'center', originY: 'center' });
+            targetObject.set({ left: 0, top: 0, originX: 'center', originY: 'center' });
+
+            // 3) Create group at the captured world center.
             const group = new fabric.Group([maskShape, targetObject], {
+                left: worldCenter.x,
+                top: worldCenter.y,
+                originX: 'center',
+                originY: 'center',
                 subTargetCheck: true,
                 selectable: true,
                 evented: true
@@ -3861,16 +3867,10 @@
             group.clipPath.originX = 'center';
             group.clipPath.originY = 'center';
 
-            normalizeMaskGroupBounds(group, maskCenter);
+            // 4) Normalize bounds to mask geometry after group creation.
+            normalizeMaskGroupBounds(group, worldCenter);
 
-            // Preserve world positions for both mask and target.
-            group.setPositionByOrigin(maskCenter, 'center', 'center');
-            const groupMatrix = group.calcTransformMatrix();
-            const inverted = fabric.util.invertTransform(groupMatrix);
-            const maskLocal = fabric.util.transformPoint(maskCenter, inverted);
-            const targetLocal = fabric.util.transformPoint(targetCenter, inverted);
-            maskShape.setPositionByOrigin(maskLocal, 'center', 'center');
-            targetObject.setPositionByOrigin(targetLocal, 'center', 'center');
+            // 5) Finalize bounds and coords with no intermediate renders.
             group._calcBounds();
             group._updateObjectsCoords();
             group.setCoords();
@@ -3944,6 +3944,9 @@
             ensureObjectId(maskShape);
             ensureObjectId(targetObject);
 
+            // Capture world center BEFORE removing any objects (strict order).
+            const capturedCenter = targetObject.getCenterPoint();
+
             maskShape.set({
                 isMask: true,
                 selectable: false,
@@ -3952,10 +3955,15 @@
             });
             maskShape.maskTargetId = targetObject.customId;
 
+            const group = createMaskGroup(maskShape, targetObject);
+            group.setPositionByOrigin(capturedCenter, 'center', 'center');
+            group._calcBounds();
+            group._updateObjectsCoords();
+            group.setCoords();
+
+            // Only after group is fully prepared, swap objects on canvas.
             canvas.remove(maskShape);
             canvas.remove(targetObject);
-
-            const group = createMaskGroup(maskShape, targetObject);
 
             canvas.add(group);
             canvas.setActiveObject(group);
