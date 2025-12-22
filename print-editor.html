@@ -3759,6 +3759,17 @@
             return group._objects.find(child => child.isMask) || group._objects[0];
         }
 
+        function normalizeObjectToCenter(obj) {
+            if (!obj) return;
+            const center = obj.getCenterPoint();
+            obj.set({
+                originX: 'center',
+                originY: 'center'
+            });
+            obj.setPositionByOrigin(center, 'center', 'center');
+            obj.setCoords();
+        }
+
         function normalizeMaskGroupBounds(group, anchorPoint) {
             if (!group || !group.isMaskGroup) return;
             if (group._maskBoundsNormalized) return;
@@ -3795,6 +3806,7 @@
                     const target = obj._objects.find(child => !child.isMask) || obj._objects[1];
 
                     if (mask) {
+                        normalizeObjectToCenter(mask);
                         mask.set({
                             isMask: true,
                             selectable: false,
@@ -3805,6 +3817,7 @@
                     }
 
                     if (target) {
+                        normalizeObjectToCenter(target);
                         ensureObjectId(target);
                         obj.maskTargetId = target.customId;
                     }
@@ -3823,6 +3836,8 @@
         }
 
         function createMaskGroup(maskShape, targetObject) {
+            normalizeObjectToCenter(maskShape);
+            normalizeObjectToCenter(targetObject);
             const maskCenter = maskShape.getCenterPoint();
             const targetCenter = targetObject.getCenterPoint();
 
