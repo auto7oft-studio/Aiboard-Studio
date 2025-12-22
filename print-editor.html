@@ -1999,7 +1999,6 @@
 
             const ratioX = newW / oldW;
             const ratioY = newH / oldH;
-            const ratio = Math.min(ratioX, ratioY);
 
             // New artboard position (same logic as createArtboard)
             const nextArtLeft = (workspaceWidth - newW) / 2;
@@ -2013,10 +2012,8 @@
                 const dy = obj.top - artboard.top;
 
                 obj.set({
-                    left: nextArtLeft + dx * ratio,
-                    top: nextArtTop + dy * ratio,
-                    scaleX: obj.scaleX * ratio,
-                    scaleY: obj.scaleY * ratio
+                    left: nextArtLeft + dx * ratioX,
+                    top: nextArtTop + dy * ratioY
                 });
                 obj.setCoords();
             });
