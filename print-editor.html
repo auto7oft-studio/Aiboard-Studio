@@ -2062,7 +2062,7 @@
 
             let hasFullyOutside = false;
             objects.forEach(obj => {
-                const objRect = getObjectBounds(obj);
+                const objRect = getEffectiveBounds(obj);
                 const isFullyOutside = !rectsIntersect(objRect, artRect);
                 if (isFullyOutside) hasFullyOutside = true;
             });
@@ -2086,7 +2086,7 @@
                     return;
                 }
 
-                const objRect = getObjectBounds(o);
+                const objRect = getEffectiveBounds(o);
                 const isPartiallyInside = rectsIntersect(objRect, artRect);
 
                 if (isPartiallyInside) {
@@ -3201,7 +3201,7 @@
 
                 canvas.discardActiveObject();
                 canvas.renderAll();
-                rebuildMasksAfterUndo(canvas);
+                rebuildMasksAfterLoad(canvas);
                 rebuildTextStrokeGroups(canvas);
                 isUndoing = false;
                 canvas.getObjects().forEach(o => updateObjectClipping(o));
@@ -3759,6 +3759,16 @@
             return group._objects.find(child => child.isMask) || group._objects[0];
         }
 
+        function getEffectiveBounds(obj) {
+            if (!obj) return null;
+            if (obj.type === 'activeSelection') return getObjectBounds(obj);
+            if (obj.isMaskGroup) {
+                const mask = getMaskObjectFromGroup(obj);
+                if (mask) return getObjectBounds(mask);
+            }
+            return getObjectBounds(obj);
+        }
+
         function normalizeObjectToCenter(obj) {
             if (!obj) return;
             const center = obj.getCenterPoint();
@@ -3798,7 +3808,7 @@
             group.setCoords();
         }
 
-        function rebuildMasksAfterUndo(targetCanvas) {
+        function rebuildMasksAfterLoad(targetCanvas) {
             const allObjects = targetCanvas.getObjects();
             allObjects.forEach(obj => {
                 if (obj.isMaskGroup) {
