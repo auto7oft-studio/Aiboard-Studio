@@ -3801,8 +3801,8 @@
 
         function getFrameParts(group) {
             if (!group || !group.isFrameGroup) return null;
-            const frameShape = group._objects.find(child => child.isFrameShape) || group._objects[0];
-            const contentImage = group._objects.find(child => child.isFrameContent) || group._objects[1];
+            const contentImage = group._objects.find(child => child.isFrameContent) || group._objects[0];
+            const frameShape = group._objects.find(child => child.isFrameShape) || group._objects[1];
             return { frameShape, contentImage };
         }
 
@@ -3884,12 +3884,6 @@
                         obj.maskTargetId = target.customId;
                     }
 
-                    obj.clipPath = mask || null;
-                    if (obj.clipPath) {
-                        obj.clipPath.absolutePositioned = false;
-                        obj.clipPath.originX = 'center';
-                        obj.clipPath.originY = 'center';
-                    }
                     obj.subTargetCheck = true;
                     const maskCenter = mask ? mask.getCenterPoint() : null;
                     normalizeMaskGroupBounds(obj, maskCenter);
@@ -3913,14 +3907,35 @@
                 if (contentImage) {
                     contentImage.set({
                         selectable: false,
-                        evented: false,
-                        globalCompositeOperation: 'source-atop'
+                        evented: false
                     });
                     contentImage.isFrameContent = true;
                 }
                 obj.subTargetCheck = true;
+                obj.clipTo = buildFrameClipper(frameShape);
                 normalizeFrameGroupBounds(obj, frameShape ? frameShape.getCenterPoint() : null);
             });
+        }
+
+        function buildFrameClipper(frameShape) {
+            if (!frameShape) return null;
+            const isCircle = frameShape.type === 'circle';
+            return function (ctx) {
+                ctx.save();
+                ctx.beginPath();
+                if (isCircle) {
+                    ctx.arc(0, 0, frameShape.radius, 0, Math.PI * 2);
+                } else {
+                    ctx.rect(
+                        -frameShape.width / 2,
+                        -frameShape.height / 2,
+                        frameShape.width,
+                        frameShape.height
+                    );
+                }
+                ctx.closePath();
+                ctx.restore();
+            };
         }
 
         function createMaskGroup(maskShape, targetObject) {
@@ -3943,10 +3958,6 @@
             });
             group.isMaskGroup = true;
             group.maskTargetId = targetObject.customId;
-            group.clipPath = maskShape;
-            group.clipPath.absolutePositioned = false;
-            group.clipPath.originX = 'center';
-            group.clipPath.originY = 'center';
 
             // 4) Normalize bounds to mask geometry after group creation.
             normalizeMaskGroupBounds(group, worldCenter);
@@ -3968,7 +3979,7 @@
             contentImage.set({ left: 0, top: 0, originX: 'center', originY: 'center' });
 
             // 3) Build group anchored to captured world center.
-            const group = new fabric.Group([frameShape, contentImage], {
+            const group = new fabric.Group([contentImage, frameShape], {
                 left: worldCenter.x,
                 top: worldCenter.y,
                 originX: 'center',
@@ -3987,8 +3998,8 @@
             contentImage.isFrameContent = true;
             contentImage.selectable = false;
             contentImage.evented = false;
-            contentImage.globalCompositeOperation = 'source-atop';
 
+            group.clipTo = buildFrameClipper(frameShape);
             normalizeFrameGroupBounds(group, worldCenter);
             group._calcBounds();
             group._updateObjectsCoords();
@@ -4141,7 +4152,7 @@
                     obj.isFrameShape = false;
                 }
                 if (obj.isFrameContent) {
-                    obj.set({ selectable: true, evented: true, globalCompositeOperation: 'source-over' });
+                    obj.set({ selectable: true, evented: true });
                     obj.isFrameContent = false;
                 }
                 if (obj.isMask) {
