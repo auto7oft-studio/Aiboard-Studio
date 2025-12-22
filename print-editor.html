@@ -1917,8 +1917,21 @@
                 renderLayerList();
             });
 
-            canvas.on('object:moving', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); });
-            canvas.on('object:scaling', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); updateImageInfoLabel(); });
+            canvas.on('object:moving', (opt) => {
+                updateFloatingToolbar(opt);
+                updateObjectClipping(opt.target);
+                if (opt.target?.isFrameContent && opt.target.group?.isFrameGroup) {
+                    constrainFrameContent(opt.target.group, opt.target);
+                }
+            });
+            canvas.on('object:scaling', (opt) => {
+                updateFloatingToolbar(opt);
+                updateObjectClipping(opt.target);
+                updateImageInfoLabel();
+                if (opt.target?.isFrameContent && opt.target.group?.isFrameGroup) {
+                    constrainFrameContent(opt.target.group, opt.target);
+                }
+            });
             canvas.on('object:rotating', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); });
 
             canvas.on('object:added', (opt) => { !isUndoing && saveHistory(); checkCanvasBoundaries(); updateObjectClipping(opt.target); renderLayerList(); });
@@ -3166,7 +3179,11 @@
                         'textStrokeWidth',
                         'textStrokeColor',
                         'isTextStrokeOutline',
-                        'isTextFill'
+                        'isTextFill',
+                        'isFrameGroup',
+                        'frameTargetId',
+                        'isFrameShape',
+                        'isFrameContent'
                     ]))
             };
             history = history.slice(0, historyStep + 1);
@@ -3199,6 +3216,7 @@
                 canvas.discardActiveObject();
                 canvas.renderAll();
                 rebuildMasksAfterLoad(canvas);
+                rebuildFramesAfterLoad(canvas);
                 rebuildTextStrokeGroups(canvas);
                 isUndoing = false;
                 canvas.getObjects().forEach(o => updateObjectClipping(o));
@@ -3614,7 +3632,7 @@
             // Mask buttons
             const isMulti = obj.type === 'activeSelection' && obj._objects && obj._objects.length === 2;
             document.getElementById('btn-mask').style.display = isMulti ? 'flex' : 'none';
-            document.getElementById('btn-unmask').style.display = obj.isMaskGroup ? 'flex' : 'none';
+            document.getElementById('btn-unmask').style.display = (obj.isMaskGroup || obj.isFrameGroup) ? 'flex' : 'none';
         }
 
         function getTransformTargets(target) {
@@ -3759,6 +3777,10 @@
         function getEffectiveBounds(obj) {
             if (!obj) return null;
             if (obj.type === 'activeSelection') return getObjectBounds(obj);
+            if (obj.isFrameGroup) {
+                const frame = getFrameParts(obj)?.frameShape;
+                if (frame) return getObjectBounds(frame);
+            }
             if (obj.isMaskGroup) {
                 const mask = getMaskObjectFromGroup(obj);
                 if (mask) return getObjectBounds(mask);
@@ -3775,6 +3797,13 @@
             });
             obj.setPositionByOrigin(center, 'center', 'center');
             obj.setCoords();
+        }
+
+        function getFrameParts(group) {
+            if (!group || !group.isFrameGroup) return null;
+            const frameShape = group._objects.find(child => child.isFrameShape) || group._objects[0];
+            const contentImage = group._objects.find(child => child.isFrameContent) || group._objects[1];
+            return { frameShape, contentImage };
         }
 
         function normalizeMaskGroupBounds(group, anchorPoint) {
@@ -3798,6 +3827,32 @@
             group._maskBoundsNormalized = true;
             const mask = getMaskObjectFromGroup(group);
             const center = anchorPoint || (mask ? mask.getCenterPoint() : group.getCenterPoint());
+            group._calcBounds();
+            group._updateObjectsCoords();
+            group.setPositionByOrigin(center, 'center', 'center');
+            group._updateObjectsCoords();
+            group.setCoords();
+        }
+
+        function normalizeFrameGroupBounds(group, anchorPoint) {
+            if (!group || !group.isFrameGroup) return;
+            if (group._frameBoundsNormalized) return;
+
+            group._calcBounds = function (onlySet) {
+                const parts = getFrameParts(this);
+                if (!parts || !parts.frameShape) {
+                    fabric.Group.prototype._calcBounds.call(this, onlySet);
+                    return;
+                }
+
+                const objects = this._objects;
+                this._objects = [parts.frameShape];
+                fabric.Group.prototype._calcBounds.call(this, onlySet);
+                this._objects = objects;
+            };
+
+            group._frameBoundsNormalized = true;
+            const center = anchorPoint || group.getCenterPoint();
             group._calcBounds();
             group._updateObjectsCoords();
             group.setPositionByOrigin(center, 'center', 'center');
@@ -3842,6 +3897,32 @@
             });
         }
 
+        function rebuildFramesAfterLoad(targetCanvas) {
+            targetCanvas.getObjects().forEach(obj => {
+                if (!obj.isFrameGroup) return;
+                const parts = getFrameParts(obj);
+                if (!parts) return;
+                const { frameShape, contentImage } = parts;
+                if (frameShape) {
+                    frameShape.set({
+                        selectable: false,
+                        evented: false
+                    });
+                    frameShape.isFrameShape = true;
+                }
+                if (contentImage) {
+                    contentImage.set({
+                        selectable: false,
+                        evented: false,
+                        globalCompositeOperation: 'source-atop'
+                    });
+                    contentImage.isFrameContent = true;
+                }
+                obj.subTargetCheck = true;
+                normalizeFrameGroupBounds(obj, frameShape ? frameShape.getCenterPoint() : null);
+            });
+        }
+
         function createMaskGroup(maskShape, targetObject) {
             // 1) Capture world center BEFORE removing anything from canvas.
             const worldCenter = targetObject.getCenterPoint();
@@ -3878,6 +3959,93 @@
             return group;
         }
 
+        function createFrame(frameShape, contentImage) {
+            // 1) Capture world center BEFORE removing anything from canvas.
+            const worldCenter = frameShape.getCenterPoint();
+
+            // 2) Normalize local coordinates for stable grouping.
+            frameShape.set({ left: 0, top: 0, originX: 'center', originY: 'center' });
+            contentImage.set({ left: 0, top: 0, originX: 'center', originY: 'center' });
+
+            // 3) Build group anchored to captured world center.
+            const group = new fabric.Group([frameShape, contentImage], {
+                left: worldCenter.x,
+                top: worldCenter.y,
+                originX: 'center',
+                originY: 'center',
+                subTargetCheck: true,
+                selectable: true,
+                evented: true
+            });
+            group.isFrameGroup = true;
+            group.frameTargetId = contentImage.customId;
+
+            frameShape.isFrameShape = true;
+            frameShape.selectable = false;
+            frameShape.evented = false;
+
+            contentImage.isFrameContent = true;
+            contentImage.selectable = false;
+            contentImage.evented = false;
+            contentImage.globalCompositeOperation = 'source-atop';
+
+            normalizeFrameGroupBounds(group, worldCenter);
+            group._calcBounds();
+            group._updateObjectsCoords();
+            group.setCoords();
+
+            return group;
+        }
+
+        function constrainFrameContent(frameGroup, contentImage) {
+            const parts = getFrameParts(frameGroup);
+            if (!parts) return;
+            const frameRect = parts.frameShape.getBoundingRect(true, true);
+            const imageRect = contentImage.getBoundingRect(true, true);
+
+            let shiftX = 0;
+            let shiftY = 0;
+            if (imageRect.left > frameRect.left) shiftX = frameRect.left - imageRect.left;
+            if (imageRect.top > frameRect.top) shiftY = frameRect.top - imageRect.top;
+            if (imageRect.left + imageRect.width < frameRect.left + frameRect.width) {
+                shiftX = frameRect.left + frameRect.width - (imageRect.left + imageRect.width);
+            }
+            if (imageRect.top + imageRect.height < frameRect.top + frameRect.height) {
+                shiftY = frameRect.top + frameRect.height - (imageRect.top + imageRect.height);
+            }
+
+            if (shiftX === 0 && shiftY === 0) return;
+
+            const inverted = fabric.util.invertTransform(frameGroup.calcTransformMatrix());
+            const delta = fabric.util.transformPoint(new fabric.Point(shiftX, shiftY), inverted);
+            contentImage.set({
+                left: contentImage.left + delta.x,
+                top: contentImage.top + delta.y
+            });
+            contentImage.setCoords();
+            frameGroup._updateObjectsCoords();
+            frameGroup.setCoords();
+        }
+
+        function enterImageEditMode(frameGroup) {
+            if (!frameGroup || !frameGroup.isFrameGroup) return;
+            const parts = getFrameParts(frameGroup);
+            if (!parts || !parts.contentImage) return;
+            frameGroup.isEditingImage = true;
+            parts.contentImage.set({ selectable: true, evented: true });
+            frameGroup.set({ selectable: false, evented: false });
+            canvas.setActiveObject(parts.contentImage);
+        }
+
+        function exitImageEditMode(frameGroup) {
+            if (!frameGroup || !frameGroup.isFrameGroup) return;
+            const parts = getFrameParts(frameGroup);
+            if (!parts || !parts.contentImage) return;
+            frameGroup.isEditingImage = false;
+            parts.contentImage.set({ selectable: false, evented: false });
+            frameGroup.set({ selectable: true, evented: true });
+            canvas.setActiveObject(frameGroup);
+        }
         function rebuildTextStrokeGroups(targetCanvas) {
             targetCanvas.getObjects().forEach(obj => {
                 if (!obj.isTextStrokeGroup || obj.type !== 'group') return;
@@ -3944,22 +4112,8 @@
             ensureObjectId(maskShape);
             ensureObjectId(targetObject);
 
-            // Capture world center BEFORE removing any objects (strict order).
-            const capturedCenter = targetObject.getCenterPoint();
-
-            maskShape.set({
-                isMask: true,
-                selectable: false,
-                evented: false,
-                opacity: 0
-            });
-            maskShape.maskTargetId = targetObject.customId;
-
-            const group = createMaskGroup(maskShape, targetObject);
-            group.setPositionByOrigin(capturedCenter, 'center', 'center');
-            group._calcBounds();
-            group._updateObjectsCoords();
-            group.setCoords();
+            // Frame-based cropping: build the frame group without clipPath.
+            const group = createFrame(maskShape, targetObject);
 
             // Only after group is fully prepared, swap objects on canvas.
             canvas.remove(maskShape);
@@ -3975,15 +4129,21 @@
 
         function releaseMask(maskGroup) {
             const group = maskGroup || canvas.getActiveObject();
-            if (!group || !group.isMaskGroup) return;
+            if (!group || (!group.isMaskGroup && !group.isFrameGroup)) return;
 
-            group.clipPath = null;
-            group._restoreObjectsState();
-            const objects = group._objects;
+            const objects = group._objects || [];
             group._objects = [];
             canvas.remove(group);
 
             objects.forEach(obj => {
+                if (obj.isFrameShape) {
+                    obj.set({ selectable: true, evented: true });
+                    obj.isFrameShape = false;
+                }
+                if (obj.isFrameContent) {
+                    obj.set({ selectable: true, evented: true, globalCompositeOperation: 'source-over' });
+                    obj.isFrameContent = false;
+                }
                 if (obj.isMask) {
                     obj.set({
                         isMask: false,
