@@ -1924,6 +1924,11 @@
             canvas.on('object:added', (opt) => { !isUndoing && saveHistory(); checkCanvasBoundaries(); updateObjectClipping(opt.target); renderLayerList(); });
             canvas.on('object:modified', (opt) => { !isUndoing && saveHistory(); checkCanvasBoundaries(); updateObjectClipping(opt.target); });
             canvas.on('object:removed', () => { !isUndoing && saveHistory(); checkCanvasBoundaries(); });
+            canvas.on('text:changed', (opt) => {
+                const target = opt.target;
+                if (!target || !target.group || !target.group.isTextStrokeGroup) return;
+                syncTextStrokeGroup(target.group);
+            });
 
             window.addEventListener('keydown', handleKeydown);
             window.addEventListener('keyup', handleKeyup);
@@ -2429,18 +2434,124 @@
             reader.readAsDataURL(file);
         }
 
+        function isTextObject(obj) {
+            return obj && (obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox');
+        }
+
+        function getTextStrokeGroupParts(group) {
+            if (!group || !group.isTextStrokeGroup) return null;
+            const stroke = group._objects.find(child => child.isTextStrokeOutline) || group._objects[0];
+            const fill = group._objects.find(child => child.isTextFill) || group._objects[1];
+            return { stroke, fill };
+        }
+
+        function buildTextClone(source, overrides = {}) {
+            const commonProps = {
+                left: source.left,
+                top: source.top,
+                originX: source.originX,
+                originY: source.originY,
+                angle: source.angle,
+                scaleX: source.scaleX,
+                scaleY: source.scaleY,
+                skewX: source.skewX,
+                skewY: source.skewY,
+                flipX: source.flipX,
+                flipY: source.flipY,
+                fontFamily: source.fontFamily,
+                fontSize: source.fontSize,
+                fontWeight: source.fontWeight,
+                fontStyle: source.fontStyle,
+                textAlign: source.textAlign,
+                lineHeight: source.lineHeight,
+                charSpacing: source.charSpacing,
+                underline: source.underline,
+                linethrough: source.linethrough,
+                overline: source.overline,
+                direction: source.direction,
+                styles: JSON.parse(JSON.stringify(source.styles || {}))
+            };
+
+            if (source.type === 'textbox') {
+                return new fabric.Textbox(source.text, { ...commonProps, width: source.width, ...overrides });
+            }
+            if (source.type === 'text') {
+                return new fabric.Text(source.text, { ...commonProps, ...overrides });
+            }
+            return new fabric.IText(source.text, { ...commonProps, ...overrides });
+        }
+
+        function createTextStrokeGroup(textObj, strokeWidth, strokeColor) {
+            // Outside stroke: draw a double-width stroke behind the fill to keep fill intact.
+            const stroke = buildTextClone(textObj, {
+                fill: 'transparent',
+                stroke: strokeColor,
+                strokeWidth: strokeWidth * 2,
+                strokeUniform: true,
+                selectable: false,
+                evented: false
+            });
+            stroke.isTextStrokeOutline = true;
+
+            textObj.set({
+                strokeWidth: 0,
+                stroke: null
+            });
+            textObj.isTextFill = true;
+
+            const group = new fabric.Group([stroke, textObj], {
+                subTargetCheck: true,
+                selectable: true,
+                evented: true
+            });
+            const center = textObj.getCenterPoint();
+            group.setPositionByOrigin(center, 'center', 'center');
+            group.isTextStrokeGroup = true;
+            group.textStrokeWidth = strokeWidth;
+            group.textStrokeColor = strokeColor;
+            group.setCoords();
+            return group;
+        }
+
+        function syncTextStrokeGroup(group) {
+            const parts = getTextStrokeGroupParts(group);
+            if (!parts) return;
+            const { stroke, fill } = parts;
+            if (!stroke || !fill) return;
+
+            stroke.set({
+                text: fill.text,
+                fontFamily: fill.fontFamily,
+                fontSize: fill.fontSize,
+                fontWeight: fill.fontWeight,
+                fontStyle: fill.fontStyle,
+                textAlign: fill.textAlign,
+                lineHeight: fill.lineHeight,
+                charSpacing: fill.charSpacing,
+                underline: fill.underline,
+                linethrough: fill.linethrough,
+                overline: fill.overline,
+                direction: fill.direction,
+                styles: JSON.parse(JSON.stringify(fill.styles || {}))
+            });
+            group._calcBounds();
+            group._updateObjectsCoords();
+            group.setCoords();
+        }
+
         // --- PROPERTIES ---
         function updateColorPickers() {
             const obj = canvas.getActiveObject();
             if (!obj) return;
 
-            if (obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox') {
+            const textTarget = obj.isTextStrokeGroup ? (getTextStrokeGroupParts(obj)?.fill || obj) : obj;
+            if (isTextObject(textTarget)) {
                 document.getElementById('prop-text').style.display = 'block';
-                document.getElementById('font-family').value = obj.fontFamily || 'Pretendard';
-                document.getElementById('font-size').value = Math.round(obj.fontSize || 24);
-                document.getElementById('font-weight').value = obj.fontWeight || 'normal';
-                document.getElementById('line-height').value = obj.lineHeight || 1.16;
-                document.getElementById('char-spacing').value = obj.charSpacing || 0;
+                document.getElementById('font-family').value = textTarget.fontFamily || 'Pretendard';
+                document.getElementById('font-size').value = Math.round(textTarget.fontSize || 24);
+                document.getElementById('font-weight').value = textTarget.fontWeight || 'normal';
+                document.getElementById('line-height').value = textTarget.lineHeight || 1.16;
+                document.getElementById('char-spacing').value = textTarget.charSpacing || 0;
             } else {
                 document.getElementById('prop-text').style.display = 'none';
             }
@@ -2478,7 +2589,7 @@
             const isLine = obj.type === 'line';
             document.getElementById('prop-fill').style.display = isLine ? 'none' : 'block';
 
-            const fill = obj.fill;
+            const fill = textTarget.fill;
             if (typeof fill === 'string') {
                 const color = fill === 'transparent' ? 'transparent' : fill;
                 document.getElementById('fill-swatch').style.background = color;
@@ -2504,17 +2615,20 @@
                 toggleGradientMode();
             }
 
-            const stroke = obj.stroke || '#000000';
+            const strokeTarget = obj.isTextStrokeGroup ? (getTextStrokeGroupParts(obj)?.stroke || obj) : obj;
+            const stroke = strokeTarget.stroke || '#000000';
             document.getElementById('stroke-swatch').style.background = stroke;
-            const strokePx = obj.strokeWidth ? Math.round(obj.strokeWidth) : 0;
+            const strokePx = obj.isTextStrokeGroup
+                ? Math.round(obj.textStrokeWidth || 0)
+                : (strokeTarget.strokeWidth ? Math.round(strokeTarget.strokeWidth) : 0);
             document.getElementById('stroke-width').value = strokePx;
             document.getElementById('stroke-width-val').innerText = strokePx;
-            const isDashed = obj._userStrokeDashed || false;
+            const isDashed = strokeTarget._userStrokeDashed || false;
             document.getElementById('stroke-dashed').checked = isDashed;
             document.getElementById('dash-settings').style.display = isDashed ? 'flex' : 'none';
             if (isDashed) {
-                document.getElementById('dash-length').value = obj._dashLength || 8;
-                document.getElementById('dash-gap').value = obj._dashGap || 4;
+                document.getElementById('dash-length').value = strokeTarget._dashLength || 8;
+                document.getElementById('dash-gap').value = strokeTarget._dashGap || 4;
             }
 
             // Opacity
@@ -2552,11 +2666,20 @@
             const obj = canvas.getActiveObject();
             if (!obj) return;
             document.getElementById('transparent-check').checked = false;
-            obj.set('fill', val);
+            if (obj.isTextStrokeGroup) {
+                const parts = getTextStrokeGroupParts(obj);
+                if (parts && parts.fill) {
+                    parts.fill.set('fill', val);
+                    syncTextStrokeGroup(obj);
+                    setObjectColorData(parts.fill, 'fill', val);
+                }
+            } else {
+                obj.set('fill', val);
+                setObjectColorData(obj, 'fill', val);
+            }
             document.getElementById('fill-swatch').style.background = val;
             document.getElementById('fill-color-hex').value = val.toUpperCase();
             canvas.renderAll();
-            setObjectColorData(obj, 'fill', val);
             saveHistory();
         }
 
@@ -2565,19 +2688,37 @@
             if (!obj) return;
             const isChecked = document.getElementById('transparent-check').checked;
             const color = isChecked ? 'transparent' : document.getElementById('fill-swatch').style.background;
-            obj.set('fill', color);
+            if (obj.isTextStrokeGroup) {
+                const parts = getTextStrokeGroupParts(obj);
+                if (parts && parts.fill) {
+                    parts.fill.set('fill', color);
+                    syncTextStrokeGroup(obj);
+                    if (color !== 'transparent') setObjectColorData(parts.fill, 'fill', color);
+                }
+            } else {
+                obj.set('fill', color);
+                if (color !== 'transparent') setObjectColorData(obj, 'fill', color);
+            }
             canvas.renderAll();
-            if (color !== 'transparent') setObjectColorData(obj, 'fill', color);
             saveHistory();
         }
 
         function changeStrokeColor(val) {
             const obj = canvas.getActiveObject();
             if (obj) {
-                obj.set('stroke', val);
+                if (obj.isTextStrokeGroup) {
+                    const parts = getTextStrokeGroupParts(obj);
+                    if (parts && parts.stroke) {
+                        parts.stroke.set('stroke', val);
+                        obj.textStrokeColor = val;
+                        setObjectColorData(parts.stroke, 'stroke', val);
+                    }
+                } else {
+                    obj.set('stroke', val);
+                    setObjectColorData(obj, 'stroke', val);
+                }
                 document.getElementById('stroke-swatch').style.background = val;
                 canvas.renderAll();
-                setObjectColorData(obj, 'stroke', val);
                 saveHistory();
             }
         }
@@ -2600,17 +2741,20 @@
             const checked = document.getElementById('stroke-dashed').checked;
             const dashSettings = document.getElementById('dash-settings');
 
+            const target = obj.isTextStrokeGroup ? getTextStrokeGroupParts(obj)?.stroke : obj;
+            if (!target) return;
+
             if (checked) {
                 const dashLen = parseInt(document.getElementById('dash-length').value) || 8;
                 const dashGap = parseInt(document.getElementById('dash-gap').value) || 4;
-                obj.set('strokeDashArray', [dashLen, dashGap]);
-                obj._userStrokeDashed = true;
-                obj._dashLength = dashLen;
-                obj._dashGap = dashGap;
+                target.set('strokeDashArray', [dashLen, dashGap]);
+                target._userStrokeDashed = true;
+                target._dashLength = dashLen;
+                target._dashGap = dashGap;
                 dashSettings.style.display = 'flex';
             } else {
-                obj.set('strokeDashArray', null);
-                obj._userStrokeDashed = false;
+                target.set('strokeDashArray', null);
+                target._userStrokeDashed = false;
                 dashSettings.style.display = 'none';
             }
             canvas.renderAll();
@@ -2622,6 +2766,34 @@
             const strokePx = Math.max(0, px || 0);
 
             const applyTo = (target) => {
+                if (target.isTextStrokeGroup) {
+                    const parts = getTextStrokeGroupParts(target);
+                    if (!parts || !parts.stroke) return;
+                    parts.stroke.set({
+                        strokeWidth: strokePx * 2,
+                        strokeUniform: true
+                    });
+                    target.textStrokeWidth = strokePx;
+                    target._calcBounds();
+                    target._updateObjectsCoords();
+                    target.setCoords();
+                    return;
+                }
+
+                if (isTextObject(target)) {
+                    if (strokePx === 0) {
+                        target.set('strokeWidth', 0);
+                        target.setCoords();
+                        return;
+                    }
+                    const strokeColor = target.stroke || document.getElementById('stroke-swatch').style.background || '#000000';
+                    canvas.remove(target);
+                    const group = createTextStrokeGroup(target, strokePx, strokeColor);
+                    canvas.add(group);
+                    canvas.setActiveObject(group);
+                    return;
+                }
+
                 target.set('strokeUniform', true);
 
                 if (target.type === 'rect' || target.type === 'triangle') {
@@ -2646,7 +2818,9 @@
             };
 
             if (obj.type === 'activeSelection') {
-                obj.forEachObject(o => applyTo(o));
+                const objects = obj.getObjects();
+                canvas.discardActiveObject();
+                objects.forEach(o => applyTo(o));
             } else {
                 applyTo(obj);
             }
@@ -2691,16 +2865,29 @@
             const active = canvas.getActiveObject();
             if (!active) return;
 
-            const update = (o) => {
-                if (o.type === 'i-text' || o.type === 'text' || o.type === 'textbox') {
-                    if (prop === 'fontSize' || prop === 'charSpacing') {
-                        o.set(prop, parseFloat(val));
-                    } else if (prop === 'lineHeight') {
-                        o.set(prop, parseFloat(val));
-                    } else {
-                        o.set(prop, val);
-                    }
+            const applyTypography = (o) => {
+                if (!isTextObject(o)) return;
+                if (prop === 'fontSize' || prop === 'charSpacing') {
+                    o.set(prop, parseFloat(val));
+                } else if (prop === 'lineHeight') {
+                    o.set(prop, parseFloat(val));
+                } else {
+                    o.set(prop, val);
                 }
+            };
+
+            const update = (o) => {
+                if (o.isTextStrokeGroup) {
+                    const parts = getTextStrokeGroupParts(o);
+                    if (!parts) return;
+                    applyTypography(parts.fill);
+                    applyTypography(parts.stroke);
+                    o._calcBounds();
+                    o._updateObjectsCoords();
+                    o.setCoords();
+                    return;
+                }
+                applyTypography(o);
             };
 
             if (active.type === 'activeSelection') {
@@ -2971,7 +3158,12 @@
                 '_strokeOutsideWidth',
                 '_strokeBaseWidth',
                 '_strokeBaseHeight',
-                '_strokeBaseRadius'
+                '_strokeBaseRadius',
+                'isTextStrokeGroup',
+                'textStrokeWidth',
+                'textStrokeColor',
+                'isTextStrokeOutline',
+                'isTextFill'
             ]);
             history = history.slice(0, historyStep + 1);
             history.push(JSON.stringify(json));
@@ -2995,6 +3187,7 @@
                 canvas.discardActiveObject();
                 canvas.renderAll();
                 rebuildAllMasks(canvas);
+                rebuildTextStrokeGroups(canvas);
                 isUndoing = false;
                 canvas.getObjects().forEach(o => updateObjectClipping(o));
                 checkCanvasBoundaries();
@@ -3081,13 +3274,24 @@
             });
         }
 
-        async function drawTextAsOutlines(pdf, obj, font) {
+        async function drawTextAsOutlines(pdf, obj, font, options = {}) {
             if (!font) return;
+            const { fill = true, stroke = false } = options;
             const text = obj.text || '';
             const lines = text.split('\n');
             const fs = obj.fontSize;
             const lh = obj.fontSize * (obj.lineHeight || 1.16);
-            pdf.setFillColor(obj.fill);
+            if (fill && obj.fill && obj.fill !== 'transparent') {
+                const rgba = colorToRgba(obj.fill);
+                pdf.setFillColor(rgba.r, rgba.g, rgba.b);
+            }
+            if (stroke && obj.stroke && obj.strokeWidth > 0) {
+                const rgba = colorToRgba(obj.stroke);
+                pdf.setDrawColor(rgba.r, rgba.g, rgba.b);
+                pdf.setLineWidth((obj.strokeWidth * obj.scaleX) / MM_TO_PX_SCREEN);
+            } else if (stroke) {
+                pdf.setLineWidth(0);
+            }
             lines.forEach((line, i) => {
                 const lp = font.getPath(line, 0, (i + 0.8) * lh, fs);
                 const cmds = lp.commands.map(c => {
@@ -3103,7 +3307,13 @@
                 const ox = - (obj.getScaledWidth() / 2) / MM_TO_PX_SCREEN;
                 const oy = - (obj.getScaledHeight() / 2) / MM_TO_PX_SCREEN;
                 renderPathToPDF(pdf, cmds, sx, sy, ox, oy);
-                pdf.fill();
+                if (fill && stroke) {
+                    pdf.fillStroke();
+                } else if (fill) {
+                    pdf.fill();
+                } else if (stroke) {
+                    pdf.stroke();
+                }
             });
         }
 
@@ -3176,9 +3386,17 @@
                         pdf.fillStroke(style);
                     }
                 }
+            } else if (obj.type === 'group' && obj.isTextStrokeGroup) {
+                const parts = getTextStrokeGroupParts(obj);
+                if (parts && parts.stroke) {
+                    await drawTextAsOutlines(pdf, parts.stroke, font, { fill: false, stroke: true });
+                }
+                if (parts && parts.fill) {
+                    await drawTextAsOutlines(pdf, parts.fill, font, { fill: true, stroke: false });
+                }
             } else if (obj.type === 'textbox' || obj.type === 'i-text' || obj.type === 'text') {
                 // PRINT-SAFE: Convert text to vector outlines
-                await drawTextAsOutlines(pdf, obj, font);
+                await drawTextAsOutlines(pdf, obj, font, { fill: true, stroke: false });
             } else if (obj.type === 'image') {
                 const dataURL = obj.toDataURL({ format: 'png' });
                 pdf.addImage(dataURL, 'PNG', -w / 2, -h / 2, w, h);
@@ -3521,6 +3739,34 @@
             return { mask, target };
         }
 
+        function getMaskObjectFromGroup(group) {
+            return group._objects.find(child => child.isMask) || group._objects[0];
+        }
+
+        function normalizeMaskGroupBounds(group) {
+            if (!group || !group.isMaskGroup) return;
+            if (group._maskBoundsNormalized) return;
+
+            // Force group bounds to follow mask geometry (Figma/Illustrator behavior).
+            group._calcBounds = function (onlySet) {
+                const mask = getMaskObjectFromGroup(this);
+                if (!mask) {
+                    fabric.Group.prototype._calcBounds.call(this, onlySet);
+                    return;
+                }
+
+                const objects = this._objects;
+                this._objects = [mask];
+                fabric.Group.prototype._calcBounds.call(this, onlySet);
+                this._objects = objects;
+            };
+
+            group._maskBoundsNormalized = true;
+            group._calcBounds();
+            group._updateObjectsCoords();
+            group.setCoords();
+        }
+
         function rebuildAllMasks(targetCanvas) {
             const allObjects = targetCanvas.getObjects();
             allObjects.forEach(obj => {
@@ -3550,7 +3796,40 @@
                         obj.clipPath.originY = 'center';
                     }
                     obj.subTargetCheck = true;
+                    normalizeMaskGroupBounds(obj);
                 }
+            });
+        }
+
+        function rebuildTextStrokeGroups(targetCanvas) {
+            targetCanvas.getObjects().forEach(obj => {
+                if (!obj.isTextStrokeGroup || obj.type !== 'group') return;
+                const parts = getTextStrokeGroupParts(obj);
+                if (!parts) return;
+                const { stroke, fill } = parts;
+                if (stroke) {
+                    stroke.set({
+                        fill: 'transparent',
+                        strokeUniform: true,
+                        selectable: false,
+                        evented: false
+                    });
+                    if (obj.textStrokeWidth !== undefined) {
+                        stroke.set('strokeWidth', obj.textStrokeWidth * 2);
+                    } else if (stroke.strokeWidth) {
+                        obj.textStrokeWidth = stroke.strokeWidth / 2;
+                    }
+                }
+                if (fill) {
+                    fill.set({
+                        strokeWidth: 0,
+                        stroke: null
+                    });
+                }
+                obj.subTargetCheck = true;
+                obj._calcBounds();
+                obj._updateObjectsCoords();
+                obj.setCoords();
             });
         }
 
@@ -3610,6 +3889,7 @@
             group.clipPath.absolutePositioned = false;
             group.clipPath.originX = 'center';
             group.clipPath.originY = 'center';
+            normalizeMaskGroupBounds(group);
 
             canvas.add(group);
             canvas.setActiveObject(group);
