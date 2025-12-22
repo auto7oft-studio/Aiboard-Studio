@@ -3184,6 +3184,7 @@
             const objectsToRemove = canvas.getObjects().filter(obj => !obj.isArtboard);
             objectsToRemove.forEach(obj => canvas.remove(obj));
 
+            // Enliven objects first (waits for images) then rebuild masks; artboard stays immutable.
             fabric.util.enlivenObjects(data.objects || [], (enlivenedObjects) => {
                 enlivenedObjects.forEach(obj => {
                     if (obj.excludeFromExport) obj.selectable = false;
@@ -3758,7 +3759,7 @@
             return group._objects.find(child => child.isMask) || group._objects[0];
         }
 
-        function normalizeMaskGroupBounds(group) {
+        function normalizeMaskGroupBounds(group, anchorPoint) {
             if (!group || !group.isMaskGroup) return;
             if (group._maskBoundsNormalized) return;
 
@@ -3777,7 +3778,8 @@
             };
 
             group._maskBoundsNormalized = true;
-            const center = group.getCenterPoint();
+            const mask = getMaskObjectFromGroup(group);
+            const center = anchorPoint || (mask ? mask.getCenterPoint() : group.getCenterPoint());
             group._calcBounds();
             group._updateObjectsCoords();
             group.setPositionByOrigin(center, 'center', 'center');
@@ -3814,7 +3816,8 @@
                         obj.clipPath.originY = 'center';
                     }
                     obj.subTargetCheck = true;
-                    normalizeMaskGroupBounds(obj);
+                    const maskCenter = mask ? mask.getCenterPoint() : null;
+                    normalizeMaskGroupBounds(obj, maskCenter);
                 }
             });
         }
@@ -3823,6 +3826,7 @@
             const maskCenter = maskShape.getCenterPoint();
             const targetCenter = targetObject.getCenterPoint();
 
+            // Build a mask group that preserves world positions and uses the mask bounds.
             const group = new fabric.Group([maskShape, targetObject], {
                 subTargetCheck: true,
                 selectable: true,
@@ -3835,7 +3839,7 @@
             group.clipPath.originX = 'center';
             group.clipPath.originY = 'center';
 
-            normalizeMaskGroupBounds(group);
+            normalizeMaskGroupBounds(group, maskCenter);
 
             // Preserve world positions for both mask and target.
             group.setPositionByOrigin(maskCenter, 'center', 'center');
