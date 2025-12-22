@@ -3105,7 +3105,10 @@
         function deleteSelected() {
             const active = canvas.getActiveObjects();
             if (active.length) {
-                active.forEach(o => canvas.remove(o));
+                active.forEach(o => {
+                    if (o.isArtboard) return;
+                    canvas.remove(o);
+                });
                 canvas.discardActiveObject();
                 canvas.renderAll();
                 renderLayerList();
@@ -3138,33 +3141,37 @@
         // --- HISTORY ---
         function saveHistory() {
             if (isUndoing) return;
-            const json = canvas.toJSON([
-                'excludeFromExport',
-                'absolutePositioned',
-                'selectable',
-                'opacity',
-                'gradientAngle',
-                'isArtboard',
-                'isArtboardClip',
-                'isMask',
-                'isMaskGroup',
-                'maskTargetId',
-                'customId',
-                'fillColorData',
-                'strokeColorData',
-                '_userStrokeDashed',
-                '_dashLength',
-                '_dashGap',
-                '_strokeOutsideWidth',
-                '_strokeBaseWidth',
-                '_strokeBaseHeight',
-                '_strokeBaseRadius',
-                'isTextStrokeGroup',
-                'textStrokeWidth',
-                'textStrokeColor',
-                'isTextStrokeOutline',
-                'isTextFill'
-            ]);
+            const json = {
+                objects: canvas.getObjects()
+                    .filter(obj => !obj.isArtboard)
+                    .map(obj => obj.toObject([
+                        'excludeFromExport',
+                        'absolutePositioned',
+                        'selectable',
+                        'opacity',
+                        'gradientAngle',
+                        'isArtboard',
+                        'isArtboardClip',
+                        'isMask',
+                        'isMaskGroup',
+                        'maskTargetId',
+                        'customId',
+                        'fillColorData',
+                        'strokeColorData',
+                        '_userStrokeDashed',
+                        '_dashLength',
+                        '_dashGap',
+                        '_strokeOutsideWidth',
+                        '_strokeBaseWidth',
+                        '_strokeBaseHeight',
+                        '_strokeBaseRadius',
+                        'isTextStrokeGroup',
+                        'textStrokeWidth',
+                        'textStrokeColor',
+                        'isTextStrokeOutline',
+                        'isTextFill'
+                    ]))
+            };
             history = history.slice(0, historyStep + 1);
             history.push(JSON.stringify(json));
             historyStep++;
@@ -3173,20 +3180,27 @@
         function restoreHistory(step) {
             const data = JSON.parse(history[step]);
             isUndoing = true;
-            canvas.loadFromJSON(data, () => {
-                artboard = canvas.getObjects().find(o => o.isArtboard);
-                if (artboard) {
-                    artboard.selectable = false;
-                    artboard.evented = false;
-                    artboard.absolutePositioned = true;
-                }
-                canvas.getObjects().forEach(o => {
-                    if (o.excludeFromExport) o.selectable = false;
-                    ensureObjectId(o);
+            const preservedArtboard = artboard;
+            const objectsToRemove = canvas.getObjects().filter(obj => !obj.isArtboard);
+            objectsToRemove.forEach(obj => canvas.remove(obj));
+
+            fabric.util.enlivenObjects(data.objects || [], (enlivenedObjects) => {
+                enlivenedObjects.forEach(obj => {
+                    if (obj.excludeFromExport) obj.selectable = false;
+                    ensureObjectId(obj);
+                    canvas.add(obj);
                 });
+
+                if (preservedArtboard) {
+                    preservedArtboard.selectable = false;
+                    preservedArtboard.evented = false;
+                    preservedArtboard.absolutePositioned = true;
+                    preservedArtboard.sendToBack();
+                }
+
                 canvas.discardActiveObject();
                 canvas.renderAll();
-                rebuildAllMasks(canvas);
+                rebuildMasksAfterUndo(canvas);
                 rebuildTextStrokeGroups(canvas);
                 isUndoing = false;
                 canvas.getObjects().forEach(o => updateObjectClipping(o));
@@ -3547,6 +3561,7 @@
         function deleteLayer(index) {
             const obj = canvas.getObjects()[index];
             if (obj) {
+                if (obj.isArtboard) return;
                 canvas.remove(obj);
                 canvas.renderAll();
                 renderLayerList();
@@ -3762,12 +3777,15 @@
             };
 
             group._maskBoundsNormalized = true;
+            const center = group.getCenterPoint();
             group._calcBounds();
+            group._updateObjectsCoords();
+            group.setPositionByOrigin(center, 'center', 'center');
             group._updateObjectsCoords();
             group.setCoords();
         }
 
-        function rebuildAllMasks(targetCanvas) {
+        function rebuildMasksAfterUndo(targetCanvas) {
             const allObjects = targetCanvas.getObjects();
             allObjects.forEach(obj => {
                 if (obj.isMaskGroup) {
@@ -3799,6 +3817,39 @@
                     normalizeMaskGroupBounds(obj);
                 }
             });
+        }
+
+        function createMaskGroup(maskShape, targetObject) {
+            const maskCenter = maskShape.getCenterPoint();
+            const targetCenter = targetObject.getCenterPoint();
+
+            const group = new fabric.Group([maskShape, targetObject], {
+                subTargetCheck: true,
+                selectable: true,
+                evented: true
+            });
+            group.isMaskGroup = true;
+            group.maskTargetId = targetObject.customId;
+            group.clipPath = maskShape;
+            group.clipPath.absolutePositioned = false;
+            group.clipPath.originX = 'center';
+            group.clipPath.originY = 'center';
+
+            normalizeMaskGroupBounds(group);
+
+            // Preserve world positions for both mask and target.
+            group.setPositionByOrigin(maskCenter, 'center', 'center');
+            const groupMatrix = group.calcTransformMatrix();
+            const inverted = fabric.util.invertTransform(groupMatrix);
+            const maskLocal = fabric.util.transformPoint(maskCenter, inverted);
+            const targetLocal = fabric.util.transformPoint(targetCenter, inverted);
+            maskShape.setPositionByOrigin(maskLocal, 'center', 'center');
+            targetObject.setPositionByOrigin(targetLocal, 'center', 'center');
+            group._calcBounds();
+            group._updateObjectsCoords();
+            group.setCoords();
+
+            return group;
         }
 
         function rebuildTextStrokeGroups(targetCanvas) {
@@ -3878,18 +3929,7 @@
             canvas.remove(maskShape);
             canvas.remove(targetObject);
 
-            const group = new fabric.Group([maskShape, targetObject], {
-                subTargetCheck: true,
-                selectable: true,
-                evented: true
-            });
-            group.isMaskGroup = true;
-            group.maskTargetId = targetObject.customId;
-            group.clipPath = maskShape;
-            group.clipPath.absolutePositioned = false;
-            group.clipPath.originX = 'center';
-            group.clipPath.originY = 'center';
-            normalizeMaskGroupBounds(group);
+            const group = createMaskGroup(maskShape, targetObject);
 
             canvas.add(group);
             canvas.setActiveObject(group);
