@@ -3911,30 +3911,30 @@
                     contentImage.isFrameContent = true;
                 }
                 obj.subTargetCheck = true;
-                obj.clipTo = buildFrameClipper(frameShape);
+                obj.objectCaching = false;  // CRITICAL: required for clipPath
+                obj.clipPath = buildFrameClipPath(frameShape);  // CORRECTED: use clipPath
                 normalizeFrameGroupBounds(obj, frameShape ? frameShape.getCenterPoint() : null);
+                obj.dirty = true;  // Force re-render
             });
+            targetCanvas.requestRenderAll();
         }
 
-        function buildFrameClipper(frameShape) {
+        function buildFrameClipPath(frameShape) {
             if (!frameShape) return null;
-            const isCircle = frameShape.type === 'circle';
-            return function (ctx) {
-                ctx.save();
-                ctx.beginPath();
-                if (isCircle) {
-                    ctx.arc(0, 0, frameShape.radius, 0, Math.PI * 2);
-                } else {
-                    ctx.rect(
-                        -frameShape.width / 2,
-                        -frameShape.height / 2,
-                        frameShape.width,
-                        frameShape.height
-                    );
-                }
-                ctx.closePath();
-                ctx.restore();
-            };
+
+            const clipShape = fabric.util.object.clone(frameShape);
+            clipShape.set({
+                left: 0,
+                top: 0,
+                originX: 'center',
+                originY: 'center',
+                absolutePositioned: false,  // CRITICAL: relative to group
+                fill: 'transparent',
+                stroke: null,
+                strokeWidth: 0
+            });
+
+            return clipShape;
         }
 
         function createMaskGroup(maskShape, targetObject) {
@@ -3985,7 +3985,8 @@
                 originY: 'center',
                 subTargetCheck: true,
                 selectable: true,
-                evented: true
+                evented: true,
+                objectCaching: false  // CRITICAL: required for clipPath to render correctly
             });
             group.isFrameGroup = true;
             group.frameTargetId = contentImage.customId;
@@ -3998,10 +3999,10 @@
             contentImage.selectable = false;
             contentImage.evented = false;
 
-            group.clipTo = buildFrameClipper(frameShape);
+            // CORRECT APPROACH: Use clipPath, not clipTo
+            group.clipPath = buildFrameClipPath(frameShape);
+
             normalizeFrameGroupBounds(group, frameCenter);
-            group._calcBounds();
-            group._updateObjectsCoords();
             group.setCoords();
 
             // 4) Restore content image's original world center inside the group.
@@ -4015,7 +4016,6 @@
                 originY: 'center'
             });
             contentImage.setCoords();
-            group._updateObjectsCoords();
             group.setCoords();
 
             return group;
