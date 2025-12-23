@@ -3970,17 +3970,17 @@
         }
 
         function createFrame(frameShape, contentImage) {
-            // 1) Capture world center BEFORE removing anything from canvas.
-            const worldCenter = frameShape.getCenterPoint();
+            // 1) Capture world centers BEFORE removing anything from canvas.
+            const frameCenter = frameShape.getCenterPoint();
+            const imageCenter = contentImage.getCenterPoint();
 
             // 2) Normalize local coordinates for stable grouping.
             frameShape.set({ left: 0, top: 0, originX: 'center', originY: 'center' });
-            contentImage.set({ left: 0, top: 0, originX: 'center', originY: 'center' });
 
-            // 3) Build group anchored to captured world center.
+            // 3) Build group anchored to captured frame center.
             const group = new fabric.Group([contentImage, frameShape], {
-                left: worldCenter.x,
-                top: worldCenter.y,
+                left: frameCenter.x,
+                top: frameCenter.y,
                 originX: 'center',
                 originY: 'center',
                 subTargetCheck: true,
@@ -3999,8 +3999,22 @@
             contentImage.evented = false;
 
             group.clipTo = buildFrameClipper(frameShape);
-            normalizeFrameGroupBounds(group, worldCenter);
+            normalizeFrameGroupBounds(group, frameCenter);
             group._calcBounds();
+            group._updateObjectsCoords();
+            group.setCoords();
+
+            // 4) Restore content image's original world center inside the group.
+            const groupMatrix = group.calcTransformMatrix();
+            const inverted = fabric.util.invertTransform(groupMatrix);
+            const imageLocal = fabric.util.transformPoint(imageCenter, inverted);
+            contentImage.set({
+                left: imageLocal.x,
+                top: imageLocal.y,
+                originX: 'center',
+                originY: 'center'
+            });
+            contentImage.setCoords();
             group._updateObjectsCoords();
             group.setCoords();
 
