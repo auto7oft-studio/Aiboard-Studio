@@ -2731,6 +2731,22 @@
             document.getElementById('global-opacity').value = opacity;
             document.getElementById('global-opacity-val').innerText = opacity;
 
+            // Shadow
+            const hasShadow = obj.shadow !== null && obj.shadow !== undefined;
+            document.getElementById('shadow-enabled').checked = hasShadow;
+            document.getElementById('shadow-settings').style.display = hasShadow ? 'block' : 'none';
+            if (hasShadow) {
+                const shadow = obj.shadow;
+                const shadowColor = shadow.color || 'rgba(0,0,0,0.5)';
+                document.getElementById('shadow-color-swatch').style.background = shadowColor;
+                document.getElementById('shadow-blur').value = shadow.blur || 10;
+                document.getElementById('shadow-blur-val').innerText = shadow.blur || 10;
+                document.getElementById('shadow-offset-x').value = shadow.offsetX || 5;
+                document.getElementById('shadow-offset-x-val').innerText = shadow.offsetX || 5;
+                document.getElementById('shadow-offset-y').value = shadow.offsetY || 5;
+                document.getElementById('shadow-offset-y-val').innerText = shadow.offsetY || 5;
+            }
+
             const layerTab = document.getElementById('tab-layers');
             if (!layerTab || layerTab.style.display === 'block') {
                 renderLayerList();
@@ -2852,6 +2868,91 @@
                 target._userStrokeDashed = false;
                 dashSettings.style.display = 'none';
             }
+            canvas.renderAll();
+            saveHistory();
+        }
+
+        function toggleShadow() {
+            const obj = canvas.getActiveObject();
+            if (!obj) return;
+
+            const isEnabled = document.getElementById('shadow-enabled').checked;
+            const shadowSettings = document.getElementById('shadow-settings');
+
+            if (isEnabled) {
+                const shadowColor = document.getElementById('shadow-color-swatch').style.background || 'rgba(0,0,0,0.5)';
+                const blur = parseInt(document.getElementById('shadow-blur').value) || 10;
+                const offsetX = parseInt(document.getElementById('shadow-offset-x').value) || 5;
+                const offsetY = parseInt(document.getElementById('shadow-offset-y').value) || 5;
+
+                const target = obj.isTextStrokeGroup ? obj : obj;
+                target.set({
+                    shadow: new fabric.Shadow({
+                        color: shadowColor,
+                        blur: blur,
+                        offsetX: offsetX,
+                        offsetY: offsetY
+                    })
+                });
+                shadowSettings.style.display = 'block';
+            } else {
+                const target = obj.isTextStrokeGroup ? obj : obj;
+                target.set('shadow', null);
+                shadowSettings.style.display = 'none';
+            }
+
+            canvas.renderAll();
+            saveHistory();
+        }
+
+        function changeShadowColor(val) {
+            const obj = canvas.getActiveObject();
+            if (!obj) return;
+
+            const target = obj.isTextStrokeGroup ? obj : obj;
+            if (!target.shadow) return;
+
+            target.shadow.color = val;
+            document.getElementById('shadow-color-swatch').style.background = val;
+            canvas.renderAll();
+            saveHistory();
+        }
+
+        function changeShadowBlur(val) {
+            const obj = canvas.getActiveObject();
+            if (!obj) return;
+
+            const target = obj.isTextStrokeGroup ? obj : obj;
+            if (!target.shadow) return;
+
+            target.shadow.blur = parseInt(val);
+            document.getElementById('shadow-blur-val').innerText = val;
+            canvas.renderAll();
+            saveHistory();
+        }
+
+        function changeShadowOffsetX(val) {
+            const obj = canvas.getActiveObject();
+            if (!obj) return;
+
+            const target = obj.isTextStrokeGroup ? obj : obj;
+            if (!target.shadow) return;
+
+            target.shadow.offsetX = parseInt(val);
+            document.getElementById('shadow-offset-x-val').innerText = val;
+            canvas.renderAll();
+            saveHistory();
+        }
+
+        function changeShadowOffsetY(val) {
+            const obj = canvas.getActiveObject();
+            if (!obj) return;
+
+            const target = obj.isTextStrokeGroup ? obj : obj;
+            if (!target.shadow) return;
+
+            target.shadow.offsetY = parseInt(val);
+            document.getElementById('shadow-offset-y-val').innerText = val;
             canvas.renderAll();
             saveHistory();
         }
@@ -4659,6 +4760,8 @@
             } else if (pickerTarget === 'stroke') {
                 changeStrokeColor(color);
                 if (activeObj) activeObj.strokeColorData = { colorMode: 'cmyk', cmyk: { ...effectiveCmyk }, rgb: { r: rgba.r, g: rgba.g, b: rgba.b } };
+            } else if (pickerTarget === 'shadow') {
+                changeShadowColor(color);
             }
             else if (pickerTarget === 'grad-start' || pickerTarget === 'grad-end') {
                 document.getElementById(pickerTarget + '-swatch').style.background = color;
