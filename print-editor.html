@@ -164,6 +164,11 @@
             overflow: hidden;
         }
 
+        .canvas-wrapper canvas {
+            border: none !important;
+            outline: none !important;
+        }
+
         /* --- Toolbar --- */
         .top-toolbar {
             position: absolute;
@@ -828,6 +833,25 @@
             text-align: center;
         }
 
+        .cmyk-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .cmyk-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .cmyk-input-group label {
+            font-size: 10px;
+            color: var(--text-sub);
+            text-transform: uppercase;
+        }
+
         .color-palette {
             display: flex;
             flex-wrap: wrap;
@@ -1063,10 +1087,9 @@
                 <button class="warning-btn" onclick="selectOutsideObjects()">확인 및 선택</button>
             </div>
 
-            <div id="canvas-size-display"
-                style="position: absolute; color: #6B7280; font-size: 12px; z-index: 100; pointer-events: none; font-weight: 500;">
-                <div id="object-info-label" style="display: none; color: #DC2626; margin-bottom: 2px;"></div>
-                <span id="canvas-size-label">90 × 50 mm</span>
+            <div id="canvas-info-bar"
+                style="position: absolute; top: 8px; left: 8px; background: #1F2937; color: #fff; font-size: 11px; z-index: 100; pointer-events: none; font-weight: 500; padding: 6px 12px; border-radius: 6px;">
+                <span id="canvas-size-label">Size : 90 × 50 mm</span><span id="image-info-label"></span>
             </div>
 
 
@@ -1249,6 +1272,41 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M7 21v-2a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v2" />
                             <circle cx="12" cy="7" r="4" />
+                        </svg>
+                    </button>
+
+                    <div class="toolbar-divider"></div>
+
+                    <button class="figma-tool-btn" onclick="flipHorizontal()" title="가로 뒤집기">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 4v16" />
+                            <rect x="3" y="7" width="6" height="10" />
+                            <rect x="15" y="7" width="6" height="10" />
+                        </svg>
+                    </button>
+                    <button class="figma-tool-btn" onclick="flipVertical()" title="세로 뒤집기">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 12h16" />
+                            <rect x="7" y="3" width="10" height="6" />
+                            <rect x="7" y="15" width="10" height="6" />
+                        </svg>
+                    </button>
+                    <button class="figma-tool-btn" onclick="rotateCCW()" title="90° 반시계 회전">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 12a8 8 0 1 0 8-8" />
+                            <path d="M8 4H4v4" />
+                        </svg>
+                    </button>
+                    <button class="figma-tool-btn" onclick="rotateCW()" title="90° 시계 회전">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 12a8 8 0 1 1-8-8" />
+                            <path d="M16 4h4v4" />
+                        </svg>
+                    </button>
+                    <button class="figma-tool-btn" onclick="rotate180()" title="180° 회전">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M7 7a8 8 0 1 1 0 10" />
+                            <path d="M7 3v4H3" />
                         </svg>
                     </button>
 
@@ -1509,16 +1567,14 @@
                         <span id="stroke-width-val" style="font-size: 11px; width: 24px; text-align: right;">0</span>
                     </div>
                     <div class="property-row">
-                        <label class="property-label">정렬</label>
-                        <select id="stroke-align" onchange="changeStrokeAlign(this.value)" style="flex:1; padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;">
-                            <option value="center">중앙</option>
-                            <option value="inside">내경</option>
-                            <option value="outside">외경</option>
-                        </select>
-                    </div>
-                    <div class="property-row">
                         <label class="property-label">점선</label>
-                        <input type="checkbox" id="stroke-dashed" onchange="changeStrokeDashed(this.checked)" style="width: 16px; height: 16px;">
+                        <input type="checkbox" id="stroke-dashed" onchange="changeStrokeDashed()" style="width: 16px; height: 16px;">
+                    </div>
+                    <div id="dash-settings" class="property-row" style="display: none;">
+                        <label class="property-label">길이/간격</label>
+                        <input type="number" id="dash-length" value="8" min="1" max="100" style="width: 45px; padding: 2px 4px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;" oninput="changeStrokeDashed()">
+                        <span style="font-size: 11px; margin: 0 4px;">/</span>
+                        <input type="number" id="dash-gap" value="4" min="1" max="100" style="width: 45px; padding: 2px 4px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;" oninput="changeStrokeDashed()">
                     </div>
                 </div>
 
@@ -1579,6 +1635,24 @@
                 <input type="text" id="picker-opacity" class="picker-input" spellcheck="false">
             </div>
         </div>
+        <div class="cmyk-grid">
+            <div class="cmyk-input-group">
+                <label>C</label>
+                <input type="number" id="picker-cmyk-c" class="picker-input" min="0" max="100" value="0">
+            </div>
+            <div class="cmyk-input-group">
+                <label>M</label>
+                <input type="number" id="picker-cmyk-m" class="picker-input" min="0" max="100" value="0">
+            </div>
+            <div class="cmyk-input-group">
+                <label>Y</label>
+                <input type="number" id="picker-cmyk-y" class="picker-input" min="0" max="100" value="0">
+            </div>
+            <div class="cmyk-input-group">
+                <label>K</label>
+                <input type="number" id="picker-cmyk-k" class="picker-input" min="0" max="100" value="0">
+            </div>
+        </div>
         <div id="doc-colors" class="color-palette">
             <div class="palette-title">문서 색상</div>
         </div>
@@ -1627,15 +1701,51 @@
         let pickerHue = 0;
         let pickerSaturation = 1;
         let pickerAlpha = 1;
+        let pickerCmyk = { c: 0, m: 0, y: 0, k: 0 };
         let recentColors = [];
 
         function mmToPx(mm) { return mm * MM_TO_PX_SCREEN; }
 
         // --- INIT ---
+        let objectIdCounter = 0;
+
+        function ensureObjectId(obj) {
+            if (!obj) return;
+            if (!obj.customId) {
+                objectIdCounter += 1;
+                obj.customId = `obj_${Date.now()}_${objectIdCounter}`;
+            }
+        }
         function initCanvas() {
             const wrapper = document.getElementById('canvas-container');
             workspaceWidth = wrapper.clientWidth;
             workspaceHeight = wrapper.clientHeight;
+
+            const baseToObject = fabric.Object.prototype.toObject;
+            fabric.Object.prototype.toObject = function (propertiesToInclude) {
+                const obj = baseToObject.call(this, propertiesToInclude);
+                delete obj.clipPath;
+                return obj;
+            };
+
+            fabric.Image.prototype.toObject = (function (toObject) {
+                return function () {
+                    return fabric.util.object.extend(toObject.call(this), {
+                        src: this.src || (this._originalElement && this._originalElement.src) || null,
+                        customId: this.customId || null
+                    });
+                };
+            })(fabric.Image.prototype.toObject);
+
+            fabric.Image.fromObject = function (object, callback) {
+                const src = object.src;
+                fabric.util.loadImage(src, (img) => {
+                    const image = new fabric.Image(img, object);
+                    image.src = src;
+                    ensureObjectId(image);
+                    callback && callback(image);
+                }, null, object.crossOrigin || 'anonymous');
+            };
 
             canvas = new fabric.Canvas('editor-canvas', {
                 width: workspaceWidth,
@@ -1699,7 +1809,7 @@
             artboard.sendToBack();
 
             // Update UI Labels
-            document.getElementById('canvas-size-label').innerText = `캔버스 사이즈 : ${widthMm} × ${heightMm} mm`;
+            document.getElementById('canvas-size-label').innerText = `Size : ${widthMm} × ${heightMm} mm`;
             document.getElementById('custom-width-input').value = widthMm;
             document.getElementById('custom-height-input').value = heightMm;
 
@@ -1790,27 +1900,48 @@
             canvas.on('selection:created', () => {
                 updateFloatingToolbar();
                 requestAnimationFrame(updateColorPickers);
-                updateObjectInfoLabel();
+                updateImageInfoLabel();
+                renderLayerList();
             });
             canvas.on('selection:updated', () => {
                 updateFloatingToolbar();
                 requestAnimationFrame(updateColorPickers);
-                updateObjectInfoLabel();
+                updateImageInfoLabel();
+                renderLayerList();
             });
             canvas.on('selection:cleared', () => {
+                updateImageInfoLabel();
                 document.getElementById('prop-text').style.display = 'none';
                 document.getElementById('prop-corner').style.display = 'none';
                 hideFloatingToolbar();
-                hideObjectInfoLabel();
+                renderLayerList();
             });
 
-            canvas.on('object:moving', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); });
-            canvas.on('object:scaling', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); updateObjectInfoLabel(); });
+            canvas.on('object:moving', (opt) => {
+                updateFloatingToolbar(opt);
+                updateObjectClipping(opt.target);
+                if (opt.target?.isFrameContent && opt.target.group?.isFrameGroup) {
+                    constrainFrameContent(opt.target.group, opt.target);
+                }
+            });
+            canvas.on('object:scaling', (opt) => {
+                updateFloatingToolbar(opt);
+                updateObjectClipping(opt.target);
+                updateImageInfoLabel();
+                if (opt.target?.isFrameContent && opt.target.group?.isFrameGroup) {
+                    constrainFrameContent(opt.target.group, opt.target);
+                }
+            });
             canvas.on('object:rotating', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); });
 
-            canvas.on('object:added', (opt) => { !isUndoing && saveHistory(); checkCanvasBoundaries(); updateObjectClipping(opt.target); });
+            canvas.on('object:added', (opt) => { !isUndoing && saveHistory(); checkCanvasBoundaries(); updateObjectClipping(opt.target); renderLayerList(); });
             canvas.on('object:modified', (opt) => { !isUndoing && saveHistory(); checkCanvasBoundaries(); updateObjectClipping(opt.target); });
             canvas.on('object:removed', () => { !isUndoing && saveHistory(); checkCanvasBoundaries(); });
+            canvas.on('text:changed', (opt) => {
+                const target = opt.target;
+                if (!target || !target.group || !target.group.isTextStrokeGroup) return;
+                syncTextStrokeGroup(target.group);
+            });
 
             window.addEventListener('keydown', handleKeydown);
             window.addEventListener('keyup', handleKeyup);
@@ -1881,7 +2012,6 @@
 
             const ratioX = newW / oldW;
             const ratioY = newH / oldH;
-            const ratio = Math.min(ratioX, ratioY);
 
             // New artboard position (same logic as createArtboard)
             const nextArtLeft = (workspaceWidth - newW) / 2;
@@ -1895,10 +2025,8 @@
                 const dy = obj.top - artboard.top;
 
                 obj.set({
-                    left: nextArtLeft + dx * ratio,
-                    top: nextArtTop + dy * ratio,
-                    scaleX: obj.scaleX * ratio,
-                    scaleY: obj.scaleY * ratio
+                    left: nextArtLeft + dx * ratioX,
+                    top: nextArtTop + dy * ratioY
                 });
                 obj.setCoords();
             });
@@ -1944,7 +2072,7 @@
 
             let hasFullyOutside = false;
             objects.forEach(obj => {
-                const objRect = getObjectBounds(obj);
+                const objRect = getEffectiveBounds(obj);
                 const isFullyOutside = !rectsIntersect(objRect, artRect);
                 if (isFullyOutside) hasFullyOutside = true;
             });
@@ -1968,7 +2096,7 @@
                     return;
                 }
 
-                const objRect = getObjectBounds(o);
+                const objRect = getEffectiveBounds(o);
                 const isPartiallyInside = rectsIntersect(objRect, artRect);
 
                 if (isPartiallyInside) {
@@ -2100,86 +2228,25 @@
         }
 
         function updateCanvasSizeLabel() {
-            if (!artboard) return;
-            const display = document.getElementById('canvas-size-display');
-            if (!display) return;
-            const zoom = canvas.getZoom();
-            const vpt = canvas.viewportTransform;
-
-            // Calculate artboard's top-left position in screen coordinates
-            const left = artboard.left * zoom + vpt[4];
-            const top = artboard.top * zoom + vpt[5];
-            const width = artboard.width * zoom;
-            const height = artboard.height * zoom;
-            const margin = 8;
-
-            const labelWidth = display.offsetWidth;
-            const labelHeight = display.offsetHeight;
-
-            let labelLeft = left;
-            let labelTop = top - labelHeight - margin;
-
-            if (labelTop < margin) {
-                labelTop = top + height + margin;
-            }
-
-            const maxLeft = workspaceWidth - labelWidth - margin;
-            labelLeft = Math.max(margin, Math.min(labelLeft, maxLeft));
-
-            display.style.left = `${labelLeft}px`;
-            display.style.top = `${labelTop}px`;
+            // Fixed position - no update needed
         }
 
-        function updateObjectInfoLabel() {
-            const infoLabel = document.getElementById('object-info-label');
-            if (!infoLabel) return;
+        function updateImageInfoLabel() {
+            const label = document.getElementById('image-info-label');
+            if (!label) return;
 
             const obj = canvas.getActiveObject();
-            if (!obj || obj.excludeFromExport || obj.type === 'activeSelection') {
-                infoLabel.style.display = 'none';
+            if (!obj || obj.type !== 'image' || obj.excludeFromExport) {
+                label.innerText = '';
                 return;
             }
 
-            let infoText = '';
+            // Calculate effective PPI
+            const printedWidthMm = (obj.width * obj.scaleX) / MM_TO_PX_SCREEN;
+            const printedWidthInches = printedWidthMm / 25.4;
+            const ppi = Math.round(obj.width / printedWidthInches);
 
-            if (obj.type === 'image') {
-                // Calculate effective PPI
-                const originalWidth = obj.width; // Original image width in pixels
-                const originalHeight = obj.height; // Original image height in pixels
-                const printedWidthMm = (obj.width * obj.scaleX) / MM_TO_PX_SCREEN;
-                const printedHeightMm = (obj.height * obj.scaleY) / MM_TO_PX_SCREEN;
-
-                // PPI = original pixels / printed inches
-                // 1 inch = 25.4mm
-                const printedWidthInches = printedWidthMm / 25.4;
-                const printedHeightInches = printedHeightMm / 25.4;
-                const ppiX = Math.round(originalWidth / printedWidthInches);
-                const ppiY = Math.round(originalHeight / printedHeightInches);
-                const effectivePpi = Math.round((ppiX + ppiY) / 2);
-
-                // Size info
-                const sizeText = `Size : ${Math.round(printedWidthMm)} × ${Math.round(printedHeightMm)} mm`;
-                const ppiText = `Image : ${effectivePpi} ppi`;
-
-                infoText = `${ppiText}\n${sizeText}`;
-                infoLabel.style.whiteSpace = 'pre-line';
-            } else {
-                // For other objects, just show size
-                const widthMm = Math.round((obj.width * obj.scaleX) / MM_TO_PX_SCREEN);
-                const heightMm = Math.round((obj.height * obj.scaleY) / MM_TO_PX_SCREEN);
-                infoText = `Size : ${widthMm} × ${heightMm} mm`;
-                infoLabel.style.whiteSpace = 'normal';
-            }
-
-            infoLabel.innerText = infoText;
-            infoLabel.style.display = 'block';
-        }
-
-        function hideObjectInfoLabel() {
-            const infoLabel = document.getElementById('object-info-label');
-            if (infoLabel) {
-                infoLabel.style.display = 'none';
-            }
+            label.innerText = ` - Image : ${ppi} ppi`;
         }
 
         // Collapsible sections (Figma style)
@@ -2328,6 +2395,7 @@
             }
 
 
+            ensureObjectId(obj);
             canvas.add(obj);
             canvas.setActiveObject(obj);
             canvas.renderAll();
@@ -2348,6 +2416,7 @@
                 originY: 'center',
                 opacity: 1
             });
+            ensureObjectId(text);
             canvas.add(text);
             canvas.setActiveObject(text);
             canvas.renderAll();
@@ -2364,6 +2433,8 @@
                     const targetWidth = minDim * 0.4; // 40% of artboard
 
                     img.set({ left: center.x, top: center.y, originX: 'center', originY: 'center', opacity: 1 });
+                    img.src = e.target.result;
+                    ensureObjectId(img);
                     img.scaleToWidth(targetWidth);
                     canvas.add(img);
                     canvas.setActiveObject(img);
@@ -2373,18 +2444,124 @@
             reader.readAsDataURL(file);
         }
 
+        function isTextObject(obj) {
+            return obj && (obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox');
+        }
+
+        function getTextStrokeGroupParts(group) {
+            if (!group || !group.isTextStrokeGroup) return null;
+            const stroke = group._objects.find(child => child.isTextStrokeOutline) || group._objects[0];
+            const fill = group._objects.find(child => child.isTextFill) || group._objects[1];
+            return { stroke, fill };
+        }
+
+        function buildTextClone(source, overrides = {}) {
+            const commonProps = {
+                left: source.left,
+                top: source.top,
+                originX: source.originX,
+                originY: source.originY,
+                angle: source.angle,
+                scaleX: source.scaleX,
+                scaleY: source.scaleY,
+                skewX: source.skewX,
+                skewY: source.skewY,
+                flipX: source.flipX,
+                flipY: source.flipY,
+                fontFamily: source.fontFamily,
+                fontSize: source.fontSize,
+                fontWeight: source.fontWeight,
+                fontStyle: source.fontStyle,
+                textAlign: source.textAlign,
+                lineHeight: source.lineHeight,
+                charSpacing: source.charSpacing,
+                underline: source.underline,
+                linethrough: source.linethrough,
+                overline: source.overline,
+                direction: source.direction,
+                styles: JSON.parse(JSON.stringify(source.styles || {}))
+            };
+
+            if (source.type === 'textbox') {
+                return new fabric.Textbox(source.text, { ...commonProps, width: source.width, ...overrides });
+            }
+            if (source.type === 'text') {
+                return new fabric.Text(source.text, { ...commonProps, ...overrides });
+            }
+            return new fabric.IText(source.text, { ...commonProps, ...overrides });
+        }
+
+        function createTextStrokeGroup(textObj, strokeWidth, strokeColor) {
+            // Outside stroke: draw a double-width stroke behind the fill to keep fill intact.
+            const stroke = buildTextClone(textObj, {
+                fill: 'transparent',
+                stroke: strokeColor,
+                strokeWidth: strokeWidth * 2,
+                strokeUniform: true,
+                selectable: false,
+                evented: false
+            });
+            stroke.isTextStrokeOutline = true;
+
+            textObj.set({
+                strokeWidth: 0,
+                stroke: null
+            });
+            textObj.isTextFill = true;
+
+            const group = new fabric.Group([stroke, textObj], {
+                subTargetCheck: true,
+                selectable: true,
+                evented: true
+            });
+            const center = textObj.getCenterPoint();
+            group.setPositionByOrigin(center, 'center', 'center');
+            group.isTextStrokeGroup = true;
+            group.textStrokeWidth = strokeWidth;
+            group.textStrokeColor = strokeColor;
+            group.setCoords();
+            return group;
+        }
+
+        function syncTextStrokeGroup(group) {
+            const parts = getTextStrokeGroupParts(group);
+            if (!parts) return;
+            const { stroke, fill } = parts;
+            if (!stroke || !fill) return;
+
+            stroke.set({
+                text: fill.text,
+                fontFamily: fill.fontFamily,
+                fontSize: fill.fontSize,
+                fontWeight: fill.fontWeight,
+                fontStyle: fill.fontStyle,
+                textAlign: fill.textAlign,
+                lineHeight: fill.lineHeight,
+                charSpacing: fill.charSpacing,
+                underline: fill.underline,
+                linethrough: fill.linethrough,
+                overline: fill.overline,
+                direction: fill.direction,
+                styles: JSON.parse(JSON.stringify(fill.styles || {}))
+            });
+            group._calcBounds();
+            group._updateObjectsCoords();
+            group.setCoords();
+        }
+
         // --- PROPERTIES ---
         function updateColorPickers() {
             const obj = canvas.getActiveObject();
             if (!obj) return;
 
-            if (obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox') {
+            const textTarget = obj.isTextStrokeGroup ? (getTextStrokeGroupParts(obj)?.fill || obj) : obj;
+            if (isTextObject(textTarget)) {
                 document.getElementById('prop-text').style.display = 'block';
-                document.getElementById('font-family').value = obj.fontFamily || 'Pretendard';
-                document.getElementById('font-size').value = Math.round(obj.fontSize || 24);
-                document.getElementById('font-weight').value = obj.fontWeight || 'normal';
-                document.getElementById('line-height').value = obj.lineHeight || 1.16;
-                document.getElementById('char-spacing').value = obj.charSpacing || 0;
+                document.getElementById('font-family').value = textTarget.fontFamily || 'Pretendard';
+                document.getElementById('font-size').value = Math.round(textTarget.fontSize || 24);
+                document.getElementById('font-weight').value = textTarget.fontWeight || 'normal';
+                document.getElementById('line-height').value = textTarget.lineHeight || 1.16;
+                document.getElementById('char-spacing').value = textTarget.charSpacing || 0;
             } else {
                 document.getElementById('prop-text').style.display = 'none';
             }
@@ -2422,7 +2599,7 @@
             const isLine = obj.type === 'line';
             document.getElementById('prop-fill').style.display = isLine ? 'none' : 'block';
 
-            const fill = obj.fill;
+            const fill = textTarget.fill;
             if (typeof fill === 'string') {
                 const color = fill === 'transparent' ? 'transparent' : fill;
                 document.getElementById('fill-swatch').style.background = color;
@@ -2448,26 +2625,31 @@
                 toggleGradientMode();
             }
 
-            const stroke = obj.stroke || '#000000';
+            const strokeTarget = obj.isTextStrokeGroup ? (getTextStrokeGroupParts(obj)?.stroke || obj) : obj;
+            const stroke = strokeTarget.stroke || '#000000';
             document.getElementById('stroke-swatch').style.background = stroke;
-            const strokeMm = obj.strokeWidth ? Math.round(obj.strokeWidth / MM_TO_PX_SCREEN) : 0;
-            document.getElementById('stroke-width').value = strokeMm;
-            document.getElementById('stroke-width-val').innerText = strokeMm;
-
-            // Stroke alignment
-            const strokeAlign = obj.strokeAlign || 'center';
-            document.getElementById('stroke-align').value = strokeAlign;
-
-            // Stroke dashed
-            const isDashed = obj._userStrokeDashed || (obj.strokeDashArray && obj.strokeDashArray.length > 0 && !obj._wasOutOfBounds);
+            const strokePx = obj.isTextStrokeGroup
+                ? Math.round(obj.textStrokeWidth || 0)
+                : (strokeTarget.strokeWidth ? Math.round(strokeTarget.strokeWidth) : 0);
+            document.getElementById('stroke-width').value = strokePx;
+            document.getElementById('stroke-width-val').innerText = strokePx;
+            const isDashed = strokeTarget._userStrokeDashed || false;
             document.getElementById('stroke-dashed').checked = isDashed;
+            document.getElementById('dash-settings').style.display = isDashed ? 'flex' : 'none';
+            if (isDashed) {
+                document.getElementById('dash-length').value = strokeTarget._dashLength || 8;
+                document.getElementById('dash-gap').value = strokeTarget._dashGap || 4;
+            }
 
             // Opacity
             const opacity = Math.round((obj.opacity || 1) * 100);
             document.getElementById('global-opacity').value = opacity;
             document.getElementById('global-opacity-val').innerText = opacity;
 
-            if (document.getElementById('tab-layers').style.display === 'block') renderLayerList();
+            const layerTab = document.getElementById('tab-layers');
+            if (!layerTab || layerTab.style.display === 'block') {
+                renderLayerList();
+            }
         }
 
         function changeObjectOpacity(val) {
@@ -2494,10 +2676,21 @@
             const obj = canvas.getActiveObject();
             if (!obj) return;
             document.getElementById('transparent-check').checked = false;
-            obj.set('fill', val);
+            if (obj.isTextStrokeGroup) {
+                const parts = getTextStrokeGroupParts(obj);
+                if (parts && parts.fill) {
+                    parts.fill.set('fill', val);
+                    syncTextStrokeGroup(obj);
+                    setObjectColorData(parts.fill, 'fill', val);
+                }
+            } else {
+                obj.set('fill', val);
+                setObjectColorData(obj, 'fill', val);
+            }
             document.getElementById('fill-swatch').style.background = val;
             document.getElementById('fill-color-hex').value = val.toUpperCase();
             canvas.renderAll();
+            saveHistory();
         }
 
         function toggleTransparentFill() {
@@ -2505,16 +2698,38 @@
             if (!obj) return;
             const isChecked = document.getElementById('transparent-check').checked;
             const color = isChecked ? 'transparent' : document.getElementById('fill-swatch').style.background;
-            obj.set('fill', color);
+            if (obj.isTextStrokeGroup) {
+                const parts = getTextStrokeGroupParts(obj);
+                if (parts && parts.fill) {
+                    parts.fill.set('fill', color);
+                    syncTextStrokeGroup(obj);
+                    if (color !== 'transparent') setObjectColorData(parts.fill, 'fill', color);
+                }
+            } else {
+                obj.set('fill', color);
+                if (color !== 'transparent') setObjectColorData(obj, 'fill', color);
+            }
             canvas.renderAll();
+            saveHistory();
         }
 
         function changeStrokeColor(val) {
             const obj = canvas.getActiveObject();
             if (obj) {
-                obj.set('stroke', val);
+                if (obj.isTextStrokeGroup) {
+                    const parts = getTextStrokeGroupParts(obj);
+                    if (parts && parts.stroke) {
+                        parts.stroke.set('stroke', val);
+                        obj.textStrokeColor = val;
+                        setObjectColorData(parts.stroke, 'stroke', val);
+                    }
+                } else {
+                    obj.set('stroke', val);
+                    setObjectColorData(obj, 'stroke', val);
+                }
                 document.getElementById('stroke-swatch').style.background = val;
                 canvas.renderAll();
+                saveHistory();
             }
         }
 
@@ -2522,74 +2737,115 @@
             const obj = canvas.getActiveObject();
             if (obj) {
                 const px = parseFloat(valPx);
-                obj.set('strokeWidth', px);
+                applyStrokeWidth(obj, px);
                 document.getElementById('stroke-width-val').innerText = px;
-                applyStrokeAlignment(obj);
                 canvas.renderAll();
                 saveHistory();
             }
         }
 
-        function changeStrokeAlign(val) {
+        function changeStrokeDashed() {
             const obj = canvas.getActiveObject();
-            if (obj) {
-                obj.strokeAlign = val;
-                applyStrokeAlignment(obj);
-                canvas.renderAll();
-                saveHistory();
+            if (!obj) return;
+
+            const checked = document.getElementById('stroke-dashed').checked;
+            const dashSettings = document.getElementById('dash-settings');
+
+            const target = obj.isTextStrokeGroup ? getTextStrokeGroupParts(obj)?.stroke : obj;
+            if (!target) return;
+
+            if (checked) {
+                const dashLen = parseInt(document.getElementById('dash-length').value) || 8;
+                const dashGap = parseInt(document.getElementById('dash-gap').value) || 4;
+                target.set('strokeDashArray', [dashLen, dashGap]);
+                target._userStrokeDashed = true;
+                target._dashLength = dashLen;
+                target._dashGap = dashGap;
+                dashSettings.style.display = 'flex';
+            } else {
+                target.set('strokeDashArray', null);
+                target._userStrokeDashed = false;
+                dashSettings.style.display = 'none';
             }
+            canvas.renderAll();
+            saveHistory();
         }
 
-        function applyStrokeAlignment(obj) {
-            if (!obj || !obj.strokeWidth) return;
+        function applyStrokeWidth(obj, px) {
+            if (!obj) return;
+            const strokePx = Math.max(0, px || 0);
 
-            const align = obj.strokeAlign || 'center';
-            const sw = obj.strokeWidth;
-
-            // Store original dimensions if not already stored
-            if (obj._originalWidth === undefined && obj.width) {
-                obj._originalWidth = obj.width;
-                obj._originalHeight = obj.height;
-            }
-
-            if (align === 'center') {
-                // Default Fabric.js behavior - stroke is centered on the edge
-                obj.set('strokeUniform', false);
-                if (obj._originalWidth !== undefined) {
-                    obj.set({
-                        width: obj._originalWidth,
-                        height: obj._originalHeight
+            const applyTo = (target) => {
+                if (target.isTextStrokeGroup) {
+                    const parts = getTextStrokeGroupParts(target);
+                    if (!parts || !parts.stroke) return;
+                    parts.stroke.set({
+                        strokeWidth: strokePx * 2,
+                        strokeUniform: true
                     });
+                    target.textStrokeWidth = strokePx;
+                    target._calcBounds();
+                    target._updateObjectsCoords();
+                    target.setCoords();
+                    return;
                 }
-            } else if (align === 'inside') {
-                // For inside stroke, we use paintFirst: 'stroke' and adjust
-                obj.set({
-                    paintFirst: 'stroke',
-                    strokeUniform: true
-                });
-            } else if (align === 'outside') {
-                // For outside stroke, we use paintFirst: 'fill'
-                obj.set({
-                    paintFirst: 'fill',
-                    strokeUniform: true
-                });
-            }
 
-            obj.setCoords();
+                if (isTextObject(target)) {
+                    if (strokePx === 0) {
+                        target.set('strokeWidth', 0);
+                        target.setCoords();
+                        return;
+                    }
+                    const strokeColor = target.stroke || document.getElementById('stroke-swatch').style.background || '#000000';
+                    canvas.remove(target);
+                    const group = createTextStrokeGroup(target, strokePx, strokeColor);
+                    canvas.add(group);
+                    canvas.setActiveObject(group);
+                    return;
+                }
+
+                target.set('strokeUniform', true);
+
+                if (target.type === 'rect' || target.type === 'triangle') {
+                    const baseWidth = target._strokeBaseWidth ?? (target.width - (target._strokeOutsideWidth || 0));
+                    const baseHeight = target._strokeBaseHeight ?? (target.height - (target._strokeOutsideWidth || 0));
+                    target._strokeBaseWidth = baseWidth;
+                    target._strokeBaseHeight = baseHeight;
+                    target._strokeOutsideWidth = strokePx;
+                    target.set({
+                        width: baseWidth + strokePx,
+                        height: baseHeight + strokePx
+                    });
+                } else if (target.type === 'circle') {
+                    const baseRadius = target._strokeBaseRadius ?? (target.radius - ((target._strokeOutsideWidth || 0) / 2));
+                    target._strokeBaseRadius = baseRadius;
+                    target._strokeOutsideWidth = strokePx;
+                    target.set('radius', baseRadius + strokePx / 2);
+                }
+
+                target.set('strokeWidth', strokePx);
+                target.setCoords();
+            };
+
+            if (obj.type === 'activeSelection') {
+                const objects = obj.getObjects();
+                canvas.discardActiveObject();
+                objects.forEach(o => applyTo(o));
+            } else {
+                applyTo(obj);
+            }
         }
 
-        function changeStrokeDashed(checked) {
-            const obj = canvas.getActiveObject();
-            if (obj) {
-                if (checked) {
-                    obj.set('strokeDashArray', [8, 4]);
-                } else {
-                    obj.set('strokeDashArray', null);
-                }
-                obj._userStrokeDashed = checked;
-                canvas.renderAll();
-                saveHistory();
-            }
+        function setObjectColorData(obj, target, color) {
+            if (!obj || !color || color === 'transparent') return;
+            const rgba = colorToRgba(color);
+            const cmyk = rgbToCmyk(rgba.r, rgba.g, rgba.b);
+            const data = {
+                colorMode: 'cmyk',
+                cmyk: { ...cmyk },
+                rgb: { r: rgba.r, g: rgba.g, b: rgba.b }
+            };
+            obj[`${target}ColorData`] = data;
         }
 
         function changeCornerRadius(val) {
@@ -2619,16 +2875,29 @@
             const active = canvas.getActiveObject();
             if (!active) return;
 
-            const update = (o) => {
-                if (o.type === 'i-text' || o.type === 'text' || o.type === 'textbox') {
-                    if (prop === 'fontSize' || prop === 'charSpacing') {
-                        o.set(prop, parseFloat(val));
-                    } else if (prop === 'lineHeight') {
-                        o.set(prop, parseFloat(val));
-                    } else {
-                        o.set(prop, val);
-                    }
+            const applyTypography = (o) => {
+                if (!isTextObject(o)) return;
+                if (prop === 'fontSize' || prop === 'charSpacing') {
+                    o.set(prop, parseFloat(val));
+                } else if (prop === 'lineHeight') {
+                    o.set(prop, parseFloat(val));
+                } else {
+                    o.set(prop, val);
                 }
+            };
+
+            const update = (o) => {
+                if (o.isTextStrokeGroup) {
+                    const parts = getTextStrokeGroupParts(o);
+                    if (!parts) return;
+                    applyTypography(parts.fill);
+                    applyTypography(parts.stroke);
+                    o._calcBounds();
+                    o._updateObjectsCoords();
+                    o.setCoords();
+                    return;
+                }
+                applyTypography(o);
             };
 
             if (active.type === 'activeSelection') {
@@ -2846,7 +3115,10 @@
         function deleteSelected() {
             const active = canvas.getActiveObjects();
             if (active.length) {
-                active.forEach(o => canvas.remove(o));
+                active.forEach(o => {
+                    if (o.isArtboard) return;
+                    canvas.remove(o);
+                });
                 canvas.discardActiveObject();
                 canvas.renderAll();
                 renderLayerList();
@@ -2879,58 +3151,91 @@
         // --- HISTORY ---
         function saveHistory() {
             if (isUndoing) return;
-            // Exclude artboard from history items
-            const objects = canvas.getObjects().filter(o => !o.excludeFromExport);
             const json = {
-                objects: objects.map(o => o.toObject(['excludeFromExport', 'absolutePositioned', 'selectable', 'clipPath', 'opacity', 'gradientAngle']))
+                objects: canvas.getObjects()
+                    .filter(obj => !obj.isArtboard)
+                    .map(obj => obj.toObject([
+                        'excludeFromExport',
+                        'absolutePositioned',
+                        'selectable',
+                        'opacity',
+                        'gradientAngle',
+                        'isArtboard',
+                        'isArtboardClip',
+                        'isMask',
+                        'isMaskGroup',
+                        'maskTargetId',
+                        'customId',
+                        'fillColorData',
+                        'strokeColorData',
+                        '_userStrokeDashed',
+                        '_dashLength',
+                        '_dashGap',
+                        '_strokeOutsideWidth',
+                        '_strokeBaseWidth',
+                        '_strokeBaseHeight',
+                        '_strokeBaseRadius',
+                        'isTextStrokeGroup',
+                        'textStrokeWidth',
+                        'textStrokeColor',
+                        'isTextStrokeOutline',
+                        'isTextFill',
+                        'isFrameGroup',
+                        'frameTargetId',
+                        'isFrameShape',
+                        'isFrameContent'
+                    ]))
             };
             history = history.slice(0, historyStep + 1);
             history.push(JSON.stringify(json));
             historyStep++;
         }
 
-        function undo() {
-            if (historyStep <= 0) return;
+        function restoreHistory(step) {
+            const data = JSON.parse(history[step]);
             isUndoing = true;
-            historyStep--;
-            const data = JSON.parse(history[historyStep]);
+            const preservedArtboard = artboard;
+            const objectsToRemove = canvas.getObjects().filter(obj => !obj.isArtboard);
+            objectsToRemove.forEach(obj => canvas.remove(obj));
 
-            // Remove all non-artboard objects (create separate array to avoid modification during iteration)
-            const objectsToRemove = canvas.getObjects().filter(o => !o.excludeFromExport);
-            objectsToRemove.forEach(o => canvas.remove(o));
+            // Enliven objects first (waits for images) then rebuild masks; artboard stays immutable.
+            fabric.util.enlivenObjects(data.objects || [], (enlivenedObjects) => {
+                enlivenedObjects.forEach(obj => {
+                    if (obj.excludeFromExport) obj.selectable = false;
+                    ensureObjectId(obj);
+                    canvas.add(obj);
+                });
 
-            // Restore objects from history
-            fabric.util.enlivenObjects(data.objects, (enlivened) => {
-                enlivened.forEach(o => canvas.add(o));
+                if (preservedArtboard) {
+                    preservedArtboard.selectable = false;
+                    preservedArtboard.evented = false;
+                    preservedArtboard.absolutePositioned = true;
+                    preservedArtboard.sendToBack();
+                }
+
                 canvas.discardActiveObject();
                 canvas.renderAll();
+                rebuildMasksAfterLoad(canvas);
+                rebuildFramesAfterLoad(canvas);
+                rebuildTextStrokeGroups(canvas);
                 isUndoing = false;
+                canvas.getObjects().forEach(o => updateObjectClipping(o));
                 checkCanvasBoundaries();
                 hideFloatingToolbar();
                 renderLayerList();
             });
         }
 
+        function undo() {
+            if (historyStep <= 0) return;
+            historyStep--;
+            restoreHistory(historyStep);
+        }
+
         function redo() {
             if (historyStep >= history.length - 1) return;
-            isUndoing = true;
             historyStep++;
-            const data = JSON.parse(history[historyStep]);
-
-            // Remove all non-artboard objects (create separate array to avoid modification during iteration)
-            const objectsToRemove = canvas.getObjects().filter(o => !o.excludeFromExport);
-            objectsToRemove.forEach(o => canvas.remove(o));
-
-            // Restore objects from history
-            fabric.util.enlivenObjects(data.objects, (enlivened) => {
-                enlivened.forEach(o => canvas.add(o));
-                canvas.discardActiveObject();
-                canvas.renderAll();
-                isUndoing = false;
-                checkCanvasBoundaries();
-                hideFloatingToolbar();
-                renderLayerList();
-            });
+            restoreHistory(historyStep);
         }
 
         // --- EXPORT ---
@@ -2999,13 +3304,24 @@
             });
         }
 
-        async function drawTextAsOutlines(pdf, obj, font) {
+        async function drawTextAsOutlines(pdf, obj, font, options = {}) {
             if (!font) return;
+            const { fill = true, stroke = false } = options;
             const text = obj.text || '';
             const lines = text.split('\n');
             const fs = obj.fontSize;
             const lh = obj.fontSize * (obj.lineHeight || 1.16);
-            pdf.setFillColor(obj.fill);
+            if (fill && obj.fill && obj.fill !== 'transparent') {
+                const rgba = colorToRgba(obj.fill);
+                pdf.setFillColor(rgba.r, rgba.g, rgba.b);
+            }
+            if (stroke && obj.stroke && obj.strokeWidth > 0) {
+                const rgba = colorToRgba(obj.stroke);
+                pdf.setDrawColor(rgba.r, rgba.g, rgba.b);
+                pdf.setLineWidth((obj.strokeWidth * obj.scaleX) / MM_TO_PX_SCREEN);
+            } else if (stroke) {
+                pdf.setLineWidth(0);
+            }
             lines.forEach((line, i) => {
                 const lp = font.getPath(line, 0, (i + 0.8) * lh, fs);
                 const cmds = lp.commands.map(c => {
@@ -3021,7 +3337,13 @@
                 const ox = - (obj.getScaledWidth() / 2) / MM_TO_PX_SCREEN;
                 const oy = - (obj.getScaledHeight() / 2) / MM_TO_PX_SCREEN;
                 renderPathToPDF(pdf, cmds, sx, sy, ox, oy);
-                pdf.fill();
+                if (fill && stroke) {
+                    pdf.fillStroke();
+                } else if (fill) {
+                    pdf.fill();
+                } else if (stroke) {
+                    pdf.stroke();
+                }
             });
         }
 
@@ -3094,9 +3416,17 @@
                         pdf.fillStroke(style);
                     }
                 }
+            } else if (obj.type === 'group' && obj.isTextStrokeGroup) {
+                const parts = getTextStrokeGroupParts(obj);
+                if (parts && parts.stroke) {
+                    await drawTextAsOutlines(pdf, parts.stroke, font, { fill: false, stroke: true });
+                }
+                if (parts && parts.fill) {
+                    await drawTextAsOutlines(pdf, parts.fill, font, { fill: true, stroke: false });
+                }
             } else if (obj.type === 'textbox' || obj.type === 'i-text' || obj.type === 'text') {
                 // PRINT-SAFE: Convert text to vector outlines
-                await drawTextAsOutlines(pdf, obj, font);
+                await drawTextAsOutlines(pdf, obj, font, { fill: true, stroke: false });
             } else if (obj.type === 'image') {
                 const dataURL = obj.toDataURL({ format: 'png' });
                 pdf.addImage(dataURL, 'PNG', -w / 2, -h / 2, w, h);
@@ -3125,23 +3455,6 @@
         }
 
         // --- LAYERS ---
-        function toggleLayerVisibility(i) {
-            const objects = canvas.getObjects().filter(o => !o.excludeFromExport).reverse();
-            const obj = objects[i];
-            obj.visible = !obj.visible;
-            canvas.renderAll();
-            renderLayerList();
-        }
-
-        function toggleLayerLock(i) {
-            const objects = canvas.getObjects().filter(o => !o.excludeFromExport).reverse();
-            const obj = objects[i];
-            obj.lockMovementX = obj.lockMovementY = obj.selectable = !obj.lockMovementX;
-            obj.selectable = !obj.lockMovementX;
-            canvas.renderAll();
-            renderLayerList();
-        }
-
         function renderLayerList() {
             const list = document.getElementById('layer-list');
             list.innerHTML = '';
@@ -3211,6 +3524,13 @@
                 };
                 list.appendChild(item);
             });
+
+            const content = document.getElementById('content-layers');
+            if (content && !content.classList.contains('collapsed')) {
+                requestAnimationFrame(() => {
+                    content.style.maxHeight = content.scrollHeight + 'px';
+                });
+            }
         }
 
         function moveLayer(index, dir) {
@@ -3257,6 +3577,7 @@
         function deleteLayer(index) {
             const obj = canvas.getObjects()[index];
             if (obj) {
+                if (obj.isArtboard) return;
                 canvas.remove(obj);
                 canvas.renderAll();
                 renderLayerList();
@@ -3311,7 +3632,81 @@
             // Mask buttons
             const isMulti = obj.type === 'activeSelection' && obj._objects && obj._objects.length === 2;
             document.getElementById('btn-mask').style.display = isMulti ? 'flex' : 'none';
-            document.getElementById('btn-unmask').style.display = (obj.clipPath) ? 'flex' : 'none';
+            document.getElementById('btn-unmask').style.display = (obj.isMaskGroup || obj.isFrameGroup) ? 'flex' : 'none';
+        }
+
+        function getTransformTargets(target) {
+            if (!target) return [];
+            if (target.type === 'activeSelection') {
+                return target.getObjects();
+            }
+            return [target];
+        }
+
+        function normalizeAngle(angle) {
+            const normalized = ((angle % 360) + 360) % 360;
+            return normalized;
+        }
+
+        function flipHorizontal(target) {
+            const active = target || canvas.getActiveObject();
+            const targets = getTransformTargets(active);
+            if (!targets.length) return;
+
+            targets.forEach(obj => {
+                const center = obj.getCenterPoint();
+                obj.set('scaleX', (obj.scaleX || 1) * -1);
+                obj.setPositionByOrigin(center, 'center', 'center');
+                obj.setCoords();
+            });
+
+            canvas.requestRenderAll();
+            saveHistory();
+        }
+
+        function flipVertical(target) {
+            const active = target || canvas.getActiveObject();
+            const targets = getTransformTargets(active);
+            if (!targets.length) return;
+
+            targets.forEach(obj => {
+                const center = obj.getCenterPoint();
+                obj.set('scaleY', (obj.scaleY || 1) * -1);
+                obj.setPositionByOrigin(center, 'center', 'center');
+                obj.setCoords();
+            });
+
+            canvas.requestRenderAll();
+            saveHistory();
+        }
+
+        function rotateCW(target) {
+            rotateBy(target, 90);
+        }
+
+        function rotateCCW(target) {
+            rotateBy(target, -90);
+        }
+
+        function rotate180(target) {
+            rotateBy(target, 180);
+        }
+
+        function rotateBy(target, delta) {
+            const active = target || canvas.getActiveObject();
+            const targets = getTransformTargets(active);
+            if (!targets.length) return;
+
+            targets.forEach(obj => {
+                const center = obj.getCenterPoint();
+                const nextAngle = normalizeAngle((obj.angle || 0) + delta);
+                obj.set('angle', nextAngle);
+                obj.setPositionByOrigin(center, 'center', 'center');
+                obj.setCoords();
+            });
+
+            canvas.requestRenderAll();
+            saveHistory();
         }
 
         function hideFloatingToolbar() {
@@ -3343,134 +3738,454 @@
             updateFloatingToolbar();
         }
 
-        async function maskWithShape() {
-            const active = canvas.getActiveObject();
-            if (!active || active.type !== 'activeSelection' || active._objects.length !== 2) return;
+        function resolveMaskPairFromSelection(selectionObjects) {
+            const objectsWithOrder = selectionObjects.map(obj => ({
+                obj,
+                index: canvas.getObjects().indexOf(obj)
+            })).sort((a, b) => a.index - b.index);
 
-            // Determine which is target (image) and which is mask (shape)
-            let target, mask;
-            const obj0 = active._objects[0];
-            const obj1 = active._objects[1];
-
-            // If one is an image and one is a shape, use image as target
-            if (obj0.type === 'image' && obj1.type !== 'image') {
-                target = obj0;
-                mask = obj1;
-            } else if (obj1.type === 'image' && obj0.type !== 'image') {
-                target = obj1;
-                mask = obj0;
-            } else {
-                // Default: first object is target, second is mask
-                target = obj0;
-                mask = obj1;
+            const imageObjects = objectsWithOrder.filter(entry => entry.obj.type === 'image');
+            if (imageObjects.length > 1) {
+                alert('이미지 마스크는 하나의 이미지와 하나의 도형만 지원합니다.');
+                return null;
             }
 
-            // Deselect before modifying
-            canvas.discardActiveObject();
+            const maskCandidates = objectsWithOrder.filter(entry => !['image', 'line'].includes(entry.obj.type));
+            if (maskCandidates.length === 0) {
+                alert('마스크는 선이나 이미지가 아닌 도형을 선택해주세요.');
+                return null;
+            }
 
-            mask.clone((clonedMask) => {
-                // Use relative positioning so mask moves with the object
-                clonedMask.isArtboardClip = false;
-                clonedMask.absolutePositioned = false;
+            let target = null;
+            let mask = null;
+            if (imageObjects.length === 1) {
+                target = imageObjects[0].obj;
+                mask = maskCandidates.find(entry => entry.obj !== target)?.obj || null;
+            } else {
+                mask = maskCandidates[maskCandidates.length - 1].obj;
+                target = objectsWithOrder.find(entry => entry.obj !== mask)?.obj || null;
+            }
 
-                // Get centers for coordinate transformation
-                const targetCenter = target.getCenterPoint();
-                const maskCenter = mask.getCenterPoint();
-
-                // Calculate relative position from target's center
-                // When absolutePositioned is false, clipPath coordinates are relative to target's center
-                const relX = (maskCenter.x - targetCenter.x);
-                const relY = (maskCenter.y - targetCenter.y);
-
-                // Apply inverse scale and rotation of target to get local coordinates
-                const angle = -target.angle * Math.PI / 180;
-                const cos = Math.cos(angle);
-                const sin = Math.sin(angle);
-
-                const localX = (relX * cos - relY * sin) / target.scaleX;
-                const localY = (relX * sin + relY * cos) / target.scaleY;
-
-                clonedMask.set({
-                    left: localX,
-                    top: localY,
-                    scaleX: mask.scaleX / target.scaleX,
-                    scaleY: mask.scaleY / target.scaleY,
-                    angle: mask.angle - target.angle,
-                    originX: 'center',
-                    originY: 'center'
-                });
-
-                // Store original mask info for release
-                target._maskInfo = {
-                    originalLeft: mask.left,
-                    originalTop: mask.top,
-                    originalScaleX: mask.scaleX,
-                    originalScaleY: mask.scaleY,
-                    originalAngle: mask.angle,
-                    fill: mask.fill,
-                    stroke: mask.stroke,
-                    strokeWidth: mask.strokeWidth
-                };
-
-                target.set('clipPath', clonedMask);
-                canvas.remove(mask);
-                canvas.setActiveObject(target);
-                canvas.requestRenderAll();
-                renderLayerList();
-                saveHistory();
-                updateFloatingToolbar();
-            }, ['isArtboard', 'excludeFromExport']);
+            if (!target || !mask) return null;
+            return { mask, target };
         }
 
-        function releaseMask() {
-            const obj = canvas.getActiveObject();
-            if (!obj || !obj.clipPath || obj.clipPath.isArtboardClip) return;
+        function getMaskObjectFromGroup(group) {
+            return group._objects.find(child => child.isMask) || group._objects[0];
+        }
 
-            const clipPath = obj.clipPath;
-            const maskInfo = obj._maskInfo || {};
+        function getEffectiveBounds(obj) {
+            if (!obj) return null;
+            if (obj.type === 'activeSelection') return getObjectBounds(obj);
+            if (obj.isFrameGroup) {
+                return getObjectBounds(obj);
+            }
+            if (obj.isMaskGroup) {
+                const mask = getMaskObjectFromGroup(obj);
+                if (mask) return getObjectBounds(mask);
+            }
+            return getObjectBounds(obj);
+        }
 
-            clipPath.clone((clonedMask) => {
-                // Convert relative coordinates back to absolute canvas coordinates
-                const targetCenter = obj.getCenterPoint();
-
-                // Get clipPath's local position
-                const localX = clipPath.left;
-                const localY = clipPath.top;
-
-                // Apply target's scale and rotation to get canvas coordinates
-                const angle = obj.angle * Math.PI / 180;
-                const cos = Math.cos(angle);
-                const sin = Math.sin(angle);
-
-                const scaledX = localX * obj.scaleX;
-                const scaledY = localY * obj.scaleY;
-
-                const absX = targetCenter.x + (scaledX * cos - scaledY * sin);
-                const absY = targetCenter.y + (scaledX * sin + scaledY * cos);
-
-                clonedMask.set({
-                    absolutePositioned: false,
-                    left: absX,
-                    top: absY,
-                    scaleX: clipPath.scaleX * obj.scaleX,
-                    scaleY: clipPath.scaleY * obj.scaleY,
-                    angle: clipPath.angle + obj.angle,
-                    originX: 'center',
-                    originY: 'center',
-                    fill: maskInfo.fill || '#cccccc',
-                    stroke: maskInfo.stroke || '#000000',
-                    strokeWidth: maskInfo.strokeWidth || 1
-                });
-
-                obj.set('clipPath', null);
-                delete obj._maskInfo;
-                canvas.add(clonedMask);
-                canvas.setActiveObject(clonedMask);
-                canvas.requestRenderAll();
-                renderLayerList();
-                saveHistory();
-                updateFloatingToolbar();
+        function normalizeObjectToCenter(obj) {
+            if (!obj) return;
+            const center = obj.getCenterPoint();
+            obj.set({
+                originX: 'center',
+                originY: 'center'
             });
+            obj.setPositionByOrigin(center, 'center', 'center');
+            obj.setCoords();
+        }
+
+        function getFrameParts(group) {
+            if (!group || !group.isFrameGroup) return null;
+            const contentImage = group._objects.find(child => child.isFrameContent) || group._objects[0];
+            const frameShape = group._objects.find(child => child.isFrameShape) || group._objects[1];
+            return { frameShape, contentImage };
+        }
+
+        function normalizeMaskGroupBounds(group, anchorPoint) {
+            if (!group || !group.isMaskGroup) return;
+            if (group._maskBoundsNormalized) return;
+
+            // Force group bounds to follow mask geometry (Figma/Illustrator behavior).
+            group._calcBounds = function (onlySet) {
+                const mask = getMaskObjectFromGroup(this);
+                if (!mask) {
+                    fabric.Group.prototype._calcBounds.call(this, onlySet);
+                    return;
+                }
+
+                const objects = this._objects;
+                this._objects = [mask];
+                fabric.Group.prototype._calcBounds.call(this, onlySet);
+                this._objects = objects;
+            };
+
+            group._maskBoundsNormalized = true;
+            const mask = getMaskObjectFromGroup(group);
+            const center = anchorPoint || (mask ? mask.getCenterPoint() : group.getCenterPoint());
+            group._calcBounds();
+            group._updateObjectsCoords();
+            group.setPositionByOrigin(center, 'center', 'center');
+            group._updateObjectsCoords();
+            group.setCoords();
+        }
+
+        function normalizeFrameGroupBounds(group, anchorPoint) {
+            if (!group || !group.isFrameGroup) return;
+            if (group._frameBoundsNormalized) return;
+
+            group._calcBounds = function (onlySet) {
+                const parts = getFrameParts(this);
+                if (!parts || !parts.frameShape) {
+                    fabric.Group.prototype._calcBounds.call(this, onlySet);
+                    return;
+                }
+
+                const objects = this._objects;
+                this._objects = [parts.frameShape];
+                fabric.Group.prototype._calcBounds.call(this, onlySet);
+                this._objects = objects;
+            };
+
+            group._frameBoundsNormalized = true;
+            const center = anchorPoint || group.getCenterPoint();
+            group._calcBounds();
+            group._updateObjectsCoords();
+            group.setPositionByOrigin(center, 'center', 'center');
+            group._updateObjectsCoords();
+            group.setCoords();
+        }
+
+        function rebuildMasksAfterLoad(targetCanvas) {
+            const allObjects = targetCanvas.getObjects();
+            allObjects.forEach(obj => {
+                if (obj.isMaskGroup) {
+                    const mask = obj._objects.find(child => child.isMask) || obj._objects[0];
+                    const target = obj._objects.find(child => !child.isMask) || obj._objects[1];
+
+                    if (mask) {
+                        normalizeObjectToCenter(mask);
+                        mask.set({
+                            isMask: true,
+                            selectable: false,
+                            evented: false,
+                            opacity: 0
+                        });
+                        mask.maskTargetId = obj.maskTargetId || (target && target.customId) || null;
+                    }
+
+                    if (target) {
+                        normalizeObjectToCenter(target);
+                        ensureObjectId(target);
+                        obj.maskTargetId = target.customId;
+                    }
+
+                    obj.subTargetCheck = true;
+                    const maskCenter = mask ? mask.getCenterPoint() : null;
+                    normalizeMaskGroupBounds(obj, maskCenter);
+                }
+            });
+        }
+
+        function rebuildFramesAfterLoad(targetCanvas) {
+            targetCanvas.getObjects().forEach(obj => {
+                if (!obj.isFrameGroup) return;
+                const parts = getFrameParts(obj);
+                if (!parts) return;
+                const { frameShape, contentImage } = parts;
+                if (frameShape) {
+                    frameShape.set({
+                        selectable: false,
+                        evented: false
+                    });
+                    frameShape.isFrameShape = true;
+                }
+                if (contentImage) {
+                    contentImage.set({
+                        selectable: false,
+                        evented: false
+                    });
+                    contentImage.isFrameContent = true;
+                }
+                obj.subTargetCheck = true;
+                obj.clipTo = buildFrameClipper(frameShape);
+                normalizeFrameGroupBounds(obj, frameShape ? frameShape.getCenterPoint() : null);
+            });
+        }
+
+        function buildFrameClipper(frameShape) {
+            if (!frameShape) return null;
+            const isCircle = frameShape.type === 'circle';
+            return function (ctx) {
+                ctx.save();
+                ctx.beginPath();
+                if (isCircle) {
+                    ctx.arc(0, 0, frameShape.radius, 0, Math.PI * 2);
+                } else {
+                    ctx.rect(
+                        -frameShape.width / 2,
+                        -frameShape.height / 2,
+                        frameShape.width,
+                        frameShape.height
+                    );
+                }
+                ctx.closePath();
+                ctx.restore();
+            };
+        }
+
+        function createMaskGroup(maskShape, targetObject) {
+            // 1) Capture world center BEFORE removing anything from canvas.
+            const worldCenter = targetObject.getCenterPoint();
+
+            // 2) Normalize to local coordinates (centered at 0,0) before grouping.
+            maskShape.set({ left: 0, top: 0, originX: 'center', originY: 'center' });
+            targetObject.set({ left: 0, top: 0, originX: 'center', originY: 'center' });
+
+            // 3) Create group at the captured world center.
+            const group = new fabric.Group([maskShape, targetObject], {
+                left: worldCenter.x,
+                top: worldCenter.y,
+                originX: 'center',
+                originY: 'center',
+                subTargetCheck: true,
+                selectable: true,
+                evented: true
+            });
+            group.isMaskGroup = true;
+            group.maskTargetId = targetObject.customId;
+
+            // 4) Normalize bounds to mask geometry after group creation.
+            normalizeMaskGroupBounds(group, worldCenter);
+
+            // 5) Finalize bounds and coords with no intermediate renders.
+            group._calcBounds();
+            group._updateObjectsCoords();
+            group.setCoords();
+
+            return group;
+        }
+
+        function createFrame(frameShape, contentImage) {
+            // 1) Capture world centers BEFORE removing anything from canvas.
+            const frameCenter = frameShape.getCenterPoint();
+            const imageCenter = contentImage.getCenterPoint();
+
+            // 2) Normalize local coordinates for stable grouping.
+            frameShape.set({ left: 0, top: 0, originX: 'center', originY: 'center' });
+
+            // 3) Build group anchored to captured frame center.
+            const group = new fabric.Group([contentImage, frameShape], {
+                left: frameCenter.x,
+                top: frameCenter.y,
+                originX: 'center',
+                originY: 'center',
+                subTargetCheck: true,
+                selectable: true,
+                evented: true
+            });
+            group.isFrameGroup = true;
+            group.frameTargetId = contentImage.customId;
+
+            frameShape.isFrameShape = true;
+            frameShape.selectable = false;
+            frameShape.evented = false;
+
+            contentImage.isFrameContent = true;
+            contentImage.selectable = false;
+            contentImage.evented = false;
+
+            group.clipTo = buildFrameClipper(frameShape);
+            normalizeFrameGroupBounds(group, frameCenter);
+            group._calcBounds();
+            group._updateObjectsCoords();
+            group.setCoords();
+
+            // 4) Restore content image's original world center inside the group.
+            const groupMatrix = group.calcTransformMatrix();
+            const inverted = fabric.util.invertTransform(groupMatrix);
+            const imageLocal = fabric.util.transformPoint(imageCenter, inverted);
+            contentImage.set({
+                left: imageLocal.x,
+                top: imageLocal.y,
+                originX: 'center',
+                originY: 'center'
+            });
+            contentImage.setCoords();
+            group._updateObjectsCoords();
+            group.setCoords();
+
+            return group;
+        }
+
+        function constrainFrameContent(frameGroup, contentImage) {
+            const parts = getFrameParts(frameGroup);
+            if (!parts) return;
+            const frameRect = parts.frameShape.getBoundingRect(true, true);
+            const imageRect = contentImage.getBoundingRect(true, true);
+
+            let shiftX = 0;
+            let shiftY = 0;
+            if (imageRect.left > frameRect.left) shiftX = frameRect.left - imageRect.left;
+            if (imageRect.top > frameRect.top) shiftY = frameRect.top - imageRect.top;
+            if (imageRect.left + imageRect.width < frameRect.left + frameRect.width) {
+                shiftX = frameRect.left + frameRect.width - (imageRect.left + imageRect.width);
+            }
+            if (imageRect.top + imageRect.height < frameRect.top + frameRect.height) {
+                shiftY = frameRect.top + frameRect.height - (imageRect.top + imageRect.height);
+            }
+
+            if (shiftX === 0 && shiftY === 0) return;
+
+            const inverted = fabric.util.invertTransform(frameGroup.calcTransformMatrix());
+            const delta = fabric.util.transformPoint(new fabric.Point(shiftX, shiftY), inverted);
+            contentImage.set({
+                left: contentImage.left + delta.x,
+                top: contentImage.top + delta.y
+            });
+            contentImage.setCoords();
+            frameGroup._updateObjectsCoords();
+            frameGroup.setCoords();
+        }
+
+        function enterImageEditMode(frameGroup) {
+            if (!frameGroup || !frameGroup.isFrameGroup) return;
+            const parts = getFrameParts(frameGroup);
+            if (!parts || !parts.contentImage) return;
+            frameGroup.isEditingImage = true;
+            parts.contentImage.set({ selectable: true, evented: true });
+            frameGroup.set({ selectable: false, evented: false });
+            canvas.setActiveObject(parts.contentImage);
+        }
+
+        function exitImageEditMode(frameGroup) {
+            if (!frameGroup || !frameGroup.isFrameGroup) return;
+            const parts = getFrameParts(frameGroup);
+            if (!parts || !parts.contentImage) return;
+            frameGroup.isEditingImage = false;
+            parts.contentImage.set({ selectable: false, evented: false });
+            frameGroup.set({ selectable: true, evented: true });
+            canvas.setActiveObject(frameGroup);
+        }
+        function rebuildTextStrokeGroups(targetCanvas) {
+            targetCanvas.getObjects().forEach(obj => {
+                if (!obj.isTextStrokeGroup || obj.type !== 'group') return;
+                const parts = getTextStrokeGroupParts(obj);
+                if (!parts) return;
+                const { stroke, fill } = parts;
+                if (stroke) {
+                    stroke.set({
+                        fill: 'transparent',
+                        strokeUniform: true,
+                        selectable: false,
+                        evented: false
+                    });
+                    if (obj.textStrokeWidth !== undefined) {
+                        stroke.set('strokeWidth', obj.textStrokeWidth * 2);
+                    } else if (stroke.strokeWidth) {
+                        obj.textStrokeWidth = stroke.strokeWidth / 2;
+                    }
+                }
+                if (fill) {
+                    fill.set({
+                        strokeWidth: 0,
+                        stroke: null
+                    });
+                }
+                obj.subTargetCheck = true;
+                obj._calcBounds();
+                obj._updateObjectsCoords();
+                obj.setCoords();
+            });
+        }
+
+        function maskWithShape(maskShape, targetObject) {
+            if (!maskShape || !targetObject) {
+                const active = canvas.getActiveObject();
+                if (!active || active.type !== 'activeSelection') return;
+                const selectionObjects = active.getObjects ? active.getObjects() : (active._objects || []);
+                if (selectionObjects.length !== 2) {
+                    alert('마스크는 두 개의 개체(대상 + 도형)만 선택했을 때 적용됩니다.');
+                    return;
+                }
+
+                const resolved = resolveMaskPairFromSelection(selectionObjects);
+                if (!resolved) return;
+                maskShape = resolved.mask;
+                targetObject = resolved.target;
+            }
+
+            if (maskShape.group || targetObject.group) {
+                const group = maskShape.group || targetObject.group;
+                if (group && group.isMaskGroup) {
+                    alert('이미 마스크 그룹에 포함된 개체는 먼저 마스크를 해제해주세요.');
+                    return;
+                }
+            }
+
+            if (maskShape.type === 'image' || maskShape.type === 'line') {
+                alert('마스크는 선이나 이미지가 아닌 도형을 선택해주세요.');
+                return;
+            }
+
+            canvas.discardActiveObject();
+
+            ensureObjectId(maskShape);
+            ensureObjectId(targetObject);
+
+            // Frame-based cropping: build the frame group without clipPath.
+            const group = createFrame(maskShape, targetObject);
+
+            // Only after group is fully prepared, swap objects on canvas.
+            canvas.remove(maskShape);
+            canvas.remove(targetObject);
+
+            canvas.add(group);
+            canvas.setActiveObject(group);
+            canvas.requestRenderAll();
+            renderLayerList();
+            saveHistory();
+            updateFloatingToolbar();
+        }
+
+        function releaseMask(maskGroup) {
+            const group = maskGroup || canvas.getActiveObject();
+            if (!group || (!group.isMaskGroup && !group.isFrameGroup)) return;
+
+            const objects = group._objects || [];
+            group._objects = [];
+            canvas.remove(group);
+
+            objects.forEach(obj => {
+                if (obj.isFrameShape) {
+                    obj.set({ selectable: true, evented: true });
+                    obj.isFrameShape = false;
+                }
+                if (obj.isFrameContent) {
+                    obj.set({ selectable: true, evented: true });
+                    obj.isFrameContent = false;
+                }
+                if (obj.isMask) {
+                    obj.set({
+                        isMask: false,
+                        selectable: true,
+                        evented: true,
+                        opacity: 1
+                    });
+                    obj.maskTargetId = null;
+                }
+                ensureObjectId(obj);
+                canvas.add(obj);
+            });
+
+            canvas.discardActiveObject();
+            canvas.requestRenderAll();
+            renderLayerList();
+            saveHistory();
+            updateFloatingToolbar();
         }
 
         function lockSelectedAction() {
@@ -3545,19 +4260,19 @@
                 const rect = sbArea.getBoundingClientRect();
                 pickerSaturation = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
                 pickerBrightness = Math.max(0, Math.min(1, 1 - (e.clientY - rect.top) / rect.height));
-                updatePickerUI();
+                updatePickerUI(true);
             };
 
             const handleHue = (e) => {
                 const rect = hueArea.getBoundingClientRect();
                 pickerHue = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * 360;
-                updatePickerUI();
+                updatePickerUI(true);
             };
 
             const handleAlpha = (e) => {
                 const rect = alphaArea.getBoundingClientRect();
                 pickerAlpha = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-                updatePickerUI();
+                updatePickerUI(true);
             };
 
             const setupDrag = (el, fn) => {
@@ -3583,7 +4298,30 @@
 
             document.getElementById('picker-opacity').addEventListener('change', (e) => {
                 pickerAlpha = parseFloat(e.target.value) / 100;
-                updatePickerUI();
+                updatePickerUI(true);
+            });
+
+            ['c', 'm', 'y', 'k'].forEach((channel) => {
+                document.getElementById(`picker-cmyk-${channel}`).addEventListener('change', () => {
+                    const c = parseFloat(document.getElementById('picker-cmyk-c').value) || 0;
+                    const m = parseFloat(document.getElementById('picker-cmyk-m').value) || 0;
+                    const y = parseFloat(document.getElementById('picker-cmyk-y').value) || 0;
+                    const k = parseFloat(document.getElementById('picker-cmyk-k').value) || 0;
+                    pickerCmyk = {
+                        c: Math.max(0, Math.min(100, c)),
+                        m: Math.max(0, Math.min(100, m)),
+                        y: Math.max(0, Math.min(100, y)),
+                        k: Math.max(0, Math.min(100, k))
+                    };
+                    const rgb = cmykToRgb(pickerCmyk.c, pickerCmyk.m, pickerCmyk.y, pickerCmyk.k);
+                    const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+                    pickerHue = hsv.h;
+                    pickerSaturation = hsv.s;
+                    pickerBrightness = hsv.v;
+                    updatePickerUI(false);
+                    const rgbaStr = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${pickerAlpha})`;
+                    applyColorToTarget(rgbaStr, pickerCmyk);
+                });
             });
 
             window.addEventListener('mousedown', (e) => {
@@ -3604,12 +4342,22 @@
             picker.classList.add('show');
 
             const color = el.style.background || '#ffffff';
-            setPickerColor(color);
+            const activeObj = canvas.getActiveObject();
+            if (activeObj && (pickerTarget === 'fill' || pickerTarget === 'stroke')) {
+                const colorData = activeObj[`${pickerTarget}ColorData`];
+                if (colorData && colorData.cmyk) {
+                    setPickerFromCmyk(colorData.cmyk);
+                } else {
+                    setPickerColor(color, { apply: false });
+                }
+            } else {
+                setPickerColor(color, { apply: false });
+            }
             renderPalette('doc-colors', getDocumentColors());
             renderPalette('recent-colors', recentColors);
         }
 
-        function setPickerColor(color) {
+        function setPickerColor(color, options = {}) {
             if (color === 'transparent') color = 'rgba(0,0,0,0)';
             const rgba = colorToRgba(color);
             const hsv = rgbToHsv(rgba.r, rgba.g, rgba.b);
@@ -3617,16 +4365,20 @@
             pickerSaturation = hsv.s;
             pickerBrightness = hsv.v;
             pickerAlpha = rgba.a;
-            updatePickerUI();
+            pickerCmyk = rgbToCmyk(rgba.r, rgba.g, rgba.b);
+            updatePickerUI(false);
+            if (options.apply !== false) {
+                const rgbaStr = `rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, ${pickerAlpha})`;
+                applyColorToTarget(rgbaStr, pickerCmyk);
+            }
         }
 
-        function updatePickerUI() {
+        function updatePickerUI(apply) {
             drawSbCanvas();
             drawAlphaCanvas();
 
             const rgb = hsvToRgb(pickerHue, pickerSaturation, pickerBrightness);
             const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
-            const rgbaStr = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${pickerAlpha})`;
 
             document.getElementById('picker-sb-cursor').style.left = `${pickerSaturation * 100}%`;
             document.getElementById('picker-sb-cursor').style.top = `${(1 - pickerBrightness) * 100}%`;
@@ -3635,15 +4387,28 @@
 
             document.getElementById('picker-hex').value = hex.toUpperCase();
             document.getElementById('picker-opacity').value = Math.round(pickerAlpha * 100);
+            pickerCmyk = rgbToCmyk(rgb.r, rgb.g, rgb.b);
+            updateCmykInputs(pickerCmyk);
 
-            applyColorToTarget(rgbaStr);
+            if (apply) {
+                const rgbaStr = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${pickerAlpha})`;
+                applyColorToTarget(rgbaStr, pickerCmyk);
+            }
         }
 
-        function applyColorToTarget(color) {
+        function applyColorToTarget(color, cmyk) {
             if (!pickerTarget) return;
+            const activeObj = canvas.getActiveObject();
+            const rgba = colorToRgba(color);
+            const effectiveCmyk = cmyk || rgbToCmyk(rgba.r, rgba.g, rgba.b);
 
-            if (pickerTarget === 'fill') changeFillColor(color);
-            else if (pickerTarget === 'stroke') changeStrokeColor(color);
+            if (pickerTarget === 'fill') {
+                changeFillColor(color);
+                if (activeObj) activeObj.fillColorData = { colorMode: 'cmyk', cmyk: { ...effectiveCmyk }, rgb: { r: rgba.r, g: rgba.g, b: rgba.b } };
+            } else if (pickerTarget === 'stroke') {
+                changeStrokeColor(color);
+                if (activeObj) activeObj.strokeColorData = { colorMode: 'cmyk', cmyk: { ...effectiveCmyk }, rgb: { r: rgba.r, g: rgba.g, b: rgba.b } };
+            }
             else if (pickerTarget === 'grad-start' || pickerTarget === 'grad-end') {
                 document.getElementById(pickerTarget + '-swatch').style.background = color;
                 updateGradient();
@@ -3653,6 +4418,28 @@
                 recentColors.unshift(color);
                 if (recentColors.length > 10) recentColors.pop();
             }
+        }
+
+        function setPickerFromCmyk(cmyk) {
+            pickerCmyk = {
+                c: Math.max(0, Math.min(100, cmyk.c || 0)),
+                m: Math.max(0, Math.min(100, cmyk.m || 0)),
+                y: Math.max(0, Math.min(100, cmyk.y || 0)),
+                k: Math.max(0, Math.min(100, cmyk.k || 0))
+            };
+            const rgb = cmykToRgb(pickerCmyk.c, pickerCmyk.m, pickerCmyk.y, pickerCmyk.k);
+            const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+            pickerHue = hsv.h;
+            pickerSaturation = hsv.s;
+            pickerBrightness = hsv.v;
+            updatePickerUI(false);
+        }
+
+        function updateCmykInputs(cmyk) {
+            document.getElementById('picker-cmyk-c').value = cmyk.c;
+            document.getElementById('picker-cmyk-m').value = cmyk.m;
+            document.getElementById('picker-cmyk-y').value = cmyk.y;
+            document.getElementById('picker-cmyk-k').value = cmyk.k;
         }
 
         function drawSbCanvas() {
@@ -3701,6 +4488,35 @@
         }
 
         // --- COLOR HELPERS ---
+        function rgbToCmyk(r, g, b) {
+            const rNorm = r / 255;
+            const gNorm = g / 255;
+            const bNorm = b / 255;
+            const k = 1 - Math.max(rNorm, gNorm, bNorm);
+            if (k === 1) return { c: 0, m: 0, y: 0, k: 100 };
+            const c = (1 - rNorm - k) / (1 - k);
+            const m = (1 - gNorm - k) / (1 - k);
+            const y = (1 - bNorm - k) / (1 - k);
+            return {
+                c: Math.round(c * 100),
+                m: Math.round(m * 100),
+                y: Math.round(y * 100),
+                k: Math.round(k * 100)
+            };
+        }
+
+        function cmykToRgb(c, m, y, k) {
+            const cNorm = c / 100;
+            const mNorm = m / 100;
+            const yNorm = y / 100;
+            const kNorm = k / 100;
+            return {
+                r: Math.round(255 * (1 - cNorm) * (1 - kNorm)),
+                g: Math.round(255 * (1 - mNorm) * (1 - kNorm)),
+                b: Math.round(255 * (1 - yNorm) * (1 - kNorm))
+            };
+        }
+
         function colorToRgba(color) {
             const canvas = document.createElement('canvas');
             canvas.width = canvas.height = 1;
