@@ -2442,6 +2442,7 @@
                 });
             };
             reader.readAsDataURL(file);
+            input.value = '';  // Reset input to allow same file selection
         }
 
         function isTextObject(obj) {
@@ -3183,7 +3184,9 @@
                         'isFrameGroup',
                         'frameTargetId',
                         'isFrameShape',
-                        'isFrameContent'
+                        'isFrameContent',
+                        'clipPath',
+                        'objectCaching'
                     ]))
             };
             history = history.slice(0, historyStep + 1);
