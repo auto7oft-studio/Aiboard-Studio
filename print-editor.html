@@ -2392,6 +2392,8 @@
                 fill: '#3B82F6',
                 stroke: '#1F2937',
                 strokeWidth: 0,
+                strokeUniform: true,  // Uniform stroke scaling
+                paintFirst: 'fill',   // Paint fill before stroke
                 originX: 'center',
                 originY: 'center',
                 opacity: 1
@@ -2851,22 +2853,24 @@
                 }
 
                 target.set('strokeUniform', true);
+                target.set('paintFirst', 'fill');
 
+                // Outside stroke: expand object by strokePx * 2 to compensate for center-aligned stroke
                 if (target.type === 'rect' || target.type === 'triangle') {
-                    const baseWidth = target._strokeBaseWidth ?? (target.width - (target._strokeOutsideWidth || 0));
-                    const baseHeight = target._strokeBaseHeight ?? (target.height - (target._strokeOutsideWidth || 0));
+                    const baseWidth = target._strokeBaseWidth ?? (target.width - (target._strokeOutsideWidth || 0) * 2);
+                    const baseHeight = target._strokeBaseHeight ?? (target.height - (target._strokeOutsideWidth || 0) * 2);
                     target._strokeBaseWidth = baseWidth;
                     target._strokeBaseHeight = baseHeight;
                     target._strokeOutsideWidth = strokePx;
                     target.set({
-                        width: baseWidth + strokePx,
-                        height: baseHeight + strokePx
+                        width: baseWidth + strokePx * 2,
+                        height: baseHeight + strokePx * 2
                     });
                 } else if (target.type === 'circle') {
-                    const baseRadius = target._strokeBaseRadius ?? (target.radius - ((target._strokeOutsideWidth || 0) / 2));
+                    const baseRadius = target._strokeBaseRadius ?? (target.radius - (target._strokeOutsideWidth || 0));
                     target._strokeBaseRadius = baseRadius;
                     target._strokeOutsideWidth = strokePx;
-                    target.set('radius', baseRadius + strokePx / 2);
+                    target.set('radius', baseRadius + strokePx);
                 }
 
                 target.set('strokeWidth', strokePx);
