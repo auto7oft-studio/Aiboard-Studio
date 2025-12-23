@@ -3216,13 +3216,18 @@
                 }
 
                 canvas.discardActiveObject();
-                canvas.renderAll();
+
+                // CRITICAL: Rebuild structures BEFORE rendering
+                // to avoid cache corruption
                 rebuildMasksAfterLoad(canvas);
                 rebuildFramesAfterLoad(canvas);
                 rebuildTextStrokeGroups(canvas);
                 isUndoing = false;
+
+                // Now render with all structures properly set up
                 canvas.getObjects().forEach(o => updateObjectClipping(o));
                 checkCanvasBoundaries();
+                canvas.renderAll();
                 hideFloatingToolbar();
                 renderLayerList();
             });
@@ -3924,7 +3929,39 @@
         function buildFrameClipPath(frameShape) {
             if (!frameShape) return null;
 
-            const clipShape = fabric.util.object.clone(frameShape);
+            // Create new clip shape based on type instead of cloning
+            // This avoids clone() issues with complex objects
+            let clipShape;
+
+            if (frameShape.type === 'circle') {
+                clipShape = new fabric.Circle({
+                    radius: frameShape.radius,
+                    scaleX: frameShape.scaleX || 1,
+                    scaleY: frameShape.scaleY || 1
+                });
+            } else if (frameShape.type === 'rect') {
+                clipShape = new fabric.Rect({
+                    width: frameShape.width,
+                    height: frameShape.height,
+                    scaleX: frameShape.scaleX || 1,
+                    scaleY: frameShape.scaleY || 1,
+                    rx: frameShape.rx || 0,
+                    ry: frameShape.ry || 0
+                });
+            } else if (frameShape.type === 'polygon' || frameShape.type === 'path') {
+                // For complex shapes, use toObject/fromObject for deep copy
+                clipShape = new fabric[frameShape.type.charAt(0).toUpperCase() + frameShape.type.slice(1)](
+                    frameShape.points || frameShape.path,
+                    {
+                        scaleX: frameShape.scaleX || 1,
+                        scaleY: frameShape.scaleY || 1
+                    }
+                );
+            } else {
+                // Fallback: try clone for other types
+                clipShape = fabric.util.object.clone(frameShape);
+            }
+
             clipShape.set({
                 left: 0,
                 top: 0,
