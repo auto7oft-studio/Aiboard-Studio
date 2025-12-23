@@ -834,22 +834,64 @@
         }
 
         .cmyk-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            display: flex;
+            flex-direction: column;
             gap: 8px;
             margin-top: 10px;
         }
 
         .cmyk-input-group {
             display: flex;
-            flex-direction: column;
-            gap: 4px;
+            align-items: center;
+            gap: 8px;
         }
 
         .cmyk-input-group label {
-            font-size: 10px;
+            font-size: 11px;
             color: var(--text-sub);
             text-transform: uppercase;
+            width: 12px;
+            font-weight: 600;
+        }
+
+        .cmyk-slider {
+            flex: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: linear-gradient(to right, #fff 0%, #000 100%);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .cmyk-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border: 2px solid #666;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .cmyk-slider::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border: 2px solid #666;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .cmyk-value {
+            width: 40px;
+            text-align: right;
+            font-size: 11px;
+            padding: 2px 4px;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            background: var(--bg-main);
         }
 
         .color-palette {
@@ -1638,19 +1680,27 @@
         <div class="cmyk-grid">
             <div class="cmyk-input-group">
                 <label>C</label>
-                <input type="number" id="picker-cmyk-c" class="picker-input" min="0" max="100" value="0">
+                <input type="range" id="picker-cmyk-c-slider" class="cmyk-slider" min="0" max="100" value="0">
+                <input type="number" id="picker-cmyk-c" class="cmyk-value" min="0" max="100" value="0">
+                <span style="font-size: 10px; color: var(--text-sub);">%</span>
             </div>
             <div class="cmyk-input-group">
                 <label>M</label>
-                <input type="number" id="picker-cmyk-m" class="picker-input" min="0" max="100" value="0">
+                <input type="range" id="picker-cmyk-m-slider" class="cmyk-slider" min="0" max="100" value="0">
+                <input type="number" id="picker-cmyk-m" class="cmyk-value" min="0" max="100" value="0">
+                <span style="font-size: 10px; color: var(--text-sub);">%</span>
             </div>
             <div class="cmyk-input-group">
                 <label>Y</label>
-                <input type="number" id="picker-cmyk-y" class="picker-input" min="0" max="100" value="0">
+                <input type="range" id="picker-cmyk-y-slider" class="cmyk-slider" min="0" max="100" value="0">
+                <input type="number" id="picker-cmyk-y" class="cmyk-value" min="0" max="100" value="0">
+                <span style="font-size: 10px; color: var(--text-sub);">%</span>
             </div>
             <div class="cmyk-input-group">
                 <label>K</label>
-                <input type="number" id="picker-cmyk-k" class="picker-input" min="0" max="100" value="0">
+                <input type="range" id="picker-cmyk-k-slider" class="cmyk-slider" min="0" max="100" value="0">
+                <input type="number" id="picker-cmyk-k" class="cmyk-value" min="0" max="100" value="0">
+                <span style="font-size: 10px; color: var(--text-sub);">%</span>
             </div>
         </div>
         <div id="doc-colors" class="color-palette">
@@ -4340,26 +4390,43 @@
                 updatePickerUI(true);
             });
 
+            // CMYK slider and input sync
+            const handleCmykChange = () => {
+                const c = parseFloat(document.getElementById('picker-cmyk-c').value) || 0;
+                const m = parseFloat(document.getElementById('picker-cmyk-m').value) || 0;
+                const y = parseFloat(document.getElementById('picker-cmyk-y').value) || 0;
+                const k = parseFloat(document.getElementById('picker-cmyk-k').value) || 0;
+                pickerCmyk = {
+                    c: Math.max(0, Math.min(100, c)),
+                    m: Math.max(0, Math.min(100, m)),
+                    y: Math.max(0, Math.min(100, y)),
+                    k: Math.max(0, Math.min(100, k))
+                };
+                const rgb = cmykToRgb(pickerCmyk.c, pickerCmyk.m, pickerCmyk.y, pickerCmyk.k);
+                const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+                pickerHue = hsv.h;
+                pickerSaturation = hsv.s;
+                pickerBrightness = hsv.v;
+                updatePickerUI(false);
+                const rgbaStr = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${pickerAlpha})`;
+                applyColorToTarget(rgbaStr, pickerCmyk);
+            };
+
             ['c', 'm', 'y', 'k'].forEach((channel) => {
-                document.getElementById(`picker-cmyk-${channel}`).addEventListener('change', () => {
-                    const c = parseFloat(document.getElementById('picker-cmyk-c').value) || 0;
-                    const m = parseFloat(document.getElementById('picker-cmyk-m').value) || 0;
-                    const y = parseFloat(document.getElementById('picker-cmyk-y').value) || 0;
-                    const k = parseFloat(document.getElementById('picker-cmyk-k').value) || 0;
-                    pickerCmyk = {
-                        c: Math.max(0, Math.min(100, c)),
-                        m: Math.max(0, Math.min(100, m)),
-                        y: Math.max(0, Math.min(100, y)),
-                        k: Math.max(0, Math.min(100, k))
-                    };
-                    const rgb = cmykToRgb(pickerCmyk.c, pickerCmyk.m, pickerCmyk.y, pickerCmyk.k);
-                    const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
-                    pickerHue = hsv.h;
-                    pickerSaturation = hsv.s;
-                    pickerBrightness = hsv.v;
-                    updatePickerUI(false);
-                    const rgbaStr = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${pickerAlpha})`;
-                    applyColorToTarget(rgbaStr, pickerCmyk);
+                const slider = document.getElementById(`picker-cmyk-${channel}-slider`);
+                const input = document.getElementById(`picker-cmyk-${channel}`);
+
+                // Slider → Input sync
+                slider.addEventListener('input', (e) => {
+                    input.value = e.target.value;
+                    handleCmykChange();
+                });
+
+                // Input → Slider sync
+                input.addEventListener('input', (e) => {
+                    const val = Math.max(0, Math.min(100, parseFloat(e.target.value) || 0));
+                    slider.value = val;
+                    handleCmykChange();
                 });
             });
 
@@ -4479,6 +4546,11 @@
             document.getElementById('picker-cmyk-m').value = cmyk.m;
             document.getElementById('picker-cmyk-y').value = cmyk.y;
             document.getElementById('picker-cmyk-k').value = cmyk.k;
+            // Sync sliders
+            document.getElementById('picker-cmyk-c-slider').value = cmyk.c;
+            document.getElementById('picker-cmyk-m-slider').value = cmyk.m;
+            document.getElementById('picker-cmyk-y-slider').value = cmyk.y;
+            document.getElementById('picker-cmyk-k-slider').value = cmyk.k;
         }
 
         function drawSbCanvas() {
