@@ -4433,13 +4433,69 @@
             });
         }
 
+        // Constrain popup position within viewport boundaries
+        function constrainPopupPosition(popup, anchorRect, preferredLeft, preferredTop) {
+            // Show popup temporarily to measure its actual size
+            const wasVisible = popup.classList.contains('show');
+            if (!wasVisible) {
+                popup.style.visibility = 'hidden';
+                popup.classList.add('show');
+            }
+
+            const popupRect = popup.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const padding = 10; // Minimum distance from viewport edge
+
+            let left = preferredLeft;
+            let top = preferredTop;
+
+            // Adjust horizontal position
+            if (left < padding) {
+                left = padding;
+            } else if (left + popupRect.width > viewportWidth - padding) {
+                // Try positioning to the right of anchor instead
+                left = anchorRect.right + padding;
+                if (left + popupRect.width > viewportWidth - padding) {
+                    // Still doesn't fit, align to right edge
+                    left = viewportWidth - popupRect.width - padding;
+                }
+            }
+
+            // Adjust vertical position
+            if (top < padding) {
+                top = padding;
+            } else if (top + popupRect.height > viewportHeight - padding) {
+                // Position above anchor instead
+                top = anchorRect.top - popupRect.height - padding;
+                if (top < padding) {
+                    // Still doesn't fit, align to bottom edge
+                    top = viewportHeight - popupRect.height - padding;
+                }
+            }
+
+            // Hide popup if it was hidden before
+            if (!wasVisible) {
+                popup.classList.remove('show');
+                popup.style.visibility = '';
+            }
+
+            return { left, top };
+        }
+
         function openPicker(target, el) {
             pickerTarget = target;
             const picker = document.getElementById('color-picker');
             const rect = el.getBoundingClientRect();
 
-            picker.style.left = `${rect.left - 250}px`;
-            picker.style.top = `${Math.min(window.innerHeight - 400, rect.top)}px`;
+            // Calculate preferred position (left of anchor)
+            const preferredLeft = rect.left - 250;
+            const preferredTop = rect.top;
+
+            // Constrain to viewport
+            const position = constrainPopupPosition(picker, rect, preferredLeft, preferredTop);
+            picker.style.left = `${position.left}px`;
+            picker.style.top = `${position.top}px`;
             picker.classList.add('show');
 
             const color = el.style.background || '#ffffff';
