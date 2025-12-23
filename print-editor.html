@@ -1706,9 +1706,6 @@
         <div id="doc-colors" class="color-palette">
             <div class="palette-title">문서 색상</div>
         </div>
-        <div id="recent-colors" class="color-palette">
-            <div class="palette-title">최근 색상</div>
-        </div>
     </div>
 
     <script>
@@ -1752,8 +1749,6 @@
         let pickerSaturation = 1;
         let pickerAlpha = 1;
         let pickerCmyk = { c: 0, m: 0, y: 0, k: 0 };
-        let recentColors = [];
-
         function mmToPx(mm) { return mm * MM_TO_PX_SCREEN; }
 
         // --- INIT ---
@@ -4460,7 +4455,6 @@
                 setPickerColor(color, { apply: false });
             }
             renderPalette('doc-colors', getDocumentColors());
-            renderPalette('recent-colors', recentColors);
         }
 
         function setPickerColor(color, options = {}) {
@@ -4518,11 +4512,6 @@
             else if (pickerTarget === 'grad-start' || pickerTarget === 'grad-end') {
                 document.getElementById(pickerTarget + '-swatch').style.background = color;
                 updateGradient();
-            }
-
-            if (!recentColors.includes(color)) {
-                recentColors.unshift(color);
-                if (recentColors.length > 10) recentColors.pop();
             }
         }
 
