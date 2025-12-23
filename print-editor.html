@@ -3778,8 +3778,7 @@
             if (!obj) return null;
             if (obj.type === 'activeSelection') return getObjectBounds(obj);
             if (obj.isFrameGroup) {
-                const frame = getFrameParts(obj)?.frameShape;
-                if (frame) return getObjectBounds(frame);
+                return getObjectBounds(obj);
             }
             if (obj.isMaskGroup) {
                 const mask = getMaskObjectFromGroup(obj);
