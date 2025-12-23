@@ -2539,7 +2539,7 @@
             return new fabric.IText(source.text, { ...commonProps, ...overrides });
         }
 
-        function createTextStrokeGroup(textObj, strokeWidth, strokeColor) {
+        function createTextStrokeGroup(textObj, strokeWidth, strokeColor, centerPoint) {
             // Outside stroke: draw a double-width stroke behind the fill to keep fill intact.
             const stroke = buildTextClone(textObj, {
                 fill: 'transparent',
@@ -2562,7 +2562,8 @@
                 selectable: true,
                 evented: true
             });
-            const center = textObj.getCenterPoint();
+            // Use provided center point (from before canvas removal) or fallback to current position
+            const center = centerPoint || textObj.getCenterPoint();
             group.setPositionByOrigin(center, 'center', 'center');
             group.isTextStrokeGroup = true;
             group.textStrokeWidth = strokeWidth;
@@ -2851,8 +2852,10 @@
                         return;
                     }
                     const strokeColor = target.stroke || document.getElementById('stroke-swatch').style.background || '#000000';
+                    // CRITICAL: Save center point BEFORE removing from canvas
+                    const center = target.getCenterPoint();
                     canvas.remove(target);
-                    const group = createTextStrokeGroup(target, strokePx, strokeColor);
+                    const group = createTextStrokeGroup(target, strokePx, strokeColor, center);
                     canvas.add(group);
                     canvas.setActiveObject(group);
                     return;
