@@ -2827,10 +2827,16 @@
                 if (target.isTextStrokeGroup) {
                     const parts = getTextStrokeGroupParts(target);
                     if (!parts || !parts.stroke) return;
+                    // Preserve dash array settings
+                    const preservedDashArray = parts.stroke.strokeDashArray;
                     parts.stroke.set({
                         strokeWidth: strokePx * 2,
                         strokeUniform: true
                     });
+                    // Restore dash array if it was set
+                    if (preservedDashArray) {
+                        parts.stroke.set('strokeDashArray', preservedDashArray);
+                    }
                     target.textStrokeWidth = strokePx;
                     target._calcBounds();
                     target._updateObjectsCoords();
@@ -2851,6 +2857,9 @@
                     canvas.setActiveObject(group);
                     return;
                 }
+
+                // Preserve dash array settings
+                const preservedDashArray = target.strokeDashArray;
 
                 target.set('strokeUniform', true);
                 target.set('paintFirst', 'fill');
@@ -2874,6 +2883,12 @@
                 }
 
                 target.set('strokeWidth', strokePx);
+
+                // Restore dash array if it was set
+                if (preservedDashArray) {
+                    target.set('strokeDashArray', preservedDashArray);
+                }
+
                 target.setCoords();
             };
 
