@@ -1804,12 +1804,12 @@
                 hideObjectInfoLabel();
             });
 
-            canvas.on('object:moving', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); });
-            canvas.on('object:scaling', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); updateObjectInfoLabel(); });
-            canvas.on('object:rotating', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); });
+            canvas.on('object:moving', (opt) => { updateFloatingToolbar(opt); updateMaskedObjectBounds(opt.target); updateObjectClipping(opt.target); });
+            canvas.on('object:scaling', (opt) => { updateFloatingToolbar(opt); updateMaskedObjectBounds(opt.target); updateObjectClipping(opt.target); updateObjectInfoLabel(); });
+            canvas.on('object:rotating', (opt) => { updateFloatingToolbar(opt); updateMaskedObjectBounds(opt.target); updateObjectClipping(opt.target); });
 
             canvas.on('object:added', (opt) => { !isUndoing && saveHistory(); checkCanvasBoundaries(); updateObjectClipping(opt.target); });
-            canvas.on('object:modified', (opt) => { !isUndoing && saveHistory(); checkCanvasBoundaries(); updateObjectClipping(opt.target); });
+            canvas.on('object:modified', (opt) => { !isUndoing && saveHistory(); checkCanvasBoundaries(); updateMaskedObjectBounds(opt.target); updateObjectClipping(opt.target); });
             canvas.on('object:removed', () => { !isUndoing && saveHistory(); checkCanvasBoundaries(); });
 
             window.addEventListener('keydown', handleKeydown);
@@ -1921,7 +1921,37 @@
             }
         }
 
+        function updateMaskedObjectBounds(obj) {
+            // CRITICAL FIX: Update stored unclipped bounds when masked object is transformed
+            if (!obj || !obj.clipPath || obj.clipPath.isArtboardClip) return;
+
+            // Temporarily remove clipPath to get actual object bounds
+            const clipPath = obj.clipPath;
+            obj.clipPath = null;
+            obj.dirty = true;
+
+            const rect = obj.getBoundingRect(true, true);
+            obj._unclippedBounds = {
+                left: rect.left,
+                top: rect.top,
+                right: rect.left + rect.width,
+                bottom: rect.top + rect.height,
+                width: rect.width,
+                height: rect.height
+            };
+
+            // Restore clipPath
+            obj.clipPath = clipPath;
+            obj.dirty = true;
+        }
+
         function getObjectBounds(obj) {
+            // CRITICAL FIX: Use unclipped bounds for masked objects
+            // When clipPath is applied, getBoundingRect returns clipped area, not actual object bounds
+            if (obj._unclippedBounds && obj.clipPath && !obj.clipPath.isArtboardClip) {
+                return obj._unclippedBounds;
+            }
+
             const rect = obj.getBoundingRect(true, true);
             return {
                 left: rect.left,
@@ -2882,7 +2912,17 @@
             // Exclude artboard from history items
             const objects = canvas.getObjects().filter(o => !o.excludeFromExport);
             const json = {
-                objects: objects.map(o => o.toObject(['excludeFromExport', 'absolutePositioned', 'selectable', 'clipPath', 'opacity', 'gradientAngle']))
+                objects: objects.map(o => o.toObject([
+                    'excludeFromExport',
+                    'absolutePositioned',
+                    'selectable',
+                    'clipPath',
+                    'opacity',
+                    'gradientAngle',
+                    'objectCaching',
+                    '_unclippedBounds',
+                    '_maskInfo'
+                ]))
             };
             history = history.slice(0, historyStep + 1);
             history.push(JSON.stringify(json));
@@ -3365,37 +3405,35 @@
                 mask = obj1;
             }
 
+            // CRITICAL FIX: Store unclipped bounds BEFORE applying mask
+            const targetRect = target.getBoundingRect(true, true);
+            target._unclippedBounds = {
+                left: targetRect.left,
+                top: targetRect.top,
+                right: targetRect.left + targetRect.width,
+                bottom: targetRect.top + targetRect.height,
+                width: targetRect.width,
+                height: targetRect.height
+            };
+
             // Deselect before modifying
             canvas.discardActiveObject();
 
             mask.clone((clonedMask) => {
-                // Use relative positioning so mask moves with the object
+                // CRITICAL FIX: Use absolutePositioned = true for stable coordinates
+                // This prevents jumping behavior caused by coordinate transformations
                 clonedMask.isArtboardClip = false;
-                clonedMask.absolutePositioned = false;
+                clonedMask.absolutePositioned = true;
 
-                // Get centers for coordinate transformation
-                const targetCenter = target.getCenterPoint();
+                // Get absolute positions - no transformation needed!
                 const maskCenter = mask.getCenterPoint();
 
-                // Calculate relative position from target's center
-                // When absolutePositioned is false, clipPath coordinates are relative to target's center
-                const relX = (maskCenter.x - targetCenter.x);
-                const relY = (maskCenter.y - targetCenter.y);
-
-                // Apply inverse scale and rotation of target to get local coordinates
-                const angle = -target.angle * Math.PI / 180;
-                const cos = Math.cos(angle);
-                const sin = Math.sin(angle);
-
-                const localX = (relX * cos - relY * sin) / target.scaleX;
-                const localY = (relX * sin + relY * cos) / target.scaleY;
-
                 clonedMask.set({
-                    left: localX,
-                    top: localY,
-                    scaleX: mask.scaleX / target.scaleX,
-                    scaleY: mask.scaleY / target.scaleY,
-                    angle: mask.angle - target.angle,
+                    left: maskCenter.x,
+                    top: maskCenter.y,
+                    scaleX: mask.scaleX,
+                    scaleY: mask.scaleY,
+                    angle: mask.angle,
                     originX: 'center',
                     originY: 'center'
                 });
@@ -3412,10 +3450,17 @@
                     strokeWidth: mask.strokeWidth
                 };
 
+                // CRITICAL FIX: Disable object caching for stable rendering
+                target.objectCaching = false;
+
                 target.set('clipPath', clonedMask);
                 canvas.remove(mask);
                 canvas.setActiveObject(target);
+
+                // CRITICAL FIX: Force coordinate update and render
+                target.setCoords();
                 canvas.requestRenderAll();
+
                 renderLayerList();
                 saveHistory();
                 updateFloatingToolbar();
@@ -3430,31 +3475,15 @@
             const maskInfo = obj._maskInfo || {};
 
             clipPath.clone((clonedMask) => {
-                // Convert relative coordinates back to absolute canvas coordinates
-                const targetCenter = obj.getCenterPoint();
-
-                // Get clipPath's local position
-                const localX = clipPath.left;
-                const localY = clipPath.top;
-
-                // Apply target's scale and rotation to get canvas coordinates
-                const angle = obj.angle * Math.PI / 180;
-                const cos = Math.cos(angle);
-                const sin = Math.sin(angle);
-
-                const scaledX = localX * obj.scaleX;
-                const scaledY = localY * obj.scaleY;
-
-                const absX = targetCenter.x + (scaledX * cos - scaledY * sin);
-                const absY = targetCenter.y + (scaledX * sin + scaledY * cos);
-
+                // CRITICAL FIX: With absolutePositioned = true, coordinates are already absolute!
+                // No complex transformations needed
                 clonedMask.set({
                     absolutePositioned: false,
-                    left: absX,
-                    top: absY,
-                    scaleX: clipPath.scaleX * obj.scaleX,
-                    scaleY: clipPath.scaleY * obj.scaleY,
-                    angle: clipPath.angle + obj.angle,
+                    left: clipPath.left,
+                    top: clipPath.top,
+                    scaleX: clipPath.scaleX,
+                    scaleY: clipPath.scaleY,
+                    angle: clipPath.angle,
                     originX: 'center',
                     originY: 'center',
                     fill: maskInfo.fill || '#cccccc',
@@ -3462,11 +3491,20 @@
                     strokeWidth: maskInfo.strokeWidth || 1
                 });
 
+                // CRITICAL FIX: Clean up metadata and restore caching
                 obj.set('clipPath', null);
+                obj.objectCaching = true;
                 delete obj._maskInfo;
+                delete obj._unclippedBounds;
+
                 canvas.add(clonedMask);
                 canvas.setActiveObject(clonedMask);
+
+                // CRITICAL FIX: Update coordinates and force render
+                obj.setCoords();
+                clonedMask.setCoords();
                 canvas.requestRenderAll();
+
                 renderLayerList();
                 saveHistory();
                 updateFloatingToolbar();
