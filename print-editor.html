@@ -1643,6 +1643,42 @@
                     </div>
                 </div>
 
+                <!-- 그림자 -->
+                <div id="prop-shadow" class="panel-section">
+                    <div class="panel-title">그림자</div>
+                    <div class="property-row">
+                        <label class="property-label">
+                            <input type="checkbox" id="shadow-enabled" onchange="toggleShadow()" style="margin-right: 4px;">
+                            활성화
+                        </label>
+                    </div>
+                    <div id="shadow-settings" style="display: none;">
+                        <div class="property-row">
+                            <label class="property-label">색상</label>
+                            <div id="shadow-color-swatch" class="color-swatch" style="background: rgba(0,0,0,0.5);"
+                                onclick="openPicker('shadow', this)"></div>
+                        </div>
+                        <div class="property-row">
+                            <label class="property-label">블러</label>
+                            <input type="range" id="shadow-blur" min="0" max="50" value="10"
+                                oninput="changeShadowBlur(this.value)" style="flex:1">
+                            <span id="shadow-blur-val" style="font-size: 11px; width: 24px; text-align: right;">10</span>
+                        </div>
+                        <div class="property-row">
+                            <label class="property-label">X 거리</label>
+                            <input type="range" id="shadow-offset-x" min="-50" max="50" value="5"
+                                oninput="changeShadowOffsetX(this.value)" style="flex:1">
+                            <span id="shadow-offset-x-val" style="font-size: 11px; width: 24px; text-align: right;">5</span>
+                        </div>
+                        <div class="property-row">
+                            <label class="property-label">Y 거리</label>
+                            <input type="range" id="shadow-offset-y" min="-50" max="50" value="5"
+                                oninput="changeShadowOffsetY(this.value)" style="flex:1">
+                            <span id="shadow-offset-y-val" style="font-size: 11px; width: 24px; text-align: right;">5</span>
+                        </div>
+                    </div>
+                </div>
+
 
             </div>
         </aside>
@@ -2826,6 +2862,43 @@
 
             const applyTo = (target) => {
                 if (target.isTextStrokeGroup) {
+                    // When stroke width is 0, convert back to plain text
+                    if (strokePx === 0) {
+                        const parts = getTextStrokeGroupParts(target);
+                        if (!parts || !parts.fill) return;
+                        const fillText = parts.fill;
+                        const center = target.getCenterPoint();
+
+                        // Properly extract text from group
+                        const textProps = {
+                            text: fillText.text,
+                            fontFamily: fillText.fontFamily,
+                            fontSize: fillText.fontSize,
+                            fontWeight: fillText.fontWeight,
+                            fontStyle: fillText.fontStyle,
+                            fill: fillText.fill,
+                            textAlign: fillText.textAlign,
+                            lineHeight: fillText.lineHeight,
+                            charSpacing: fillText.charSpacing,
+                            underline: fillText.underline,
+                            linethrough: fillText.linethrough,
+                            overline: fillText.overline,
+                            strokeWidth: 0,
+                            stroke: null,
+                            angle: target.angle,
+                            scaleX: target.scaleX,
+                            scaleY: target.scaleY
+                        };
+
+                        const newText = new fabric.IText(textProps.text, textProps);
+                        canvas.remove(target);
+                        canvas.add(newText);
+                        newText.setPositionByOrigin(center, 'center', 'center');
+                        newText.setCoords();
+                        canvas.setActiveObject(newText);
+                        return;
+                    }
+
                     const parts = getTextStrokeGroupParts(target);
                     if (!parts || !parts.stroke) return;
                     // Preserve dash array settings
