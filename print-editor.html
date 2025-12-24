@@ -1827,12 +1827,20 @@
             // Store the currently selected object
             eyedropperSelectedObject = canvas.getActiveObject();
 
+            // Require an object to be selected first
+            if (!eyedropperSelectedObject) {
+                alert('먼저 색상을 적용할 객체를 선택해주세요.');
+                return;
+            }
+
             eyedropperActive = true;
             eyedropperTarget = target;
             canvas.defaultCursor = 'none'; // Hide cursor, we'll show magnifier instead
             canvas.hoverCursor = 'none';
             canvas.selection = false;
-            canvas.discardActiveObject();
+
+            // DON'T discard active object - keep panels visible!
+            // Just disable interaction temporarily
             canvas.forEachObject(obj => {
                 obj.selectable = false;
                 obj.evented = false;
@@ -1942,7 +1950,9 @@
 
             const pointer = canvas.getPointer(e.e);
             const ctx = canvas.getContext('2d');
-            const pixelData = ctx.getImageData(pointer.x, pointer.y, 1, 1).data;
+
+            // Use floor to get exact pixel coordinates
+            const pixelData = ctx.getImageData(Math.floor(pointer.x), Math.floor(pointer.y), 1, 1).data;
             const r = pixelData[0];
             const g = pixelData[1];
             const b = pixelData[2];
@@ -1951,12 +1961,7 @@
             const color = `rgba(${r}, ${g}, ${b}, ${a})`;
             const targetType = eyedropperTarget; // Store before deactivating
 
-            // Restore selection FIRST
-            if (eyedropperSelectedObject) {
-                canvas.setActiveObject(eyedropperSelectedObject);
-            }
-
-            // Then deactivate eyedropper
+            // Object is still selected, just re-enable interaction
             eyedropperActive = false;
             eyedropperTarget = null;
             canvas.defaultCursor = 'default';
@@ -1972,7 +1977,7 @@
             // Hide magnifier
             document.getElementById('eyedropper-magnifier').style.display = 'none';
 
-            // Now apply the color to the selected object
+            // Apply the color to the selected object (still active)
             if (targetType === 'fill') {
                 changeFillColor(color);
             } else if (targetType === 'stroke') {
