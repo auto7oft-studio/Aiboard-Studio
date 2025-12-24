@@ -3336,43 +3336,6 @@
             saveHistory();
         }
 
-                // Outside stroke: expand object by strokePx * 2 to compensate for center-aligned stroke
-                if (target.type === 'rect' || target.type === 'triangle') {
-                    const baseWidth = target._strokeBaseWidth ?? (target.width - (target._strokeOutsideWidth || 0) * 2);
-                    const baseHeight = target._strokeBaseHeight ?? (target.height - (target._strokeOutsideWidth || 0) * 2);
-                    target._strokeBaseWidth = baseWidth;
-                    target._strokeBaseHeight = baseHeight;
-                    target._strokeOutsideWidth = strokePx;
-                    target.set({
-                        width: baseWidth + strokePx * 2,
-                        height: baseHeight + strokePx * 2
-                    });
-                } else if (target.type === 'circle') {
-                    const baseRadius = target._strokeBaseRadius ?? (target.radius - (target._strokeOutsideWidth || 0));
-                    target._strokeBaseRadius = baseRadius;
-                    target._strokeOutsideWidth = strokePx;
-                    target.set('radius', baseRadius + strokePx);
-                }
-
-                target.set('strokeWidth', strokePx);
-
-                // Restore dash array if it was set
-                if (preservedDashArray) {
-                    target.set('strokeDashArray', preservedDashArray);
-                }
-
-                target.setCoords();
-            };
-
-            if (obj.type === 'activeSelection') {
-                const objects = obj.getObjects();
-                canvas.discardActiveObject();
-                objects.forEach(o => applyTo(o));
-            } else {
-                applyTo(obj);
-            }
-        }
-
         function setObjectColorData(obj, target, color) {
             if (!obj || !color || color === 'transparent') return;
             const rgba = colorToRgba(color);
