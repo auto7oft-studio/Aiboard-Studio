@@ -2893,8 +2893,8 @@
             } else {
                 const rawWidth = strokeTarget.strokeWidth;
                 if (rawWidth !== null && rawWidth !== undefined && rawWidth > 0) {
-                    // For text objects, we store strokeWidth * 2, so divide by 2 to get actual width
-                    strokePx = isTextObject(obj) ? Math.round(rawWidth / 2) : Math.round(rawWidth);
+                    // Use actual strokeWidth value directly
+                    strokePx = Math.round(rawWidth);
                 }
             }
 
@@ -3273,7 +3273,7 @@
                         scaleX: target.scaleX,
                         scaleY: target.scaleY,
                         stroke: strokePx > 0 ? (target.textStrokeColor || '#000000') : null,
-                        strokeWidth: strokePx * 2,  // Double for outside effect
+                        strokeWidth: strokePx,  // Use actual pixel value
                         strokeUniform: true,
                         strokeLineCap: 'round',
                         strokeLineJoin: 'round',
@@ -3303,7 +3303,7 @@
                         const strokeColor = target.stroke || document.getElementById('stroke-swatch').style.background || '#000000';
                         target.set({
                             stroke: strokeColor,
-                            strokeWidth: strokePx * 2,  // Double for outside effect
+                            strokeWidth: strokePx,  // Use actual pixel value
                             strokeUniform: true,
                             strokeLineCap: 'round',
                             strokeLineJoin: 'round',
