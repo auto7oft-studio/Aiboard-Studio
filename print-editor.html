@@ -1546,26 +1546,29 @@
                 </div>
 
                 <!-- 채우기 -->
-                <div id="prop-fill" class="panel-section">
-                    <div class="panel-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <div id="prop-fill" class="panel-section" style="display: none;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                         <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 600;">
                             <input type="checkbox" id="fill-enabled" onchange="toggleFillEnabled()" checked style="width: 16px; height: 16px;">
                             채우기
                         </label>
-                        <label style="font-weight: normal; font-size: 11px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                        <div id="fill-swatch" class="color-swatch" style="background: #3B82F6;"
+                            onclick="openPicker('fill', this)"></div>
+                        <button onclick="activateEyedropper('fill')" title="스포이드로 색상 추출"
+                            style="width: 24px; height: 24px; padding: 4px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-panel); cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M2 22l1-1h3l9-9"></path>
+                                <path d="M3 21v-3l9-9"></path>
+                                <path d="M15 6l3-3"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L19 8l-3-3 2.5-2.5z"></path>
+                            </svg>
+                        </button>
+                        <label style="font-weight: normal; font-size: 11px; display: flex; align-items: center; gap: 6px; cursor: pointer; margin-left: auto;">
                             <input type="checkbox" id="gradient-check" onchange="toggleGradientMode()" style="width: 14px; height: 14px;">
                             그라데이션
                         </label>
                     </div>
                     <div id="fill-settings">
-                        <div id="solid-color-panel">
-                            <div class="color-swatch-wrapper">
-                                <div id="fill-swatch" class="color-swatch" style="background: #3B82F6;"
-                                    onclick="openPicker('fill', this)"></div>
-                                <input type="text" id="fill-color-hex" value="#3B82F6"
-                                    style="font-family: monospace; font-size: 12px;" readonly>
-                            </div>
-                        </div>
                         <div id="gradient-panel" style="display: none;">
                             <div class="property-row">
                                 <label class="property-label">유형</label>
@@ -1595,36 +1598,44 @@
                 </div>
 
                 <!-- 테두리 -->
-                <div class="panel-section">
-                    <div class="panel-title">
+                <div id="prop-stroke" class="panel-section" style="display: none;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                         <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 600;">
                             <input type="checkbox" id="stroke-enabled" onchange="toggleStrokeEnabled()" style="width: 16px; height: 16px;">
                             테두리
                         </label>
+                        <div id="stroke-swatch" class="color-swatch" style="background: #000000;"
+                            onclick="openPicker('stroke', this)"></div>
+                        <button onclick="activateEyedropper('stroke')" title="스포이드로 색상 추출"
+                            style="width: 24px; height: 24px; padding: 4px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-panel); cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M2 22l1-1h3l9-9"></path>
+                                <path d="M3 21v-3l9-9"></path>
+                                <path d="M15 6l3-3"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L19 8l-3-3 2.5-2.5z"></path>
+                            </svg>
+                        </button>
                     </div>
                     <div id="stroke-settings" style="display: none;">
-                        <div class="property-row">
-                            <label class="property-label">색상</label>
-                            <div id="stroke-swatch" class="color-swatch" style="background: #000000;"
-                                onclick="openPicker('stroke', this)"></div>
-                        </div>
-                        <div class="property-row">
-                            <label class="property-label">크기</label>
-                            <input type="number" id="stroke-width-input" min="1" max="100" value="1"
-                                oninput="changeStrokeWidth(this.value)"
-                                style="width: 50px; padding: 4px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;">
-                        </div>
-                        <div class="property-row">
-                            <label class="property-label">대시</label>
-                            <input type="number" id="dash-length" value="0" min="0" max="100"
-                                oninput="updateStrokeDash()"
-                                style="width: 50px; padding: 4px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;">
-                        </div>
-                        <div class="property-row">
-                            <label class="property-label">간격</label>
-                            <input type="number" id="dash-gap" value="0" min="0" max="100"
-                                oninput="updateStrokeDash()"
-                                style="width: 50px; padding: 4px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;">
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                                <label style="font-size: 10px; color: var(--text-sub);">크기</label>
+                                <input type="number" id="stroke-width-input" min="1" max="100" value="1"
+                                    oninput="changeStrokeWidth(this.value)"
+                                    style="width: 100%; padding: 4px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;">
+                            </div>
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                                <label style="font-size: 10px; color: var(--text-sub);">길이</label>
+                                <input type="number" id="dash-length" value="0" min="0" max="100"
+                                    oninput="updateStrokeDash()"
+                                    style="width: 100%; padding: 4px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;">
+                            </div>
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                                <label style="font-size: 10px; color: var(--text-sub);">간격</label>
+                                <input type="number" id="dash-gap" value="0" min="0" max="100"
+                                    oninput="updateStrokeDash()"
+                                    style="width: 100%; padding: 4px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1794,6 +1805,62 @@
         let pickerSaturation = 1;
         let pickerAlpha = 1;
         let pickerCmyk = { c: 0, m: 0, y: 0, k: 0 };
+
+        // Eyedropper
+        let eyedropperActive = false;
+        let eyedropperTarget = null;
+
+        function activateEyedropper(target) {
+            eyedropperActive = true;
+            eyedropperTarget = target;
+            canvas.defaultCursor = 'crosshair';
+            canvas.hoverCursor = 'crosshair';
+            canvas.selection = false;
+            canvas.forEachObject(obj => {
+                obj.selectable = false;
+                obj.evented = false;
+            });
+            canvas.renderAll();
+        }
+
+        function deactivateEyedropper() {
+            eyedropperActive = false;
+            eyedropperTarget = null;
+            canvas.defaultCursor = 'default';
+            canvas.hoverCursor = 'move';
+            canvas.selection = true;
+            canvas.forEachObject(obj => {
+                if (!obj.lockMovementX && !obj.isArtboard) {
+                    obj.selectable = true;
+                    obj.evented = true;
+                }
+            });
+            canvas.renderAll();
+        }
+
+        function sampleColorFromCanvas(e) {
+            if (!eyedropperActive) return;
+
+            const pointer = canvas.getPointer(e.e);
+            const ctx = canvas.getContext('2d');
+            const pixelData = ctx.getImageData(pointer.x, pointer.y, 1, 1).data;
+            const r = pixelData[0];
+            const g = pixelData[1];
+            const b = pixelData[2];
+            const a = pixelData[3] / 255;
+
+            const color = `rgba(${r}, ${g}, ${b}, ${a})`;
+
+            // Apply the sampled color
+            if (eyedropperTarget === 'fill') {
+                changeFillColor(color);
+            } else if (eyedropperTarget === 'stroke') {
+                changeStrokeColor(color);
+            }
+
+            deactivateEyedropper();
+        }
+
         function mmToPx(mm) { return mm * MM_TO_PX_SCREEN; }
 
         // --- INIT ---
@@ -1947,6 +2014,12 @@
             });
 
             canvas.on('mouse:down', function (opt) {
+                // Handle eyedropper sampling
+                if (eyedropperActive) {
+                    sampleColorFromCanvas(opt);
+                    return;
+                }
+
                 if (isSpacePressed) {
                     this.isDragging = true;
                     this.lastPosX = opt.e.clientX;
@@ -2003,6 +2076,8 @@
                 updateImageInfoLabel();
                 document.getElementById('prop-text').style.display = 'none';
                 document.getElementById('prop-corner').style.display = 'none';
+                document.getElementById('prop-fill').style.display = 'none';
+                document.getElementById('prop-stroke').style.display = 'none';
                 hideFloatingToolbar();
                 renderLayerList();
             });
@@ -2652,6 +2727,11 @@
             const obj = canvas.getActiveObject();
             if (!obj) return;
 
+            // Show fill and stroke panels when object is selected
+            const isLine = obj.type === 'line';
+            document.getElementById('prop-fill').style.display = isLine ? 'none' : 'block';
+            document.getElementById('prop-stroke').style.display = 'block';
+
             const textTarget = obj.isTextStrokeGroup ? (getTextStrokeGroupParts(obj)?.fill || obj) : obj;
             if (isTextObject(textTarget)) {
                 document.getElementById('prop-text').style.display = 'block';
@@ -2693,10 +2773,6 @@
                 document.getElementById('prop-corner').style.display = 'none';
             }
 
-            // Line/Arrow specificity
-            const isLine = obj.type === 'line';
-            document.getElementById('prop-fill').style.display = isLine ? 'none' : 'block';
-
             // Fill sync
             const fill = textTarget.fill;
             const hasFill = fill && fill !== 'transparent';
@@ -2706,7 +2782,6 @@
             if (typeof fill === 'string') {
                 const color = fill === 'transparent' ? '#3B82F6' : fill;
                 document.getElementById('fill-swatch').style.background = color;
-                document.getElementById('fill-color-hex').value = color.toUpperCase();
                 document.getElementById('gradient-check').checked = false;
             }
             if (fill && fill.colorStops) {
