@@ -2592,6 +2592,8 @@
                 fontFamily: 'Pretendard',
                 fontSize: dynamicFontSize,
                 fill: '#1F2937',
+                stroke: null,
+                strokeWidth: 0,
                 originX: 'center',
                 originY: 'center',
                 opacity: 1
@@ -3202,11 +3204,13 @@
                         };
 
                         const newText = new fabric.IText(textProps.text, textProps);
+                        ensureObjectId(newText);
                         canvas.remove(target);
                         canvas.add(newText);
                         newText.setPositionByOrigin(center, 'center', 'center');
                         newText.setCoords();
                         canvas.setActiveObject(newText);
+                        canvas.renderAll();
                         return;
                     }
 
@@ -3244,8 +3248,10 @@
                     const center = target.getCenterPoint();
                     canvas.remove(target);
                     const group = createTextStrokeGroup(target, strokePx, strokeColor, center);
+                    ensureObjectId(group);
                     canvas.add(group);
                     canvas.setActiveObject(group);
+                    canvas.renderAll();
                     return;
                 }
 
