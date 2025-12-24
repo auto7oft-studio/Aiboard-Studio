@@ -2685,25 +2685,43 @@
                     centerPoint
                 });
 
-                // Outside stroke: draw a double-width stroke behind the fill to keep fill intact.
+                // Save the center point before any modifications
+                const savedCenter = centerPoint || textObj.getCenterPoint();
+                console.log('[createTextStrokeGroup] Saved center:', savedCenter);
+
+                // Create stroke clone at origin (0,0) to ensure proper grouping
                 const stroke = buildTextClone(textObj, {
                     fill: 'transparent',
                     stroke: strokeColor,
                     strokeWidth: strokeWidth * 2,
                     strokeUniform: true,
                     selectable: false,
-                    evented: false
+                    evented: false,
+                    left: 0,
+                    top: 0,
+                    originX: 'center',
+                    originY: 'center'
                 });
                 stroke.isTextStrokeOutline = true;
                 console.log('[createTextStrokeGroup] Stroke clone created:', stroke.type);
 
+                // Reset text position to origin for proper grouping
                 textObj.set({
                     strokeWidth: 0,
-                    stroke: null
+                    stroke: null,
+                    left: 0,
+                    top: 0,
+                    originX: 'center',
+                    originY: 'center'
                 });
                 textObj.isTextFill = true;
 
+                // Create group with both objects at origin
                 const group = new fabric.Group([stroke, textObj], {
+                    left: savedCenter.x,
+                    top: savedCenter.y,
+                    originX: 'center',
+                    originY: 'center',
                     subTargetCheck: true,
                     selectable: true,
                     evented: true,
@@ -2711,9 +2729,6 @@
                 });
                 console.log('[createTextStrokeGroup] Group created:', group.type, group._objects?.length);
 
-                // Use provided center point (from before canvas removal) or fallback to current position
-                const center = centerPoint || textObj.getCenterPoint();
-                group.setPositionByOrigin(center, 'center', 'center');
                 group.isTextStrokeGroup = true;
                 group.textStrokeWidth = strokeWidth;
                 group.textStrokeColor = strokeColor;
@@ -2724,12 +2739,24 @@
                 textObj.dirty = true;
                 group.dirty = true;
 
-                console.log('[createTextStrokeGroup] Success! Group bounds:', group.getBoundingRect());
+                const bounds = group.getBoundingRect();
+                console.log('[createTextStrokeGroup] Success! Group bounds:', bounds);
+
+                // Verify the group has valid dimensions
+                if (!bounds || bounds.width === 0 || bounds.height === 0) {
+                    console.error('[createTextStrokeGroup] Invalid group bounds!', bounds);
+                    throw new Error('Group has invalid bounds');
+                }
+
                 return group;
             } catch (error) {
                 console.error('[createTextStrokeGroup] Error:', error);
                 console.error('[createTextStrokeGroup] Stack:', error.stack);
-                // Return the original text object if group creation fails
+                // Restore textObj to its original state
+                textObj.set({
+                    strokeWidth: 0,
+                    stroke: null
+                });
                 return textObj;
             }
         }
