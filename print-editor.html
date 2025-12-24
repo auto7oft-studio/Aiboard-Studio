@@ -1880,40 +1880,50 @@
         function updateEyedropperMagnifier(e) {
             if (!eyedropperActive) return;
 
-            const pointer = canvas.getPointer(e.e);
             const magnifier = document.getElementById('eyedropper-magnifier');
             const magnifierCanvas = document.getElementById('magnifier-canvas');
             const magnifierCtx = magnifierCanvas.getContext('2d');
             const colorLabel = document.getElementById('magnifier-color');
 
+            // Get actual canvas element and its bounding rect
+            const canvasEl = canvas.upperCanvasEl;
+            const canvasRect = canvasEl.getBoundingClientRect();
+
+            // Calculate mouse position relative to canvas element
+            const mouseX = e.e.clientX - canvasRect.left;
+            const mouseY = e.e.clientY - canvasRect.top;
+
             // Position magnifier near cursor (offset to bottom-right to not block view)
-            const canvasRect = canvas.upperCanvasEl.getBoundingClientRect();
             const magnifierSize = 140;
             const offset = 30;
 
-            let left = e.e.clientX - canvasRect.left + offset;
-            let top = e.e.clientY - canvasRect.top + offset;
+            let left = mouseX + offset;
+            let top = mouseY + offset;
 
             // Keep magnifier within canvas bounds
             if (left + magnifierSize > canvasRect.width) {
-                left = e.e.clientX - canvasRect.left - magnifierSize - offset;
+                left = mouseX - magnifierSize - offset;
             }
             if (top + magnifierSize + 40 > canvasRect.height) { // +40 for color label
-                top = e.e.clientY - canvasRect.top - magnifierSize - offset;
+                top = mouseY - magnifierSize - offset;
             }
 
             magnifier.style.left = left + 'px';
             magnifier.style.top = top + 'px';
 
-            // Get canvas context and draw zoomed area
+            // Get canvas rendering context (2d context for pixel data)
             const ctx = canvas.getContext('2d');
             const size = 14; // Sample size in pixels (14x14 grid)
 
             try {
+                // Sample from actual pixel coordinates (not transformed)
+                const sampleX = Math.floor(mouseX);
+                const sampleY = Math.floor(mouseY);
+
                 // Get image data from canvas
                 const imageData = ctx.getImageData(
-                    Math.floor(pointer.x - size / 2),
-                    Math.floor(pointer.y - size / 2),
+                    sampleX - Math.floor(size / 2),
+                    sampleY - Math.floor(size / 2),
                     size,
                     size
                 );
@@ -1930,7 +1940,7 @@
                 magnifierCtx.drawImage(tempCanvas, 0, 0, size, size, 0, 0, 140, 140);
 
                 // Get center pixel color
-                const centerPixel = ctx.getImageData(Math.floor(pointer.x), Math.floor(pointer.y), 1, 1).data;
+                const centerPixel = ctx.getImageData(sampleX, sampleY, 1, 1).data;
                 const r = centerPixel[0];
                 const g = centerPixel[1];
                 const b = centerPixel[2];
@@ -1942,17 +1952,23 @@
                 colorLabel.style.color = (r + g + b) / 3 > 128 ? '#000' : '#fff';
             } catch (err) {
                 // Ignore errors from sampling outside canvas
+                console.warn('Eyedropper sampling error:', err);
             }
         }
 
         function sampleColorFromCanvas(e) {
             if (!eyedropperActive) return;
 
-            const pointer = canvas.getPointer(e.e);
+            // Get actual canvas element and mouse position
+            const canvasEl = canvas.upperCanvasEl;
+            const canvasRect = canvasEl.getBoundingClientRect();
+            const mouseX = Math.floor(e.e.clientX - canvasRect.left);
+            const mouseY = Math.floor(e.e.clientY - canvasRect.top);
+
             const ctx = canvas.getContext('2d');
 
-            // Use floor to get exact pixel coordinates
-            const pixelData = ctx.getImageData(Math.floor(pointer.x), Math.floor(pointer.y), 1, 1).data;
+            // Sample from actual pixel coordinates
+            const pixelData = ctx.getImageData(mouseX, mouseY, 1, 1).data;
             const r = pixelData[0];
             const g = pixelData[1];
             const b = pixelData[2];
