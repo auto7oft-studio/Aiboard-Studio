@@ -1862,16 +1862,35 @@
             const a = pixelData[3] / 255;
 
             const color = `rgba(${r}, ${g}, ${b}, ${a})`;
+            const targetType = eyedropperTarget; // Store before deactivating
 
-            // Deactivate eyedropper first to restore selection
-            deactivateEyedropper();
+            // Restore selection FIRST
+            if (eyedropperSelectedObject) {
+                canvas.setActiveObject(eyedropperSelectedObject);
+            }
 
-            // Apply the sampled color to the restored object
-            if (eyedropperTarget === 'fill') {
+            // Then deactivate eyedropper
+            eyedropperActive = false;
+            eyedropperTarget = null;
+            canvas.defaultCursor = 'default';
+            canvas.hoverCursor = 'move';
+            canvas.selection = true;
+            canvas.forEachObject(obj => {
+                if (!obj.lockMovementX && !obj.isArtboard) {
+                    obj.selectable = true;
+                    obj.evented = true;
+                }
+            });
+
+            // Now apply the color to the selected object
+            if (targetType === 'fill') {
                 changeFillColor(color);
-            } else if (eyedropperTarget === 'stroke') {
+            } else if (targetType === 'stroke') {
                 changeStrokeColor(color);
             }
+
+            eyedropperSelectedObject = null;
+            canvas.renderAll();
         }
 
         function mmToPx(mm) { return mm * MM_TO_PX_SCREEN; }
