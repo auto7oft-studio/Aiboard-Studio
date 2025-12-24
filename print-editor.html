@@ -1137,6 +1137,13 @@
 
             <div class="canvas-wrapper" id="canvas-container">
                 <canvas id="editor-canvas"></canvas>
+                <!-- Eyedropper magnifier -->
+                <div id="eyedropper-magnifier" style="display: none; position: absolute; width: 120px; height: 120px; border: 3px solid #fff; border-radius: 60px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); pointer-events: none; z-index: 10000; overflow: hidden;">
+                    <canvas id="magnifier-canvas" width="120" height="120"></canvas>
+                    <div style="position: absolute; left: 50%; top: 50%; width: 1px; height: 100%; background: rgba(0,0,0,0.5); transform: translateX(-50%);"></div>
+                    <div style="position: absolute; left: 0; top: 50%; width: 100%; height: 1px; background: rgba(0,0,0,0.5); transform: translateY(-50%);"></div>
+                    <div id="magnifier-color" style="position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%); background: #fff; padding: 4px 8px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); font-size: 11px; font-family: monospace; white-space: nowrap;"></div>
+                </div>
             </div>
 
             <!-- Bottom Toolbar (Figma Style) -->
@@ -1817,14 +1824,18 @@
 
             eyedropperActive = true;
             eyedropperTarget = target;
-            canvas.defaultCursor = 'crosshair';
-            canvas.hoverCursor = 'crosshair';
+            canvas.defaultCursor = 'none'; // Hide cursor, we'll show magnifier instead
+            canvas.hoverCursor = 'none';
             canvas.selection = false;
             canvas.discardActiveObject();
             canvas.forEachObject(obj => {
                 obj.selectable = false;
                 obj.evented = false;
             });
+
+            // Show magnifier
+            document.getElementById('eyedropper-magnifier').style.display = 'block';
+
             canvas.renderAll();
         }
 
@@ -1841,6 +1852,9 @@
                 }
             });
 
+            // Hide magnifier
+            document.getElementById('eyedropper-magnifier').style.display = 'none';
+
             // Restore the previously selected object
             if (eyedropperSelectedObject) {
                 canvas.setActiveObject(eyedropperSelectedObject);
@@ -1848,6 +1862,61 @@
             }
 
             canvas.renderAll();
+        }
+
+        function updateEyedropperMagnifier(e) {
+            if (!eyedropperActive) return;
+
+            const pointer = canvas.getPointer(e.e);
+            const magnifier = document.getElementById('eyedropper-magnifier');
+            const magnifierCanvas = document.getElementById('magnifier-canvas');
+            const magnifierCtx = magnifierCanvas.getContext('2d');
+            const colorLabel = document.getElementById('magnifier-color');
+
+            // Position magnifier near cursor (offset to not block view)
+            const canvasRect = canvas.upperCanvasEl.getBoundingClientRect();
+            magnifier.style.left = (e.e.clientX - canvasRect.left + 20) + 'px';
+            magnifier.style.top = (e.e.clientY - canvasRect.top + 20) + 'px';
+
+            // Get canvas context and draw zoomed area
+            const ctx = canvas.getContext('2d');
+            const zoom = 10; // 10x magnification
+            const size = 12; // Sample size in pixels
+
+            try {
+                // Get image data from canvas
+                const imageData = ctx.getImageData(
+                    pointer.x - size / 2,
+                    pointer.y - size / 2,
+                    size,
+                    size
+                );
+
+                // Draw zoomed image on magnifier canvas
+                magnifierCtx.imageSmoothingEnabled = false; // Pixelated zoom
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = size;
+                tempCanvas.height = size;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.putImageData(imageData, 0, 0);
+
+                magnifierCtx.clearRect(0, 0, 120, 120);
+                magnifierCtx.drawImage(tempCanvas, 0, 0, size, size, 0, 0, 120, 120);
+
+                // Get center pixel color
+                const centerPixel = ctx.getImageData(pointer.x, pointer.y, 1, 1).data;
+                const r = centerPixel[0];
+                const g = centerPixel[1];
+                const b = centerPixel[2];
+                const color = `rgb(${r}, ${g}, ${b})`;
+
+                // Update color label
+                colorLabel.textContent = color;
+                colorLabel.style.background = color;
+                colorLabel.style.color = (r + g + b) / 3 > 128 ? '#000' : '#fff';
+            } catch (err) {
+                // Ignore errors from sampling outside canvas
+            }
         }
 
         function sampleColorFromCanvas(e) {
@@ -1881,6 +1950,9 @@
                     obj.evented = true;
                 }
             });
+
+            // Hide magnifier
+            document.getElementById('eyedropper-magnifier').style.display = 'none';
 
             // Now apply the color to the selected object
             if (targetType === 'fill') {
@@ -2063,6 +2135,12 @@
             });
 
             canvas.on('mouse:move', function (opt) {
+                // Update eyedropper magnifier if active
+                if (eyedropperActive) {
+                    updateEyedropperMagnifier(opt);
+                    return;
+                }
+
                 if (this.isDragging) {
                     const e = opt.e;
                     const vpt = this.viewportTransform;
