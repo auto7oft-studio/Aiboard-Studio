@@ -1885,45 +1885,50 @@
             const magnifierCtx = magnifierCanvas.getContext('2d');
             const colorLabel = document.getElementById('magnifier-color');
 
-            // Get actual canvas element and its bounding rect
-            const canvasEl = canvas.upperCanvasEl;
+            // Use lowerCanvasEl - the actual rendered canvas with all objects
+            const canvasEl = canvas.lowerCanvasEl;
             const canvasRect = canvasEl.getBoundingClientRect();
 
-            // Calculate mouse position relative to canvas element
-            const mouseX = e.e.clientX - canvasRect.left;
-            const mouseY = e.e.clientY - canvasRect.top;
+            // Calculate mouse position relative to canvas element (CSS pixels)
+            const cssX = e.e.clientX - canvasRect.left;
+            const cssY = e.e.clientY - canvasRect.top;
 
             // Position magnifier near cursor (offset to bottom-right to not block view)
             const magnifierSize = 140;
             const offset = 30;
 
-            let left = mouseX + offset;
-            let top = mouseY + offset;
+            let left = cssX + offset;
+            let top = cssY + offset;
 
             // Keep magnifier within canvas bounds
             if (left + magnifierSize > canvasRect.width) {
-                left = mouseX - magnifierSize - offset;
+                left = cssX - magnifierSize - offset;
             }
             if (top + magnifierSize + 40 > canvasRect.height) { // +40 for color label
-                top = mouseY - magnifierSize - offset;
+                top = cssY - magnifierSize - offset;
             }
 
             magnifier.style.left = left + 'px';
             magnifier.style.top = top + 'px';
 
-            // Get canvas rendering context (2d context for pixel data)
-            const ctx = canvas.getContext('2d');
-            const size = 14; // Sample size in pixels (14x14 grid)
+            // Get 2D context from the lower canvas (actual rendered content)
+            const ctx = canvasEl.getContext('2d', { willReadFrequently: true });
+
+            // Account for canvas internal scaling (devicePixelRatio and canvas size vs display size)
+            const scaleX = canvasEl.width / canvasRect.width;
+            const scaleY = canvasEl.height / canvasRect.height;
+
+            // Convert CSS coordinates to canvas pixel coordinates
+            const canvasX = Math.floor(cssX * scaleX);
+            const canvasY = Math.floor(cssY * scaleY);
+
+            const size = 14; // Sample size in canvas pixels (14x14 grid)
 
             try {
-                // Sample from actual pixel coordinates (not transformed)
-                const sampleX = Math.floor(mouseX);
-                const sampleY = Math.floor(mouseY);
-
-                // Get image data from canvas
+                // Get image data from canvas at the scaled coordinates
                 const imageData = ctx.getImageData(
-                    sampleX - Math.floor(size / 2),
-                    sampleY - Math.floor(size / 2),
+                    canvasX - Math.floor(size / 2),
+                    canvasY - Math.floor(size / 2),
                     size,
                     size
                 );
@@ -1940,7 +1945,7 @@
                 magnifierCtx.drawImage(tempCanvas, 0, 0, size, size, 0, 0, 140, 140);
 
                 // Get center pixel color
-                const centerPixel = ctx.getImageData(sampleX, sampleY, 1, 1).data;
+                const centerPixel = ctx.getImageData(canvasX, canvasY, 1, 1).data;
                 const r = centerPixel[0];
                 const g = centerPixel[1];
                 const b = centerPixel[2];
@@ -1959,16 +1964,26 @@
         function sampleColorFromCanvas(e) {
             if (!eyedropperActive) return;
 
-            // Get actual canvas element and mouse position
-            const canvasEl = canvas.upperCanvasEl;
+            // Use lowerCanvasEl for consistent sampling
+            const canvasEl = canvas.lowerCanvasEl;
             const canvasRect = canvasEl.getBoundingClientRect();
-            const mouseX = Math.floor(e.e.clientX - canvasRect.left);
-            const mouseY = Math.floor(e.e.clientY - canvasRect.top);
 
-            const ctx = canvas.getContext('2d');
+            // Calculate CSS coordinates
+            const cssX = e.e.clientX - canvasRect.left;
+            const cssY = e.e.clientY - canvasRect.top;
 
-            // Sample from actual pixel coordinates
-            const pixelData = ctx.getImageData(mouseX, mouseY, 1, 1).data;
+            // Account for canvas internal scaling
+            const scaleX = canvasEl.width / canvasRect.width;
+            const scaleY = canvasEl.height / canvasRect.height;
+
+            // Convert to canvas pixel coordinates
+            const canvasX = Math.floor(cssX * scaleX);
+            const canvasY = Math.floor(cssY * scaleY);
+
+            const ctx = canvasEl.getContext('2d', { willReadFrequently: true });
+
+            // Sample from scaled coordinates
+            const pixelData = ctx.getImageData(canvasX, canvasY, 1, 1).data;
             const r = pixelData[0];
             const g = pixelData[1];
             const b = pixelData[2];
