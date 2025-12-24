@@ -2629,6 +2629,10 @@
                 direction: fill.direction,
                 styles: JSON.parse(JSON.stringify(fill.styles || {}))
             });
+            // Mark objects as dirty to force re-render
+            stroke.dirty = true;
+            fill.dirty = true;
+            group.dirty = true;
             group._calcBounds();
             group._updateObjectsCoords();
             group.setCoords();
@@ -2823,6 +2827,9 @@
                         parts.stroke.set('stroke', val);
                         obj.textStrokeColor = val;
                         setObjectColorData(parts.stroke, 'stroke', val);
+                        // Mark as dirty to force re-render
+                        parts.stroke.dirty = true;
+                        obj.dirty = true;
                     }
                 } else {
                     obj.set('stroke', val);
@@ -2867,6 +2874,11 @@
                 target.set('strokeDashArray', null);
                 target._userStrokeDashed = false;
                 dashSettings.style.display = 'none';
+            }
+            // Mark as dirty to force re-render for text stroke groups
+            if (obj.isTextStrokeGroup) {
+                target.dirty = true;
+                obj.dirty = true;
             }
             canvas.renderAll();
             saveHistory();
@@ -3013,6 +3025,10 @@
                         parts.stroke.set('strokeDashArray', preservedDashArray);
                     }
                     target.textStrokeWidth = strokePx;
+                    // Mark objects as dirty to force re-render
+                    parts.stroke.dirty = true;
+                    if (parts.fill) parts.fill.dirty = true;
+                    target.dirty = true;
                     target._calcBounds();
                     target._updateObjectsCoords();
                     target.setCoords();
