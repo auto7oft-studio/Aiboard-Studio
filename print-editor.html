@@ -2888,10 +2888,14 @@
             // Get stroke width - treat null, undefined, and 0 as no stroke
             let strokePx = 0;
             if (obj.isTextStrokeGroup) {
+                // Old text stroke group format - will be converted to simple stroke
                 strokePx = Math.round(obj.textStrokeWidth || 0);
             } else {
                 const rawWidth = strokeTarget.strokeWidth;
-                strokePx = (rawWidth !== null && rawWidth !== undefined && rawWidth > 0) ? Math.round(rawWidth) : 0;
+                if (rawWidth !== null && rawWidth !== undefined && rawWidth > 0) {
+                    // For text objects, we store strokeWidth * 2, so divide by 2 to get actual width
+                    strokePx = isTextObject(obj) ? Math.round(rawWidth / 2) : Math.round(rawWidth);
+                }
             }
 
             const hasStroke = strokePx > 0;
@@ -3044,19 +3048,11 @@
             const isEnabled = document.getElementById('stroke-enabled').checked;
             const strokeSettings = document.getElementById('stroke-settings');
 
-            console.log('[toggleStrokeEnabled]', {
-                isEnabled,
-                objType: obj.type,
-                isTextStrokeGroup: obj.isTextStrokeGroup
-            });
-
             if (isEnabled) {
                 const strokeWidth = parseInt(document.getElementById('stroke-width-input').value) || 1;
-                console.log('[toggleStrokeEnabled] Enabling stroke with width:', strokeWidth);
                 applyStrokeWidth(obj, strokeWidth);
                 strokeSettings.style.display = 'block';
             } else {
-                console.log('[toggleStrokeEnabled] Disabling stroke');
                 applyStrokeWidth(obj, 0);
                 strokeSettings.style.display = 'none';
             }
@@ -3252,118 +3248,93 @@
             const strokePx = Math.max(0, px || 0);
 
             const applyTo = (target) => {
+                // Handle text stroke groups - convert back to simple text with stroke
                 if (target.isTextStrokeGroup) {
-                    // When stroke width is 0, convert back to plain text
-                    if (strokePx === 0) {
-                        const parts = getTextStrokeGroupParts(target);
-                        if (!parts || !parts.fill) return;
-                        const fillText = parts.fill;
-                        const center = target.getCenterPoint();
-
-                        // Properly extract text from group
-                        const textProps = {
-                            text: fillText.text,
-                            fontFamily: fillText.fontFamily,
-                            fontSize: fillText.fontSize,
-                            fontWeight: fillText.fontWeight,
-                            fontStyle: fillText.fontStyle,
-                            fill: fillText.fill,
-                            textAlign: fillText.textAlign,
-                            lineHeight: fillText.lineHeight,
-                            charSpacing: fillText.charSpacing,
-                            underline: fillText.underline,
-                            linethrough: fillText.linethrough,
-                            overline: fillText.overline,
-                            strokeWidth: 0,
-                            stroke: null,
-                            angle: target.angle,
-                            scaleX: target.scaleX,
-                            scaleY: target.scaleY
-                        };
-
-                        const newText = new fabric.IText(textProps.text, textProps);
-                        ensureObjectId(newText);
-                        canvas.remove(target);
-                        canvas.add(newText);
-                        newText.setPositionByOrigin(center, 'center', 'center');
-                        newText.setCoords();
-                        canvas.setActiveObject(newText);
-                        canvas.renderAll();
-                        return;
-                    }
-
                     const parts = getTextStrokeGroupParts(target);
-                    if (!parts || !parts.stroke) return;
-                    // Preserve dash array settings
-                    const preservedDashArray = parts.stroke.strokeDashArray;
-                    parts.stroke.set({
-                        strokeWidth: strokePx,  // Use actual width, not doubled
+                    if (!parts || !parts.fill) return;
+                    const fillText = parts.fill;
+                    const center = target.getCenterPoint();
+
+                    // Extract text properties
+                    const textProps = {
+                        text: fillText.text,
+                        fontFamily: fillText.fontFamily,
+                        fontSize: fillText.fontSize,
+                        fontWeight: fillText.fontWeight,
+                        fontStyle: fillText.fontStyle,
+                        fill: fillText.fill,
+                        textAlign: fillText.textAlign,
+                        lineHeight: fillText.lineHeight,
+                        charSpacing: fillText.charSpacing,
+                        underline: fillText.underline,
+                        linethrough: fillText.linethrough,
+                        overline: fillText.overline,
+                        angle: target.angle,
+                        scaleX: target.scaleX,
+                        scaleY: target.scaleY,
+                        stroke: strokePx > 0 ? (target.textStrokeColor || '#000000') : null,
+                        strokeWidth: strokePx * 2,  // Double for outside effect
                         strokeUniform: true,
                         strokeLineCap: 'round',
-                        strokeLineJoin: 'round'
-                    });
-                    // Restore dash array if it was set
-                    if (preservedDashArray) {
-                        parts.stroke.set('strokeDashArray', preservedDashArray);
-                    }
-                    target.textStrokeWidth = strokePx;
-                    // Mark objects as dirty to force re-render
-                    parts.stroke.dirty = true;
-                    if (parts.fill) parts.fill.dirty = true;
-                    target.dirty = true;
-                    target._calcBounds();
-                    target._updateObjectsCoords();
-                    target.setCoords();
-                    return;
-                }
+                        strokeLineJoin: 'round',
+                        paintFirst: 'stroke'  // Paint stroke first, then fill on top
+                    };
 
-                if (isTextObject(target)) {
-                    if (strokePx === 0) {
-                        target.set('strokeWidth', 0);
-                        target.setCoords();
-                        return;
-                    }
-                    console.log('[applyStrokeWidth] Applying to text:', {
-                        text: target.text,
-                        strokePx,
-                        targetType: target.type,
-                        hasStroke: target.stroke
-                    });
-
-                    const strokeColor = target.stroke || document.getElementById('stroke-swatch').style.background || '#000000';
-                    console.log('[applyStrokeWidth] Stroke color:', strokeColor);
-
-                    // CRITICAL: Save center point BEFORE removing from canvas
-                    const center = target.getCenterPoint();
-                    console.log('[applyStrokeWidth] Center point:', center);
-
+                    // Create new text with native stroke
+                    const newText = new fabric.IText(textProps.text, textProps);
+                    ensureObjectId(newText);
                     canvas.remove(target);
-                    console.log('[applyStrokeWidth] Text removed from canvas');
-
-                    const group = createTextStrokeGroup(target, strokePx, strokeColor, center);
-                    console.log('[applyStrokeWidth] Group created, isTextStrokeGroup:', group?.isTextStrokeGroup);
-
-                    // Check if group creation succeeded
-                    if (group && group.isTextStrokeGroup) {
-                        ensureObjectId(group);
-                        canvas.add(group);
-                        canvas.setActiveObject(group);
-                        console.log('[applyStrokeWidth] Group added to canvas');
-                    } else {
-                        // If group creation failed, add back the original text
-                        console.warn('[applyStrokeWidth] Text stroke group creation failed, restoring original text');
-                        canvas.add(target);
-                        canvas.setActiveObject(target);
-                    }
+                    canvas.add(newText);
+                    newText.setPositionByOrigin(center, 'center', 'center');
+                    newText.setCoords();
+                    canvas.setActiveObject(newText);
                     canvas.renderAll();
                     return;
                 }
 
-                // Preserve dash array settings
-                const preservedDashArray = target.strokeDashArray;
+                // Handle regular text objects
+                if (isTextObject(target)) {
+                    if (strokePx === 0) {
+                        target.set({
+                            stroke: null,
+                            strokeWidth: 0
+                        });
+                    } else {
+                        const strokeColor = target.stroke || document.getElementById('stroke-swatch').style.background || '#000000';
+                        target.set({
+                            stroke: strokeColor,
+                            strokeWidth: strokePx * 2,  // Double for outside effect
+                            strokeUniform: true,
+                            strokeLineCap: 'round',
+                            strokeLineJoin: 'round',
+                            paintFirst: 'stroke'  // Paint stroke first, then fill on top
+                        });
+                    }
+                    target.setCoords();
+                    canvas.renderAll();
+                    return;
+                }
 
+                // Handle non-text objects (shapes, etc.)
+                const preservedDashArray = target.strokeDashArray;
                 target.set('strokeUniform', true);
                 target.set('paintFirst', 'fill');
+                target.set('strokeWidth', strokePx);
+
+                if (preservedDashArray) {
+                    target.set('strokeDashArray', preservedDashArray);
+                }
+                target.setCoords();
+            };
+
+            if (obj._objects) {
+                obj.forEachObject(child => applyTo(child));
+            } else {
+                applyTo(obj);
+            }
+            canvas.renderAll();
+            saveHistory();
+        }
 
                 // Outside stroke: expand object by strokePx * 2 to compensate for center-aligned stroke
                 if (target.type === 'rect' || target.type === 'triangle') {
@@ -4049,7 +4020,13 @@
 
                 // Get SVG icon based on type (Figma style)
                 let iconSvg = '';
-                if (obj.type === 'i-text' || obj.type === 'textbox' || obj.type === 'text') {
+                let displayType = obj.type;
+
+                // Text stroke groups should display as text
+                if (obj.isTextStrokeGroup) {
+                    displayType = 'text';
+                    iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>';
+                } else if (obj.type === 'i-text' || obj.type === 'textbox' || obj.type === 'text') {
                     iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>';
                 } else if (obj.type === 'image') {
                     iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
@@ -4081,7 +4058,7 @@
 
                 item.innerHTML = `
                     <div class="layer-icon">${iconSvg}</div>
-                    <span class="layer-name">${obj.name || obj.type}</span>
+                    <span class="layer-name">${obj.name || displayType}</span>
                     <div class="layer-actions">
                         <div class="layer-action-btn" title="${isLocked ? '잠금 해제' : '잠금'}" onclick="event.stopPropagation(); toggleLayerLock(${actualIndex})">${lockIcon}</div>
                         <div class="layer-action-btn" title="${isHidden ? '표시' : '숨기기'}" onclick="event.stopPropagation(); toggleLayerVisibility(${actualIndex})">${visibilityIcon}</div>
@@ -4199,7 +4176,8 @@
 
             // Toggle Group/Ungroup buttons
             document.getElementById('btn-group').style.display = (obj.type === 'activeSelection') ? 'flex' : 'none';
-            document.getElementById('btn-ungroup').style.display = (obj.type === 'group') ? 'flex' : 'none';
+            // Hide ungroup button for text stroke groups
+            document.getElementById('btn-ungroup').style.display = (obj.type === 'group' && !obj.isTextStrokeGroup) ? 'flex' : 'none';
 
             // Mask buttons
             const isMulti = obj.type === 'activeSelection' && obj._objects && obj._objects.length === 2;
@@ -4304,6 +4282,13 @@
         function ungroupSelected() {
             const active = canvas.getActiveObject();
             if (!active || active.type !== 'group') return;
+
+            // Prevent ungrouping text stroke groups
+            if (active.isTextStrokeGroup) {
+                console.warn('Text stroke groups cannot be ungrouped');
+                return;
+            }
+
             active.toActiveSelection();
             canvas.requestRenderAll();
             saveHistory();
