@@ -1547,76 +1547,85 @@
 
                 <!-- 채우기 -->
                 <div id="prop-fill" class="panel-section">
-                    <div class="panel-title"
-                        style="display: flex; justify-content: space-between; align-items: center;">
-                        채우기
-                        <label
-                            style="font-weight: normal; font-size: 11px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                            <input type="checkbox" id="transparent-check" onchange="toggleTransparentFill()"> 투명
+                    <div class="panel-title" style="display: flex; justify-content: space-between; align-items: center;">
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 600;">
+                            <input type="checkbox" id="fill-enabled" onchange="toggleFillEnabled()" checked style="width: 16px; height: 16px;">
+                            채우기
+                        </label>
+                        <label style="font-weight: normal; font-size: 11px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                            <input type="checkbox" id="gradient-check" onchange="toggleGradientMode()" style="width: 14px; height: 14px;">
+                            그라데이션
                         </label>
                     </div>
-                    <div class="property-row" id="grad-toggle-row">
-                        <label style="font-size: 11px; cursor: pointer;"><input type="checkbox" id="gradient-check"
-                                onchange="toggleGradientMode()"> 그라데이션</label>
-                    </div>
-                    <div id="solid-color-panel">
-                        <div class="color-swatch-wrapper">
-                            <div id="fill-swatch" class="color-swatch" style="background: #3B82F6;"
-                                onclick="openPicker('fill', this)"></div>
-                            <input type="text" id="fill-color-hex" value="#3B82F6"
-                                style="font-family: monospace; font-size: 12px;" readonly>
+                    <div id="fill-settings">
+                        <div id="solid-color-panel">
+                            <div class="color-swatch-wrapper">
+                                <div id="fill-swatch" class="color-swatch" style="background: #3B82F6;"
+                                    onclick="openPicker('fill', this)"></div>
+                                <input type="text" id="fill-color-hex" value="#3B82F6"
+                                    style="font-family: monospace; font-size: 12px;" readonly>
+                            </div>
                         </div>
-                    </div>
-                    <div id="gradient-panel" style="display: none;">
-                        <div class="property-row">
-                            <label class="property-label">유형</label>
-                            <select id="grad-type" onchange="updateGradientType()">
-                                <option value="linear">선형 (Linear)</option>
-                                <option value="radial">원형 (Radial)</option>
-                            </select>
-                        </div>
-                        <div class="property-row" id="grad-angle-row">
-                            <label class="property-label">회전</label>
-                            <input type="range" id="grad-angle" min="0" max="360" value="0" oninput="updateGradient()"
-                                style="flex:1">
-                            <span id="grad-angle-val" style="font-size: 11px; width: 28px; text-align: right;">0°</span>
-                        </div>
-                        <div class="property-row">
-                            <label class="property-label">시작</label>
-                            <div id="grad-start-swatch" class="color-swatch" style="background: #3B82F6;"
-                                onclick="openPicker('grad-start', this)"></div>
-                        </div>
-                        <div class="property-row">
-                            <label class="property-label">종료</label>
-                            <div id="grad-end-swatch" class="color-swatch" style="background: #2563EB;"
-                                onclick="openPicker('grad-end', this)"></div>
+                        <div id="gradient-panel" style="display: none;">
+                            <div class="property-row">
+                                <label class="property-label">유형</label>
+                                <select id="grad-type" onchange="updateGradientType()">
+                                    <option value="linear">선형 (Linear)</option>
+                                    <option value="radial">원형 (Radial)</option>
+                                </select>
+                            </div>
+                            <div class="property-row" id="grad-angle-row">
+                                <label class="property-label">회전</label>
+                                <input type="range" id="grad-angle" min="0" max="360" value="0" oninput="updateGradient()"
+                                    style="flex:1">
+                                <span id="grad-angle-val" style="font-size: 11px; width: 28px; text-align: right;">0°</span>
+                            </div>
+                            <div class="property-row">
+                                <label class="property-label">시작</label>
+                                <div id="grad-start-swatch" class="color-swatch" style="background: #3B82F6;"
+                                    onclick="openPicker('grad-start', this)"></div>
+                            </div>
+                            <div class="property-row">
+                                <label class="property-label">종료</label>
+                                <div id="grad-end-swatch" class="color-swatch" style="background: #2563EB;"
+                                    onclick="openPicker('grad-end', this)"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- 테두리 -->
                 <div class="panel-section">
-                    <div class="panel-title">테두리</div>
-                    <div class="property-row">
-                        <label class="property-label">색상</label>
-                        <div id="stroke-swatch" class="color-swatch" style="background: #000000;"
-                            onclick="openPicker('stroke', this)"></div>
+                    <div class="panel-title">
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 600;">
+                            <input type="checkbox" id="stroke-enabled" onchange="toggleStrokeEnabled()" style="width: 16px; height: 16px;">
+                            테두리
+                        </label>
                     </div>
-                    <div class="property-row">
-                        <label class="property-label">두께 (px)</label>
-                        <input type="range" id="stroke-width" min="0" max="100" value="0" step="1"
-                            oninput="changeStrokeWidth(this.value)" style="flex:1">
-                        <span id="stroke-width-val" style="font-size: 11px; width: 24px; text-align: right;">0</span>
-                    </div>
-                    <div class="property-row">
-                        <label class="property-label">점선</label>
-                        <input type="checkbox" id="stroke-dashed" onchange="changeStrokeDashed()" style="width: 16px; height: 16px;">
-                    </div>
-                    <div id="dash-settings" class="property-row" style="display: none;">
-                        <label class="property-label">길이/간격</label>
-                        <input type="number" id="dash-length" value="8" min="1" max="100" style="width: 45px; padding: 2px 4px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;" oninput="changeStrokeDashed()">
-                        <span style="font-size: 11px; margin: 0 4px;">/</span>
-                        <input type="number" id="dash-gap" value="4" min="1" max="100" style="width: 45px; padding: 2px 4px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;" oninput="changeStrokeDashed()">
+                    <div id="stroke-settings" style="display: none;">
+                        <div class="property-row">
+                            <label class="property-label">색상</label>
+                            <div id="stroke-swatch" class="color-swatch" style="background: #000000;"
+                                onclick="openPicker('stroke', this)"></div>
+                        </div>
+                        <div class="property-row">
+                            <label class="property-label">크기</label>
+                            <input type="number" id="stroke-width-input" min="1" max="100" value="1"
+                                oninput="changeStrokeWidth(this.value)"
+                                style="width: 50px; padding: 4px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;">
+                        </div>
+                        <div class="property-row">
+                            <label class="property-label">대시</label>
+                            <input type="number" id="dash-length" value="0" min="0" max="100"
+                                oninput="updateStrokeDash()"
+                                style="width: 50px; padding: 4px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;">
+                        </div>
+                        <div class="property-row">
+                            <label class="property-label">간격</label>
+                            <input type="number" id="dash-gap" value="0" min="0" max="100"
+                                oninput="updateStrokeDash()"
+                                style="width: 50px; padding: 4px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;">
+                        </div>
                     </div>
                 </div>
 
@@ -2688,12 +2697,16 @@
             const isLine = obj.type === 'line';
             document.getElementById('prop-fill').style.display = isLine ? 'none' : 'block';
 
+            // Fill sync
             const fill = textTarget.fill;
+            const hasFill = fill && fill !== 'transparent';
+            document.getElementById('fill-enabled').checked = hasFill;
+            document.getElementById('fill-settings').style.display = hasFill ? 'block' : 'none';
+
             if (typeof fill === 'string') {
-                const color = fill === 'transparent' ? 'transparent' : fill;
+                const color = fill === 'transparent' ? '#3B82F6' : fill;
                 document.getElementById('fill-swatch').style.background = color;
                 document.getElementById('fill-color-hex').value = color.toUpperCase();
-                document.getElementById('transparent-check').checked = (fill === 'transparent');
                 document.getElementById('gradient-check').checked = false;
             }
             if (fill && fill.colorStops) {
@@ -2714,21 +2727,24 @@
                 toggleGradientMode();
             }
 
+            // Stroke sync
             const strokeTarget = obj.isTextStrokeGroup ? (getTextStrokeGroupParts(obj)?.stroke || obj) : obj;
             const stroke = strokeTarget.stroke || '#000000';
-            document.getElementById('stroke-swatch').style.background = stroke;
             const strokePx = obj.isTextStrokeGroup
                 ? Math.round(obj.textStrokeWidth || 0)
                 : (strokeTarget.strokeWidth ? Math.round(strokeTarget.strokeWidth) : 0);
-            document.getElementById('stroke-width').value = strokePx;
-            document.getElementById('stroke-width-val').innerText = strokePx;
-            const isDashed = strokeTarget._userStrokeDashed || false;
-            document.getElementById('stroke-dashed').checked = isDashed;
-            document.getElementById('dash-settings').style.display = isDashed ? 'flex' : 'none';
-            if (isDashed) {
-                document.getElementById('dash-length').value = strokeTarget._dashLength || 8;
-                document.getElementById('dash-gap').value = strokeTarget._dashGap || 4;
-            }
+
+            const hasStroke = strokePx > 0;
+            document.getElementById('stroke-enabled').checked = hasStroke;
+            document.getElementById('stroke-settings').style.display = hasStroke ? 'block' : 'none';
+
+            document.getElementById('stroke-swatch').style.background = stroke;
+            document.getElementById('stroke-width-input').value = Math.max(1, strokePx);
+
+            const dashLen = strokeTarget._dashLength || 0;
+            const dashGap = strokeTarget._dashGap || 0;
+            document.getElementById('dash-length').value = dashLen;
+            document.getElementById('dash-gap').value = dashGap;
 
             // Opacity
             const opacity = Math.round((obj.opacity || 1) * 100);
@@ -2818,6 +2834,92 @@
             saveHistory();
         }
 
+        function toggleFillEnabled() {
+            const obj = canvas.getActiveObject();
+            if (!obj) return;
+
+            const isEnabled = document.getElementById('fill-enabled').checked;
+            const fillSettings = document.getElementById('fill-settings');
+
+            if (isEnabled) {
+                const color = document.getElementById('fill-swatch').style.background || '#3B82F6';
+                if (obj.isTextStrokeGroup) {
+                    const parts = getTextStrokeGroupParts(obj);
+                    if (parts && parts.fill) {
+                        parts.fill.set('fill', color);
+                        syncTextStrokeGroup(obj);
+                        setObjectColorData(parts.fill, 'fill', color);
+                    }
+                } else {
+                    obj.set('fill', color);
+                    setObjectColorData(obj, 'fill', color);
+                }
+                fillSettings.style.display = 'block';
+            } else {
+                if (obj.isTextStrokeGroup) {
+                    const parts = getTextStrokeGroupParts(obj);
+                    if (parts && parts.fill) {
+                        parts.fill.set('fill', 'transparent');
+                        syncTextStrokeGroup(obj);
+                    }
+                } else {
+                    obj.set('fill', 'transparent');
+                }
+                fillSettings.style.display = 'none';
+            }
+            canvas.renderAll();
+            saveHistory();
+        }
+
+        function toggleStrokeEnabled() {
+            const obj = canvas.getActiveObject();
+            if (!obj) return;
+
+            const isEnabled = document.getElementById('stroke-enabled').checked;
+            const strokeSettings = document.getElementById('stroke-settings');
+
+            if (isEnabled) {
+                const strokeWidth = parseInt(document.getElementById('stroke-width-input').value) || 1;
+                applyStrokeWidth(obj, strokeWidth);
+                strokeSettings.style.display = 'block';
+            } else {
+                applyStrokeWidth(obj, 0);
+                strokeSettings.style.display = 'none';
+            }
+            canvas.renderAll();
+            saveHistory();
+        }
+
+        function updateStrokeDash() {
+            const obj = canvas.getActiveObject();
+            if (!obj) return;
+
+            const dashLen = parseInt(document.getElementById('dash-length').value) || 0;
+            const dashGap = parseInt(document.getElementById('dash-gap').value) || 0;
+
+            const target = obj.isTextStrokeGroup ? getTextStrokeGroupParts(obj)?.stroke : obj;
+            if (!target) return;
+
+            if (dashLen > 0 && dashGap > 0) {
+                target.set('strokeDashArray', [dashLen, dashGap]);
+                target._userStrokeDashed = true;
+                target._dashLength = dashLen;
+                target._dashGap = dashGap;
+            } else {
+                target.set('strokeDashArray', null);
+                target._userStrokeDashed = false;
+            }
+
+            // Mark as dirty to force re-render for text stroke groups
+            if (obj.isTextStrokeGroup) {
+                target.dirty = true;
+                obj.dirty = true;
+            }
+
+            canvas.renderAll();
+            saveHistory();
+        }
+
         function changeStrokeColor(val) {
             const obj = canvas.getActiveObject();
             if (obj) {
@@ -2846,7 +2948,9 @@
             if (obj) {
                 const px = parseFloat(valPx);
                 applyStrokeWidth(obj, px);
-                document.getElementById('stroke-width-val').innerText = px;
+                // Update the input value
+                const widthInput = document.getElementById('stroke-width-input');
+                if (widthInput) widthInput.value = Math.max(1, px);
                 canvas.renderAll();
                 saveHistory();
             }
