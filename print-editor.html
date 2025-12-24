@@ -1548,9 +1548,9 @@
                 <!-- 채우기 -->
                 <div id="prop-fill" class="panel-section" style="display: none;">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 600;">
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
                             <input type="checkbox" id="fill-enabled" onchange="toggleFillEnabled()" checked style="width: 16px; height: 16px;">
-                            채우기
+                            <span class="panel-title" style="margin: 0;">채우기</span>
                         </label>
                         <div id="fill-swatch" class="color-swatch" style="background: #3B82F6;"
                             onclick="openPicker('fill', this)"></div>
@@ -1600,9 +1600,9 @@
                 <!-- 테두리 -->
                 <div id="prop-stroke" class="panel-section" style="display: none;">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 600;">
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
                             <input type="checkbox" id="stroke-enabled" onchange="toggleStrokeEnabled()" style="width: 16px; height: 16px;">
-                            테두리
+                            <span class="panel-title" style="margin: 0;">테두리</span>
                         </label>
                         <div id="stroke-swatch" class="color-swatch" style="background: #000000;"
                             onclick="openPicker('stroke', this)"></div>
@@ -1809,13 +1809,18 @@
         // Eyedropper
         let eyedropperActive = false;
         let eyedropperTarget = null;
+        let eyedropperSelectedObject = null;
 
         function activateEyedropper(target) {
+            // Store the currently selected object
+            eyedropperSelectedObject = canvas.getActiveObject();
+
             eyedropperActive = true;
             eyedropperTarget = target;
             canvas.defaultCursor = 'crosshair';
             canvas.hoverCursor = 'crosshair';
             canvas.selection = false;
+            canvas.discardActiveObject();
             canvas.forEachObject(obj => {
                 obj.selectable = false;
                 obj.evented = false;
@@ -1835,6 +1840,13 @@
                     obj.evented = true;
                 }
             });
+
+            // Restore the previously selected object
+            if (eyedropperSelectedObject) {
+                canvas.setActiveObject(eyedropperSelectedObject);
+                eyedropperSelectedObject = null;
+            }
+
             canvas.renderAll();
         }
 
@@ -1851,14 +1863,15 @@
 
             const color = `rgba(${r}, ${g}, ${b}, ${a})`;
 
-            // Apply the sampled color
+            // Deactivate eyedropper first to restore selection
+            deactivateEyedropper();
+
+            // Apply the sampled color to the restored object
             if (eyedropperTarget === 'fill') {
                 changeFillColor(color);
             } else if (eyedropperTarget === 'stroke') {
                 changeStrokeColor(color);
             }
-
-            deactivateEyedropper();
         }
 
         function mmToPx(mm) { return mm * MM_TO_PX_SCREEN; }
