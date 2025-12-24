@@ -2675,36 +2675,49 @@
         }
 
         function createTextStrokeGroup(textObj, strokeWidth, strokeColor, centerPoint) {
-            // Outside stroke: draw a double-width stroke behind the fill to keep fill intact.
-            const stroke = buildTextClone(textObj, {
-                fill: 'transparent',
-                stroke: strokeColor,
-                strokeWidth: strokeWidth * 2,
-                strokeUniform: true,
-                selectable: false,
-                evented: false
-            });
-            stroke.isTextStrokeOutline = true;
+            try {
+                // Outside stroke: draw a double-width stroke behind the fill to keep fill intact.
+                const stroke = buildTextClone(textObj, {
+                    fill: 'transparent',
+                    stroke: strokeColor,
+                    strokeWidth: strokeWidth * 2,
+                    strokeUniform: true,
+                    selectable: false,
+                    evented: false
+                });
+                stroke.isTextStrokeOutline = true;
 
-            textObj.set({
-                strokeWidth: 0,
-                stroke: null
-            });
-            textObj.isTextFill = true;
+                textObj.set({
+                    strokeWidth: 0,
+                    stroke: null
+                });
+                textObj.isTextFill = true;
 
-            const group = new fabric.Group([stroke, textObj], {
-                subTargetCheck: true,
-                selectable: true,
-                evented: true
-            });
-            // Use provided center point (from before canvas removal) or fallback to current position
-            const center = centerPoint || textObj.getCenterPoint();
-            group.setPositionByOrigin(center, 'center', 'center');
-            group.isTextStrokeGroup = true;
-            group.textStrokeWidth = strokeWidth;
-            group.textStrokeColor = strokeColor;
-            group.setCoords();
-            return group;
+                const group = new fabric.Group([stroke, textObj], {
+                    subTargetCheck: true,
+                    selectable: true,
+                    evented: true,
+                    objectCaching: false
+                });
+                // Use provided center point (from before canvas removal) or fallback to current position
+                const center = centerPoint || textObj.getCenterPoint();
+                group.setPositionByOrigin(center, 'center', 'center');
+                group.isTextStrokeGroup = true;
+                group.textStrokeWidth = strokeWidth;
+                group.textStrokeColor = strokeColor;
+                group.setCoords();
+
+                // Mark as dirty to ensure proper rendering
+                stroke.dirty = true;
+                textObj.dirty = true;
+                group.dirty = true;
+
+                return group;
+            } catch (error) {
+                console.error('Error creating text stroke group:', error);
+                // Return the original text object if group creation fails
+                return textObj;
+            }
         }
 
         function syncTextStrokeGroup(group) {
@@ -2820,9 +2833,15 @@
             // Stroke sync
             const strokeTarget = obj.isTextStrokeGroup ? (getTextStrokeGroupParts(obj)?.stroke || obj) : obj;
             const stroke = strokeTarget.stroke || '#000000';
-            const strokePx = obj.isTextStrokeGroup
-                ? Math.round(obj.textStrokeWidth || 0)
-                : (strokeTarget.strokeWidth ? Math.round(strokeTarget.strokeWidth) : 0);
+
+            // Get stroke width - treat null, undefined, and 0 as no stroke
+            let strokePx = 0;
+            if (obj.isTextStrokeGroup) {
+                strokePx = Math.round(obj.textStrokeWidth || 0);
+            } else {
+                const rawWidth = strokeTarget.strokeWidth;
+                strokePx = (rawWidth !== null && rawWidth !== undefined && rawWidth > 0) ? Math.round(rawWidth) : 0;
+            }
 
             const hasStroke = strokePx > 0;
             document.getElementById('stroke-enabled').checked = hasStroke;
@@ -3248,9 +3267,18 @@
                     const center = target.getCenterPoint();
                     canvas.remove(target);
                     const group = createTextStrokeGroup(target, strokePx, strokeColor, center);
-                    ensureObjectId(group);
-                    canvas.add(group);
-                    canvas.setActiveObject(group);
+
+                    // Check if group creation succeeded
+                    if (group && group.isTextStrokeGroup) {
+                        ensureObjectId(group);
+                        canvas.add(group);
+                        canvas.setActiveObject(group);
+                    } else {
+                        // If group creation failed, add back the original text
+                        console.warn('Text stroke group creation failed, restoring original text');
+                        canvas.add(target);
+                        canvas.setActiveObject(target);
+                    }
                     canvas.renderAll();
                     return;
                 }
