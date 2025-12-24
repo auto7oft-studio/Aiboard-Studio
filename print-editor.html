@@ -2677,6 +2677,14 @@
 
         function createTextStrokeGroup(textObj, strokeWidth, strokeColor, centerPoint) {
             try {
+                console.log('[createTextStrokeGroup] Starting with:', {
+                    text: textObj.text,
+                    strokeWidth,
+                    strokeColor,
+                    textType: textObj.type,
+                    centerPoint
+                });
+
                 // Outside stroke: draw a double-width stroke behind the fill to keep fill intact.
                 const stroke = buildTextClone(textObj, {
                     fill: 'transparent',
@@ -2687,6 +2695,7 @@
                     evented: false
                 });
                 stroke.isTextStrokeOutline = true;
+                console.log('[createTextStrokeGroup] Stroke clone created:', stroke.type);
 
                 textObj.set({
                     strokeWidth: 0,
@@ -2700,6 +2709,8 @@
                     evented: true,
                     objectCaching: false
                 });
+                console.log('[createTextStrokeGroup] Group created:', group.type, group._objects?.length);
+
                 // Use provided center point (from before canvas removal) or fallback to current position
                 const center = centerPoint || textObj.getCenterPoint();
                 group.setPositionByOrigin(center, 'center', 'center');
@@ -2713,9 +2724,11 @@
                 textObj.dirty = true;
                 group.dirty = true;
 
+                console.log('[createTextStrokeGroup] Success! Group bounds:', group.getBoundingRect());
                 return group;
             } catch (error) {
-                console.error('Error creating text stroke group:', error);
+                console.error('[createTextStrokeGroup] Error:', error);
+                console.error('[createTextStrokeGroup] Stack:', error.stack);
                 // Return the original text object if group creation fails
                 return textObj;
             }
@@ -2994,11 +3007,19 @@
             const isEnabled = document.getElementById('stroke-enabled').checked;
             const strokeSettings = document.getElementById('stroke-settings');
 
+            console.log('[toggleStrokeEnabled]', {
+                isEnabled,
+                objType: obj.type,
+                isTextStrokeGroup: obj.isTextStrokeGroup
+            });
+
             if (isEnabled) {
                 const strokeWidth = parseInt(document.getElementById('stroke-width-input').value) || 1;
+                console.log('[toggleStrokeEnabled] Enabling stroke with width:', strokeWidth);
                 applyStrokeWidth(obj, strokeWidth);
                 strokeSettings.style.display = 'block';
             } else {
+                console.log('[toggleStrokeEnabled] Disabling stroke');
                 applyStrokeWidth(obj, 0);
                 strokeSettings.style.display = 'none';
             }
@@ -3263,20 +3284,35 @@
                         target.setCoords();
                         return;
                     }
+                    console.log('[applyStrokeWidth] Applying to text:', {
+                        text: target.text,
+                        strokePx,
+                        targetType: target.type,
+                        hasStroke: target.stroke
+                    });
+
                     const strokeColor = target.stroke || document.getElementById('stroke-swatch').style.background || '#000000';
+                    console.log('[applyStrokeWidth] Stroke color:', strokeColor);
+
                     // CRITICAL: Save center point BEFORE removing from canvas
                     const center = target.getCenterPoint();
+                    console.log('[applyStrokeWidth] Center point:', center);
+
                     canvas.remove(target);
+                    console.log('[applyStrokeWidth] Text removed from canvas');
+
                     const group = createTextStrokeGroup(target, strokePx, strokeColor, center);
+                    console.log('[applyStrokeWidth] Group created, isTextStrokeGroup:', group?.isTextStrokeGroup);
 
                     // Check if group creation succeeded
                     if (group && group.isTextStrokeGroup) {
                         ensureObjectId(group);
                         canvas.add(group);
                         canvas.setActiveObject(group);
+                        console.log('[applyStrokeWidth] Group added to canvas');
                     } else {
                         // If group creation failed, add back the original text
-                        console.warn('Text stroke group creation failed, restoring original text');
+                        console.warn('[applyStrokeWidth] Text stroke group creation failed, restoring original text');
                         canvas.add(target);
                         canvas.setActiveObject(target);
                     }
