@@ -2662,6 +2662,7 @@
                 linethrough: source.linethrough,
                 overline: source.overline,
                 direction: source.direction,
+                textBaseline: 'alphabetic',  // Fix: ensure valid textBaseline value
                 styles: JSON.parse(JSON.stringify(source.styles || {}))
             };
 
