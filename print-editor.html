@@ -4727,10 +4727,32 @@
             if (!group || (!group.isMaskGroup && !group.isFrameGroup)) return;
 
             const objects = group._objects || [];
+
+            // Calculate absolute positions before destroying group
+            const objectsWithPositions = objects.map(obj => {
+                // Get object's center point in canvas coordinates
+                const matrix = group.calcTransformMatrix();
+                const point = fabric.util.transformPoint(
+                    { x: obj.left, y: obj.top },
+                    matrix
+                );
+
+                return {
+                    obj: obj,
+                    left: point.x,
+                    top: point.y,
+                    angle: obj.angle + group.angle,
+                    scaleX: obj.scaleX * group.scaleX,
+                    scaleY: obj.scaleY * group.scaleY
+                };
+            });
+
+            // Clear group and remove it
             group._objects = [];
             canvas.remove(group);
 
-            objects.forEach(obj => {
+            // Add objects back with restored positions
+            objectsWithPositions.forEach(({ obj, left, top, angle, scaleX, scaleY }) => {
                 if (obj.isFrameShape) {
                     obj.set({ selectable: true, evented: true });
                     obj.isFrameShape = false;
@@ -4748,6 +4770,17 @@
                     });
                     obj.maskTargetId = null;
                 }
+
+                // Restore absolute position and transforms
+                obj.set({
+                    left: left,
+                    top: top,
+                    angle: angle,
+                    scaleX: scaleX,
+                    scaleY: scaleY
+                });
+
+                obj.setCoords();
                 ensureObjectId(obj);
                 canvas.add(obj);
             });
