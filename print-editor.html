@@ -2827,12 +2827,20 @@
             document.getElementById('stroke-settings').style.display = hasStroke ? 'block' : 'none';
 
             document.getElementById('stroke-swatch').style.background = stroke;
-            document.getElementById('stroke-width-input').value = Math.max(1, strokePx);
 
-            const dashLen = strokeTarget._dashLength || 0;
-            const dashGap = strokeTarget._dashGap || 0;
-            document.getElementById('dash-length').value = dashLen;
-            document.getElementById('dash-gap').value = dashGap;
+            // Only update stroke width input if stroke is enabled
+            if (hasStroke) {
+                document.getElementById('stroke-width-input').value = strokePx;
+                const dashLen = strokeTarget._dashLength || 0;
+                const dashGap = strokeTarget._dashGap || 0;
+                document.getElementById('dash-length').value = dashLen;
+                document.getElementById('dash-gap').value = dashGap;
+            } else {
+                // Set default values when stroke is disabled
+                document.getElementById('stroke-width-input').value = 1;
+                document.getElementById('dash-length').value = 0;
+                document.getElementById('dash-gap').value = 0;
+            }
 
             // Opacity
             const opacity = Math.round((obj.opacity || 1) * 100);
@@ -2884,7 +2892,6 @@
         function changeFillColor(val) {
             const obj = canvas.getActiveObject();
             if (!obj) return;
-            document.getElementById('transparent-check').checked = false;
             if (obj.isTextStrokeGroup) {
                 const parts = getTextStrokeGroupParts(obj);
                 if (parts && parts.fill) {
@@ -2897,7 +2904,6 @@
                 setObjectColorData(obj, 'fill', val);
             }
             document.getElementById('fill-swatch').style.background = val;
-            document.getElementById('fill-color-hex').value = val.toUpperCase();
             canvas.renderAll();
             saveHistory();
         }
