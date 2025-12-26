@@ -721,13 +721,13 @@
         /* --- Left Vertical Toolbar (XD/Figma Style) --- */
         .left-toolbar {
             position: absolute;
-            left: 20px;
-            top: 20px;
-            bottom: 20px;
+            left: 0;
+            top: 0;
+            bottom: 0;
             width: 48px;
             background: var(--bg-panel);
-            border-radius: 8px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05);
+            border-right: 1px solid var(--border);
+            box-shadow: none;
             display: flex;
             flex-direction: column;
             padding: 8px 0;
@@ -790,13 +790,13 @@
         /* --- Layer Panel (Always Visible) --- */
         .layer-panel-fixed {
             position: absolute;
-            left: 88px;
-            top: 20px;
-            bottom: 20px;
+            left: 48px;
+            top: 0;
+            bottom: 0;
             width: 240px;
             background: var(--bg-panel);
-            border-radius: 8px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05);
+            border-right: 1px solid var(--border);
+            box-shadow: none;
             display: flex;
             flex-direction: column;
             z-index: 100;
@@ -1168,70 +1168,10 @@
     <div class="loading" id="loading">처리 중...</div>
 
     <div class="container">
-        <!-- 1. 좌측 사이드바 -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <div
-                        style="width: 24px; height: 24px; background: var(--primary); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white;">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-                            stroke-width="3">
-                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                        </svg>
-                    </div>
-                    <span style="letter-spacing: -0.02em; font-weight: 700;">Aiboard Studio</span>
-                </div>
-            </div>
+        <!-- Image upload input (hidden) -->
+        <input type="file" id="img-upload" style="display: none;" accept="image/*" onchange="handleImageUpload(this)">
 
-            <div class="sidebar-content">
-                <!-- Canvas Size Presets -->
-                <div class="collapsible-section">
-                    <div class="collapsible-header" onclick="toggleSection('presets')">
-                        <span class="collapsible-title">규격 프리셋</span>
-                        <svg class="collapsible-icon" id="icon-presets" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                    </div>
-                    <div class="collapsible-content" id="content-presets">
-                        <div class="size-presets">
-                            <div class="preset-card active" onclick="setCanvasSize(90, 50, '명함')">
-                                <span class="preset-name">명함</span>
-                                <span class="preset-dim">90 × 50mm</span>
-                            </div>
-                            <div class="preset-card" onclick="setCanvasSize(210, 297, '전단지 A4')">
-                                <span class="preset-name">전단지 A4</span>
-                                <span class="preset-dim">210 × 297mm</span>
-                            </div>
-                            <div class="preset-card" onclick="setCanvasSize(5000, 900, '현수막')">
-                                <span class="preset-name">현수막</span>
-                                <span class="preset-dim">5000 × 900mm</span>
-                            </div>
-                            <div class="preset-card" onclick="setCanvasSize(600, 1800, '배너')">
-                                <span class="preset-name">배너</span>
-                                <span class="preset-dim">600 × 1800mm</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Layers -->
-                <div class="collapsible-section">
-                    <div class="collapsible-header" onclick="toggleSection('layers')">
-                        <span class="collapsible-title">레이어</span>
-                        <svg class="collapsible-icon" id="icon-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                    </div>
-                    <div class="collapsible-content" id="content-layers">
-                        <div id="layer-list"></div>
-                    </div>
-                </div>
-            </div>
-
-            <input type="file" id="img-upload" style="display: none;" accept="image/*" onchange="handleImageUpload(this)">
-        </aside>
-
-        <!-- 2. 중앙 캔버스 영역 -->
+        <!-- Canvas Area -->
         <main class="canvas-area">
             <!-- Left Vertical Toolbar -->
             <div class="left-toolbar">
@@ -1262,12 +1202,35 @@
                     </svg>
                 </button>
 
-                <!-- Shape Tool -->
-                <button class="left-toolbar-btn" id="shape-tool-btn" onclick="selectTool('shape')" title="모양 (R)">
+                <!-- Rectangle Tool -->
+                <button class="left-toolbar-btn" id="rect-tool-btn" onclick="selectTool('rect')" title="사각형 (R)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="3" width="18" height="18" rx="2" />
                     </svg>
                 </button>
+
+                <!-- Circle Tool -->
+                <button class="left-toolbar-btn" id="circle-tool-btn" onclick="selectTool('circle')" title="원형 (O)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                    </svg>
+                </button>
+
+                <!-- Triangle Tool -->
+                <button class="left-toolbar-btn" id="triangle-tool-btn" onclick="selectTool('triangle')" title="삼각형">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 3l9 18H3L12 3z" />
+                    </svg>
+                </button>
+
+                <!-- Star Tool -->
+                <button class="left-toolbar-btn" id="star-tool-btn" onclick="selectTool('star')" title="별">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                </button>
+
+                <div class="left-toolbar-divider"></div>
 
                 <!-- Line Tool -->
                 <button class="left-toolbar-btn" id="line-tool-btn-left" onclick="selectTool('line')" title="라인 (L)">
@@ -1275,6 +1238,15 @@
                         <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
                 </button>
+
+                <!-- Arrow Tool -->
+                <button class="left-toolbar-btn" id="arrow-tool-btn" onclick="selectTool('arrow')" title="화살표">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14M13 5l7 7-7 7" />
+                    </svg>
+                </button>
+
+                <div class="left-toolbar-divider"></div>
 
                 <!-- Image Tool -->
                 <button class="left-toolbar-btn" id="image-tool-btn" onclick="selectTool('image')" title="이미지 (I)">
@@ -2866,15 +2838,23 @@
                 addText();
                 // Reset to select tool after adding
                 setTimeout(() => selectTool('select'), 100);
-            } else if (tool === 'shape') {
-                // Open shape dropdown in bottom toolbar for compatibility
-                const shapeDropdown = document.getElementById('shape-dropdown');
-                if (shapeDropdown) {
-                    addShape('rect'); // Default to rectangle
-                }
+            } else if (tool === 'rect') {
+                addShape('rect');
+                setTimeout(() => selectTool('select'), 100);
+            } else if (tool === 'circle') {
+                addShape('circle');
+                setTimeout(() => selectTool('select'), 100);
+            } else if (tool === 'triangle') {
+                addShape('triangle');
+                setTimeout(() => selectTool('select'), 100);
+            } else if (tool === 'star') {
+                addShape('star');
                 setTimeout(() => selectTool('select'), 100);
             } else if (tool === 'line') {
                 addShape('line');
+                setTimeout(() => selectTool('select'), 100);
+            } else if (tool === 'arrow') {
+                addShape('arrow');
                 setTimeout(() => selectTool('select'), 100);
             } else if (tool === 'image') {
                 document.getElementById('img-upload').click();
