@@ -1214,29 +1214,6 @@
                     </div>
                 </div>
 
-                <!-- Custom Size -->
-                <div class="collapsible-section">
-                    <div class="collapsible-header" onclick="toggleSection('custom-size')">
-                        <span class="collapsible-title">사용자 정의 크기</span>
-                        <svg class="collapsible-icon" id="icon-custom-size" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                    </div>
-                    <div class="collapsible-content" id="content-custom-size">
-                        <div class="custom-size-group">
-                            <div style="flex:1">
-                                <label style="font-size: 10px; color: var(--text-sub); margin-bottom: 4px; display: block;">가로 (mm)</label>
-                                <input type="number" id="custom-width-input" class="size-input" value="90" onchange="applyCustomSize()">
-                            </div>
-                            <span style="font-size: 12px; margin-top: 14px;">×</span>
-                            <div style="flex:1">
-                                <label style="font-size: 10px; color: var(--text-sub); margin-bottom: 4px; display: block;">세로 (mm)</label>
-                                <input type="number" id="custom-height-input" class="size-input" value="50" onchange="applyCustomSize()">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Layers -->
                 <div class="collapsible-section">
                     <div class="collapsible-header" onclick="toggleSection('layers')">
@@ -1650,6 +1627,22 @@
                     </div>
                 </div>
 
+                <!-- 사용자 정의 크기 -->
+                <div class="panel-section">
+                    <div class="panel-title">사용자 정의 크기</div>
+                    <div class="custom-size-group">
+                        <div style="flex:1">
+                            <label style="font-size: 10px; color: var(--text-sub); margin-bottom: 4px; display: block;">가로 (mm)</label>
+                            <input type="number" id="custom-width-input" class="size-input" value="210" onchange="applyCustomSize()">
+                        </div>
+                        <span style="font-size: 12px; margin-top: 14px;">×</span>
+                        <div style="flex:1">
+                            <label style="font-size: 10px; color: var(--text-sub); margin-bottom: 4px; display: block;">세로 (mm)</label>
+                            <input type="number" id="custom-height-input" class="size-input" value="297" onchange="applyCustomSize()">
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 텍스트 -->
                 <div id="prop-text" class="panel-section" style="display: none;">
                     <div class="panel-title">타이포그래피</div>
@@ -1952,8 +1945,8 @@
     <script>
         // --- GLOBAL STATE ---
         let canvas;
-        let currentWidth = 90; // mm
-        let currentHeight = 50; // mm
+        let currentWidth = 210; // mm (A4 default)
+        let currentHeight = 297; // mm (A4 default)
         const SCREEN_DPI = 96;
         const PRINT_DPI = 300;
         const MM_TO_PX_SCREEN = SCREEN_DPI / 25.4;
