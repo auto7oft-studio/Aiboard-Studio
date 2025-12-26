@@ -718,6 +718,144 @@
             margin: 0 4px;
         }
 
+        /* --- Left Vertical Toolbar (XD/Figma Style) --- */
+        .left-toolbar {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 48px;
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            box-shadow: none;
+            display: flex;
+            flex-direction: column;
+            padding: 8px 0;
+            gap: 4px;
+            z-index: 100;
+        }
+
+        .left-toolbar-btn {
+            position: relative;
+            width: 32px;
+            height: 32px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-sub);
+            transition: all 0.15s;
+        }
+
+        .left-toolbar-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .left-toolbar-btn:hover {
+            background: var(--bg-app);
+            color: var(--text-main);
+        }
+
+        .left-toolbar-btn.active {
+            background: var(--selection);
+            color: var(--primary);
+        }
+
+        .left-toolbar-divider {
+            width: 24px;
+            height: 1px;
+            background: var(--border);
+            margin: 4px auto;
+        }
+
+        .left-toolbar-spacer {
+            flex: 1;
+        }
+
+        .left-toolbar-btn.export-btn {
+            background: var(--primary);
+            color: white;
+        }
+
+        .left-toolbar-btn.export-btn:hover {
+            background: var(--primary-hover);
+            color: white;
+        }
+
+        /* --- Layer Panel (Always Visible) --- */
+        .layer-panel-fixed {
+            position: absolute;
+            left: 48px;
+            top: 0;
+            bottom: 0;
+            width: 240px;
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            box-shadow: none;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .layer-panel-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text-main);
+        }
+
+        .layer-panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .preset-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            color: var(--text-main);
+            transition: all 0.15s;
+            margin-bottom: 2px;
+        }
+
+        .preset-item:hover {
+            background: var(--bg-app);
+        }
+
+        .preset-item.active {
+            background: var(--selection);
+            color: var(--primary);
+        }
+
+        .preset-name {
+            font-weight: 500;
+        }
+
+        .preset-size {
+            font-size: 10px;
+            color: var(--text-sub);
+        }
+
+        .preset-category {
+            padding: 8px 12px 4px 12px;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
         .loading {
             position: fixed;
             top: 0;
@@ -834,22 +972,64 @@
         }
 
         .cmyk-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            display: flex;
+            flex-direction: column;
             gap: 8px;
             margin-top: 10px;
         }
 
         .cmyk-input-group {
             display: flex;
-            flex-direction: column;
-            gap: 4px;
+            align-items: center;
+            gap: 8px;
         }
 
         .cmyk-input-group label {
-            font-size: 10px;
+            font-size: 11px;
             color: var(--text-sub);
             text-transform: uppercase;
+            width: 12px;
+            font-weight: 600;
+        }
+
+        .cmyk-slider {
+            flex: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: linear-gradient(to right, #fff 0%, #000 100%);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .cmyk-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border: 2px solid #666;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .cmyk-slider::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border: 2px solid #666;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .cmyk-value {
+            width: 40px;
+            text-align: right;
+            font-size: 11px;
+            padding: 2px 4px;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            background: var(--bg-main);
         }
 
         .color-palette {
@@ -988,94 +1168,159 @@
     <div class="loading" id="loading">처리 중...</div>
 
     <div class="container">
-        <!-- 1. 좌측 사이드바 -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <div
-                        style="width: 24px; height: 24px; background: var(--primary); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white;">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-                            stroke-width="3">
-                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                        </svg>
-                    </div>
-                    <span style="letter-spacing: -0.02em; font-weight: 700;">Aiboard Studio</span>
-                </div>
-            </div>
+        <!-- Image upload input (hidden) -->
+        <input type="file" id="img-upload" style="display: none;" accept="image/*" onchange="handleImageUpload(this)">
 
-            <div class="sidebar-content">
-                <!-- Canvas Size Presets -->
-                <div class="collapsible-section">
-                    <div class="collapsible-header" onclick="toggleSection('presets')">
-                        <span class="collapsible-title">규격 프리셋</span>
-                        <svg class="collapsible-icon" id="icon-presets" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                    </div>
-                    <div class="collapsible-content" id="content-presets">
-                        <div class="size-presets">
-                            <div class="preset-card active" onclick="setCanvasSize(90, 50, '명함')">
-                                <span class="preset-name">명함</span>
-                                <span class="preset-dim">90 × 50mm</span>
-                            </div>
-                            <div class="preset-card" onclick="setCanvasSize(210, 297, '전단지 A4')">
-                                <span class="preset-name">전단지 A4</span>
-                                <span class="preset-dim">210 × 297mm</span>
-                            </div>
-                            <div class="preset-card" onclick="setCanvasSize(5000, 900, '현수막')">
-                                <span class="preset-name">현수막</span>
-                                <span class="preset-dim">5000 × 900mm</span>
-                            </div>
-                            <div class="preset-card" onclick="setCanvasSize(600, 1800, '배너')">
-                                <span class="preset-name">배너</span>
-                                <span class="preset-dim">600 × 1800mm</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Custom Size -->
-                <div class="collapsible-section">
-                    <div class="collapsible-header" onclick="toggleSection('custom-size')">
-                        <span class="collapsible-title">사용자 정의 크기</span>
-                        <svg class="collapsible-icon" id="icon-custom-size" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                    </div>
-                    <div class="collapsible-content" id="content-custom-size">
-                        <div class="custom-size-group">
-                            <div style="flex:1">
-                                <label style="font-size: 10px; color: var(--text-sub); margin-bottom: 4px; display: block;">가로 (mm)</label>
-                                <input type="number" id="custom-width-input" class="size-input" value="90" onchange="applyCustomSize()">
-                            </div>
-                            <span style="font-size: 12px; margin-top: 14px;">×</span>
-                            <div style="flex:1">
-                                <label style="font-size: 10px; color: var(--text-sub); margin-bottom: 4px; display: block;">세로 (mm)</label>
-                                <input type="number" id="custom-height-input" class="size-input" value="50" onchange="applyCustomSize()">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Layers -->
-                <div class="collapsible-section">
-                    <div class="collapsible-header" onclick="toggleSection('layers')">
-                        <span class="collapsible-title">레이어</span>
-                        <svg class="collapsible-icon" id="icon-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                    </div>
-                    <div class="collapsible-content" id="content-layers">
-                        <div id="layer-list"></div>
-                    </div>
-                </div>
-            </div>
-
-            <input type="file" id="img-upload" style="display: none;" accept="image/*" onchange="handleImageUpload(this)">
-        </aside>
-
-        <!-- 2. 중앙 캔버스 영역 -->
+        <!-- Canvas Area -->
         <main class="canvas-area">
+            <!-- Left Vertical Toolbar -->
+            <div class="left-toolbar">
+                <!-- Artboard Tool -->
+                <button class="left-toolbar-btn" id="artboard-tool-btn" onclick="selectTool('artboard')" title="아트보드 (A)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                        <line x1="3" y1="9" x2="21" y2="9" />
+                        <line x1="9" y1="21" x2="9" y2="9" />
+                    </svg>
+                </button>
+
+                <div class="left-toolbar-divider"></div>
+
+                <!-- Text Tool -->
+                <button class="left-toolbar-btn" id="text-tool-btn" onclick="selectTool('text')" title="텍스트 (T)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 7V4h16v3M9 20h6M12 4v16" />
+                    </svg>
+                </button>
+
+                <!-- Rectangle Tool -->
+                <button class="left-toolbar-btn" id="rect-tool-btn" onclick="selectTool('rect')" title="사각형 (R)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                    </svg>
+                </button>
+
+                <!-- Circle Tool -->
+                <button class="left-toolbar-btn" id="circle-tool-btn" onclick="selectTool('circle')" title="원형 (O)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                    </svg>
+                </button>
+
+                <!-- Triangle Tool -->
+                <button class="left-toolbar-btn" id="triangle-tool-btn" onclick="selectTool('triangle')" title="삼각형">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 3l9 18H3L12 3z" />
+                    </svg>
+                </button>
+
+                <!-- Star Tool -->
+                <button class="left-toolbar-btn" id="star-tool-btn" onclick="selectTool('star')" title="별">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                </button>
+
+                <div class="left-toolbar-divider"></div>
+
+                <!-- Line Tool -->
+                <button class="left-toolbar-btn" id="line-tool-btn-left" onclick="selectTool('line')" title="라인 (L)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                </button>
+
+                <!-- Arrow Tool -->
+                <button class="left-toolbar-btn" id="arrow-tool-btn" onclick="selectTool('arrow')" title="화살표">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14M13 5l7 7-7 7" />
+                    </svg>
+                </button>
+
+                <div class="left-toolbar-divider"></div>
+
+                <!-- Image Tool -->
+                <button class="left-toolbar-btn" id="image-tool-btn" onclick="selectTool('image')" title="이미지 (I)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <path d="M21 15l-5-5L5 21" />
+                    </svg>
+                </button>
+
+                <!-- Spacer -->
+                <div class="left-toolbar-spacer"></div>
+
+                <!-- Export Button (at bottom) -->
+                <button class="left-toolbar-btn export-btn" onclick="exportToPDF()" title="PDF로 내보내기">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Layer Panel (Always Visible) -->
+            <div class="layer-panel-fixed" id="layer-panel-fixed">
+                <div class="layer-panel-header">레이어 & 프리셋</div>
+                <div class="layer-panel-content" id="layer-panel-fixed-content">
+                    <!-- Print Size Presets (shown when artboard selected) -->
+                    <div id="print-presets-section" style="display: none;">
+                        <div class="preset-category">인쇄 규격</div>
+                        <div class="preset-item active" onclick="applyPreset(210, 297, 'A4')">
+                            <span class="preset-name">A4</span>
+                            <span class="preset-size">210 × 297</span>
+                        </div>
+                        <div class="preset-item" onclick="applyPreset(297, 420, 'A3')">
+                            <span class="preset-name">A3</span>
+                            <span class="preset-size">297 × 420</span>
+                        </div>
+                        <div class="preset-item" onclick="applyPreset(148, 210, 'A5')">
+                            <span class="preset-name">A5</span>
+                            <span class="preset-size">148 × 210</span>
+                        </div>
+
+                        <div class="preset-category">명함 / 카드</div>
+                        <div class="preset-item" onclick="applyPreset(90, 50, '명함 (일반)')">
+                            <span class="preset-name">명함 (일반)</span>
+                            <span class="preset-size">90 × 50</span>
+                        </div>
+                        <div class="preset-item" onclick="applyPreset(86, 54, '신용카드')">
+                            <span class="preset-name">신용카드</span>
+                            <span class="preset-size">86 × 54</span>
+                        </div>
+
+                        <div class="preset-category">포스터</div>
+                        <div class="preset-item" onclick="applyPreset(420, 594, 'A2')">
+                            <span class="preset-name">A2</span>
+                            <span class="preset-size">420 × 594</span>
+                        </div>
+                        <div class="preset-item" onclick="applyPreset(594, 841, 'A1')">
+                            <span class="preset-name">A1</span>
+                            <span class="preset-size">594 × 841</span>
+                        </div>
+                        <div class="preset-item" onclick="applyPreset(500, 700, '포스터 (일반)')">
+                            <span class="preset-name">포스터 (일반)</span>
+                            <span class="preset-size">500 × 700</span>
+                        </div>
+
+                        <div class="preset-category">배너</div>
+                        <div class="preset-item" onclick="applyPreset(1000, 3000, '세로 배너')">
+                            <span class="preset-name">세로 배너</span>
+                            <span class="preset-size">1000 × 3000</span>
+                        </div>
+                        <div class="preset-item" onclick="applyPreset(3000, 1000, '가로 배너')">
+                            <span class="preset-name">가로 배너</span>
+                            <span class="preset-size">3000 × 1000</span>
+                        </div>
+                    </div>
+
+                    <!-- Regular Layer List (shown by default) -->
+                    <div id="regular-layer-list">
+                        <!-- Layer list will be dynamically populated here -->
+                    </div>
+                </div>
+            </div>
+
             <div id="boundary-warning" class="boundary-warning">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                     <path
@@ -1095,6 +1340,18 @@
 
             <div class="canvas-wrapper" id="canvas-container">
                 <canvas id="editor-canvas"></canvas>
+                <!-- Eyedropper magnifier -->
+                <div id="eyedropper-magnifier" style="display: none; position: absolute; width: 140px; height: 140px; border: 4px solid #fff; border-radius: 70px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); pointer-events: none; z-index: 10000;">
+                    <div style="position: relative; width: 100%; height: 100%; border-radius: 70px; overflow: hidden;">
+                        <canvas id="magnifier-canvas" width="140" height="140" style="display: block;"></canvas>
+                        <!-- Crosshairs on top of canvas -->
+                        <div style="position: absolute; left: 50%; top: 0; width: 2px; height: 100%; background: #fff; transform: translateX(-50%); box-shadow: 0 0 2px rgba(0,0,0,0.5);"></div>
+                        <div style="position: absolute; left: 0; top: 50%; width: 100%; height: 2px; background: #fff; transform: translateY(-50%); box-shadow: 0 0 2px rgba(0,0,0,0.5);"></div>
+                        <!-- Center dot -->
+                        <div style="position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; background: #fff; border: 2px solid #000; border-radius: 4px; transform: translate(-50%, -50%); box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>
+                    </div>
+                    <div id="magnifier-color" style="position: absolute; bottom: -35px; left: 50%; transform: translateX(-50%); background: #fff; padding: 6px 10px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); font-size: 12px; font-family: monospace; white-space: nowrap; font-weight: 600;"></div>
+                </div>
             </div>
 
             <!-- Bottom Toolbar (Figma Style) -->
@@ -1123,96 +1380,6 @@
                 <button class="figma-tool-btn" onclick="fitToScreen()" title="화면에 맞춤">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-                    </svg>
-                </button>
-
-                <div class="toolbar-divider"></div>
-
-                <!-- Text Tool -->
-                <button class="figma-tool-btn" onclick="addText()" title="텍스트 (T)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 7V4h16v3M9 20h6M12 4v16" />
-                    </svg>
-                </button>
-
-                <div class="toolbar-divider"></div>
-
-                <!-- Line Tool (with dropdown) -->
-                <div style="position: relative;">
-                    <button class="figma-tool-btn" id="line-tool-btn" onclick="toggleToolDropdown('line')" title="라인 (L)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="line-tool-icon">
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                        </svg>
-                        <span class="dropdown-indicator"></span>
-                    </button>
-                    <div class="tool-dropdown" id="line-dropdown">
-                        <div class="tool-dropdown-item" onclick="selectLineTool('line')">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="5" y1="12" x2="19" y2="12" />
-                            </svg>
-                            <span>라인</span>
-                        </div>
-                        <div class="tool-dropdown-item" onclick="selectLineTool('arrow')">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M5 12h14M13 5l7 7-7 7" />
-                            </svg>
-                            <span>화살표</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="toolbar-divider"></div>
-
-                <!-- Shape Tool (with dropdown) -->
-                <div style="position: relative;">
-                    <button class="figma-tool-btn" id="shape-tool-btn" onclick="toggleToolDropdown('shape')" title="모양 (R)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="shape-tool-icon">
-                            <rect x="3" y="3" width="18" height="18" rx="2" />
-                        </svg>
-                        <span class="dropdown-indicator"></span>
-                    </button>
-                    <div class="tool-dropdown" id="shape-dropdown">
-                        <div class="tool-dropdown-item" onclick="selectShapeTool('rect')">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="3" width="18" height="18" rx="2" />
-                            </svg>
-                            <span>사각형</span>
-                        </div>
-                        <div class="tool-dropdown-item" onclick="selectShapeTool('circle')">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10" />
-                            </svg>
-                            <span>원형</span>
-                        </div>
-                        <div class="tool-dropdown-item" onclick="selectShapeTool('triangle')">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 3l9 18H3L12 3z" />
-                            </svg>
-                            <span>삼각형</span>
-                        </div>
-                        <div class="tool-dropdown-item" onclick="selectShapeTool('star')">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                            </svg>
-                            <span>별형</span>
-                        </div>
-                        <div class="tool-dropdown-item" onclick="selectShapeTool('heart')">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                            </svg>
-                            <span>하트</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="toolbar-divider"></div>
-
-                <!-- Image Upload Tool -->
-                <button class="figma-tool-btn" onclick="document.getElementById('img-upload').click()" title="이미지 (I)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" />
-                        <circle cx="8.5" cy="8.5" r="1.5" />
-                        <path d="M21 15l-5-5L5 21" />
                     </svg>
                 </button>
 
@@ -1423,6 +1590,22 @@
                     </div>
                 </div>
 
+                <!-- 사용자 정의 크기 -->
+                <div class="panel-section">
+                    <div class="panel-title">사용자 정의 크기</div>
+                    <div class="custom-size-group">
+                        <div style="flex:1">
+                            <label style="font-size: 10px; color: var(--text-sub); margin-bottom: 4px; display: block;">가로 (mm)</label>
+                            <input type="number" id="custom-width-input" class="size-input" value="210" onchange="applyCustomSize()">
+                        </div>
+                        <span style="font-size: 12px; margin-top: 14px;">×</span>
+                        <div style="flex:1">
+                            <label style="font-size: 10px; color: var(--text-sub); margin-bottom: 4px; display: block;">세로 (mm)</label>
+                            <input type="number" id="custom-height-input" class="size-input" value="297" onchange="applyCustomSize()">
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 텍스트 -->
                 <div id="prop-text" class="panel-section" style="display: none;">
                     <div class="panel-title">타이포그래피</div>
@@ -1504,77 +1687,97 @@
                 </div>
 
                 <!-- 채우기 -->
-                <div id="prop-fill" class="panel-section">
-                    <div class="panel-title"
-                        style="display: flex; justify-content: space-between; align-items: center;">
-                        채우기
-                        <label
-                            style="font-weight: normal; font-size: 11px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                            <input type="checkbox" id="transparent-check" onchange="toggleTransparentFill()"> 투명
+                <div id="prop-fill" class="panel-section" style="display: none;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                            <input type="checkbox" id="fill-enabled" onchange="toggleFillEnabled()" checked style="width: 16px; height: 16px;">
+                            <span class="panel-title" style="margin: 0;">채우기</span>
+                        </label>
+                        <div id="fill-swatch" class="color-swatch" style="background: #3B82F6;"
+                            onclick="openPicker('fill', this)"></div>
+                        <button onclick="activateEyedropper('fill')" title="스포이드로 색상 추출"
+                            style="width: 24px; height: 24px; padding: 4px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-panel); cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M2 22l1-1h3l9-9"></path>
+                                <path d="M3 21v-3l9-9"></path>
+                                <path d="M15 6l3-3"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L19 8l-3-3 2.5-2.5z"></path>
+                            </svg>
+                        </button>
+                        <label style="font-weight: normal; font-size: 11px; display: flex; align-items: center; gap: 6px; cursor: pointer; margin-left: auto;">
+                            <input type="checkbox" id="gradient-check" onchange="toggleGradientMode()" style="width: 14px; height: 14px;">
+                            그라데이션
                         </label>
                     </div>
-                    <div class="property-row" id="grad-toggle-row">
-                        <label style="font-size: 11px; cursor: pointer;"><input type="checkbox" id="gradient-check"
-                                onchange="toggleGradientMode()"> 그라데이션</label>
-                    </div>
-                    <div id="solid-color-panel">
-                        <div class="color-swatch-wrapper">
-                            <div id="fill-swatch" class="color-swatch" style="background: #3B82F6;"
-                                onclick="openPicker('fill', this)"></div>
-                            <input type="text" id="fill-color-hex" value="#3B82F6"
-                                style="font-family: monospace; font-size: 12px;" readonly>
-                        </div>
-                    </div>
-                    <div id="gradient-panel" style="display: none;">
-                        <div class="property-row">
-                            <label class="property-label">유형</label>
-                            <select id="grad-type" onchange="updateGradientType()">
-                                <option value="linear">선형 (Linear)</option>
-                                <option value="radial">원형 (Radial)</option>
-                            </select>
-                        </div>
-                        <div class="property-row" id="grad-angle-row">
-                            <label class="property-label">회전</label>
-                            <input type="range" id="grad-angle" min="0" max="360" value="0" oninput="updateGradient()"
-                                style="flex:1">
-                            <span id="grad-angle-val" style="font-size: 11px; width: 28px; text-align: right;">0°</span>
-                        </div>
-                        <div class="property-row">
-                            <label class="property-label">시작</label>
-                            <div id="grad-start-swatch" class="color-swatch" style="background: #3B82F6;"
-                                onclick="openPicker('grad-start', this)"></div>
-                        </div>
-                        <div class="property-row">
-                            <label class="property-label">종료</label>
-                            <div id="grad-end-swatch" class="color-swatch" style="background: #2563EB;"
-                                onclick="openPicker('grad-end', this)"></div>
+                    <div id="fill-settings">
+                        <div id="gradient-panel" style="display: none;">
+                            <div class="property-row">
+                                <label class="property-label">유형</label>
+                                <select id="grad-type" onchange="updateGradientType()">
+                                    <option value="linear">선형 (Linear)</option>
+                                    <option value="radial">원형 (Radial)</option>
+                                </select>
+                            </div>
+                            <div class="property-row" id="grad-angle-row">
+                                <label class="property-label">회전</label>
+                                <input type="range" id="grad-angle" min="0" max="360" value="0" oninput="updateGradient()"
+                                    style="flex:1">
+                                <span id="grad-angle-val" style="font-size: 11px; width: 28px; text-align: right;">0°</span>
+                            </div>
+                            <div class="property-row">
+                                <label class="property-label">시작</label>
+                                <div id="grad-start-swatch" class="color-swatch" style="background: #3B82F6;"
+                                    onclick="openPicker('grad-start', this)"></div>
+                            </div>
+                            <div class="property-row">
+                                <label class="property-label">종료</label>
+                                <div id="grad-end-swatch" class="color-swatch" style="background: #2563EB;"
+                                    onclick="openPicker('grad-end', this)"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- 테두리 -->
-                <div class="panel-section">
-                    <div class="panel-title">테두리</div>
-                    <div class="property-row">
-                        <label class="property-label">색상</label>
+                <div id="prop-stroke" class="panel-section" style="display: none;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                            <input type="checkbox" id="stroke-enabled" onchange="toggleStrokeEnabled()" style="width: 16px; height: 16px;">
+                            <span class="panel-title" style="margin: 0;">테두리</span>
+                        </label>
                         <div id="stroke-swatch" class="color-swatch" style="background: #000000;"
                             onclick="openPicker('stroke', this)"></div>
+                        <button onclick="activateEyedropper('stroke')" title="스포이드로 색상 추출"
+                            style="width: 24px; height: 24px; padding: 4px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-panel); cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M2 22l1-1h3l9-9"></path>
+                                <path d="M3 21v-3l9-9"></path>
+                                <path d="M15 6l3-3"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L19 8l-3-3 2.5-2.5z"></path>
+                            </svg>
+                        </button>
                     </div>
-                    <div class="property-row">
-                        <label class="property-label">두께 (px)</label>
-                        <input type="range" id="stroke-width" min="0" max="100" value="0" step="1"
-                            oninput="changeStrokeWidth(this.value)" style="flex:1">
-                        <span id="stroke-width-val" style="font-size: 11px; width: 24px; text-align: right;">0</span>
-                    </div>
-                    <div class="property-row">
-                        <label class="property-label">점선</label>
-                        <input type="checkbox" id="stroke-dashed" onchange="changeStrokeDashed()" style="width: 16px; height: 16px;">
-                    </div>
-                    <div id="dash-settings" class="property-row" style="display: none;">
-                        <label class="property-label">길이/간격</label>
-                        <input type="number" id="dash-length" value="8" min="1" max="100" style="width: 45px; padding: 2px 4px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;" oninput="changeStrokeDashed()">
-                        <span style="font-size: 11px; margin: 0 4px;">/</span>
-                        <input type="number" id="dash-gap" value="4" min="1" max="100" style="width: 45px; padding: 2px 4px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;" oninput="changeStrokeDashed()">
+                    <div id="stroke-settings" style="display: none;">
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                                <label style="font-size: 10px; color: var(--text-sub);">크기</label>
+                                <input type="number" id="stroke-width-input" min="1" max="100" value="1"
+                                    oninput="changeStrokeWidth(this.value)"
+                                    style="width: 100%; padding: 4px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;">
+                            </div>
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                                <label style="font-size: 10px; color: var(--text-sub);">길이</label>
+                                <input type="number" id="dash-length" value="0" min="0" max="100"
+                                    oninput="updateStrokeDash()"
+                                    style="width: 100%; padding: 4px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;">
+                            </div>
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                                <label style="font-size: 10px; color: var(--text-sub);">간격</label>
+                                <input type="number" id="dash-gap" value="0" min="0" max="100"
+                                    oninput="updateStrokeDash()"
+                                    style="width: 100%; padding: 4px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;">
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1598,6 +1801,42 @@
                             oninput="changeObjectOpacity(this.value)" onchange="saveHistory()" style="flex:1">
                         <span id="global-opacity-val"
                             style="font-size: 11px; width: 28px; text-align: right;">100</span>
+                    </div>
+                </div>
+
+                <!-- 그림자 -->
+                <div id="prop-shadow" class="panel-section">
+                    <div class="panel-title">그림자</div>
+                    <div class="property-row">
+                        <label class="property-label">
+                            <input type="checkbox" id="shadow-enabled" onchange="toggleShadow()" style="margin-right: 4px;">
+                            활성화
+                        </label>
+                    </div>
+                    <div id="shadow-settings" style="display: none;">
+                        <div class="property-row">
+                            <label class="property-label">색상</label>
+                            <div id="shadow-color-swatch" class="color-swatch" style="background: rgba(0,0,0,0.5);"
+                                onclick="openPicker('shadow', this)"></div>
+                        </div>
+                        <div class="property-row">
+                            <label class="property-label">블러</label>
+                            <input type="range" id="shadow-blur" min="0" max="50" value="10"
+                                oninput="changeShadowBlur(this.value)" style="flex:1">
+                            <span id="shadow-blur-val" style="font-size: 11px; width: 24px; text-align: right;">10</span>
+                        </div>
+                        <div class="property-row">
+                            <label class="property-label">X 거리</label>
+                            <input type="range" id="shadow-offset-x" min="-50" max="50" value="5"
+                                oninput="changeShadowOffsetX(this.value)" style="flex:1">
+                            <span id="shadow-offset-x-val" style="font-size: 11px; width: 24px; text-align: right;">5</span>
+                        </div>
+                        <div class="property-row">
+                            <label class="property-label">Y 거리</label>
+                            <input type="range" id="shadow-offset-y" min="-50" max="50" value="5"
+                                oninput="changeShadowOffsetY(this.value)" style="flex:1">
+                            <span id="shadow-offset-y-val" style="font-size: 11px; width: 24px; text-align: right;">5</span>
+                        </div>
                     </div>
                 </div>
 
@@ -1638,34 +1877,39 @@
         <div class="cmyk-grid">
             <div class="cmyk-input-group">
                 <label>C</label>
-                <input type="number" id="picker-cmyk-c" class="picker-input" min="0" max="100" value="0">
+                <input type="range" id="picker-cmyk-c-slider" class="cmyk-slider" min="0" max="100" value="0">
+                <input type="number" id="picker-cmyk-c" class="cmyk-value" min="0" max="100" value="0">
+                <span style="font-size: 10px; color: var(--text-sub);">%</span>
             </div>
             <div class="cmyk-input-group">
                 <label>M</label>
-                <input type="number" id="picker-cmyk-m" class="picker-input" min="0" max="100" value="0">
+                <input type="range" id="picker-cmyk-m-slider" class="cmyk-slider" min="0" max="100" value="0">
+                <input type="number" id="picker-cmyk-m" class="cmyk-value" min="0" max="100" value="0">
+                <span style="font-size: 10px; color: var(--text-sub);">%</span>
             </div>
             <div class="cmyk-input-group">
                 <label>Y</label>
-                <input type="number" id="picker-cmyk-y" class="picker-input" min="0" max="100" value="0">
+                <input type="range" id="picker-cmyk-y-slider" class="cmyk-slider" min="0" max="100" value="0">
+                <input type="number" id="picker-cmyk-y" class="cmyk-value" min="0" max="100" value="0">
+                <span style="font-size: 10px; color: var(--text-sub);">%</span>
             </div>
             <div class="cmyk-input-group">
                 <label>K</label>
-                <input type="number" id="picker-cmyk-k" class="picker-input" min="0" max="100" value="0">
+                <input type="range" id="picker-cmyk-k-slider" class="cmyk-slider" min="0" max="100" value="0">
+                <input type="number" id="picker-cmyk-k" class="cmyk-value" min="0" max="100" value="0">
+                <span style="font-size: 10px; color: var(--text-sub);">%</span>
             </div>
         </div>
         <div id="doc-colors" class="color-palette">
             <div class="palette-title">문서 색상</div>
-        </div>
-        <div id="recent-colors" class="color-palette">
-            <div class="palette-title">최근 색상</div>
         </div>
     </div>
 
     <script>
         // --- GLOBAL STATE ---
         let canvas;
-        let currentWidth = 90; // mm
-        let currentHeight = 50; // mm
+        let currentWidth = 210; // mm (A4 default)
+        let currentHeight = 297; // mm (A4 default)
         const SCREEN_DPI = 96;
         const PRINT_DPI = 300;
         const MM_TO_PX_SCREEN = SCREEN_DPI / 25.4;
@@ -1702,7 +1946,207 @@
         let pickerSaturation = 1;
         let pickerAlpha = 1;
         let pickerCmyk = { c: 0, m: 0, y: 0, k: 0 };
-        let recentColors = [];
+
+        // Eyedropper
+        let eyedropperActive = false;
+        let eyedropperTarget = null;
+        let eyedropperSelectedObject = null;
+
+        function activateEyedropper(target) {
+            // Store the currently selected object
+            eyedropperSelectedObject = canvas.getActiveObject();
+
+            // Require an object to be selected first
+            if (!eyedropperSelectedObject) {
+                alert('먼저 색상을 적용할 객체를 선택해주세요.');
+                return;
+            }
+
+            eyedropperActive = true;
+            eyedropperTarget = target;
+            canvas.defaultCursor = 'none'; // Hide cursor, we'll show magnifier instead
+            canvas.hoverCursor = 'none';
+            canvas.selection = false;
+
+            // DON'T discard active object - keep panels visible!
+            // Just disable interaction temporarily
+            canvas.forEachObject(obj => {
+                obj.selectable = false;
+                obj.evented = false;
+            });
+
+            // Show magnifier
+            document.getElementById('eyedropper-magnifier').style.display = 'block';
+
+            canvas.renderAll();
+        }
+
+        function deactivateEyedropper() {
+            eyedropperActive = false;
+            eyedropperTarget = null;
+            canvas.defaultCursor = 'default';
+            canvas.hoverCursor = 'move';
+            canvas.selection = true;
+            canvas.forEachObject(obj => {
+                if (!obj.lockMovementX && !obj.isArtboard) {
+                    obj.selectable = true;
+                    obj.evented = true;
+                }
+            });
+
+            // Hide magnifier
+            document.getElementById('eyedropper-magnifier').style.display = 'none';
+
+            // Restore the previously selected object
+            if (eyedropperSelectedObject) {
+                canvas.setActiveObject(eyedropperSelectedObject);
+                eyedropperSelectedObject = null;
+            }
+
+            canvas.renderAll();
+        }
+
+        function updateEyedropperMagnifier(e) {
+            if (!eyedropperActive) return;
+
+            const magnifier = document.getElementById('eyedropper-magnifier');
+            const magnifierCanvas = document.getElementById('magnifier-canvas');
+            const magnifierCtx = magnifierCanvas.getContext('2d');
+            const colorLabel = document.getElementById('magnifier-color');
+
+            // Use lowerCanvasEl - the actual rendered canvas with all objects
+            const canvasEl = canvas.lowerCanvasEl;
+            const canvasRect = canvasEl.getBoundingClientRect();
+
+            // Calculate mouse position relative to canvas element (CSS pixels)
+            const cssX = e.e.clientX - canvasRect.left;
+            const cssY = e.e.clientY - canvasRect.top;
+
+            // Position magnifier near cursor (offset to bottom-right to not block view)
+            const magnifierSize = 140;
+            const offset = 30;
+
+            let left = cssX + offset;
+            let top = cssY + offset;
+
+            // Keep magnifier within canvas bounds
+            if (left + magnifierSize > canvasRect.width) {
+                left = cssX - magnifierSize - offset;
+            }
+            if (top + magnifierSize + 40 > canvasRect.height) { // +40 for color label
+                top = cssY - magnifierSize - offset;
+            }
+
+            magnifier.style.left = left + 'px';
+            magnifier.style.top = top + 'px';
+
+            // Get 2D context from the lower canvas (actual rendered content)
+            const ctx = canvasEl.getContext('2d', { willReadFrequently: true });
+
+            // Account for canvas internal scaling (devicePixelRatio and canvas size vs display size)
+            const scaleX = canvasEl.width / canvasRect.width;
+            const scaleY = canvasEl.height / canvasRect.height;
+
+            // Convert CSS coordinates to canvas pixel coordinates
+            const canvasX = Math.floor(cssX * scaleX);
+            const canvasY = Math.floor(cssY * scaleY);
+
+            const size = 14; // Sample size in canvas pixels (14x14 grid)
+
+            try {
+                // Get image data from canvas at the scaled coordinates
+                const imageData = ctx.getImageData(
+                    canvasX - Math.floor(size / 2),
+                    canvasY - Math.floor(size / 2),
+                    size,
+                    size
+                );
+
+                // Draw zoomed image on magnifier canvas
+                magnifierCtx.imageSmoothingEnabled = false; // Pixelated zoom
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = size;
+                tempCanvas.height = size;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.putImageData(imageData, 0, 0);
+
+                magnifierCtx.clearRect(0, 0, 140, 140);
+                magnifierCtx.drawImage(tempCanvas, 0, 0, size, size, 0, 0, 140, 140);
+
+                // Get center pixel color
+                const centerPixel = ctx.getImageData(canvasX, canvasY, 1, 1).data;
+                const r = centerPixel[0];
+                const g = centerPixel[1];
+                const b = centerPixel[2];
+                const color = `rgb(${r}, ${g}, ${b})`;
+
+                // Update color label
+                colorLabel.textContent = color;
+                colorLabel.style.background = color;
+                colorLabel.style.color = (r + g + b) / 3 > 128 ? '#000' : '#fff';
+            } catch (err) {
+                // Ignore errors from sampling outside canvas
+                console.warn('Eyedropper sampling error:', err);
+            }
+        }
+
+        function sampleColorFromCanvas(e) {
+            if (!eyedropperActive) return;
+
+            // Use lowerCanvasEl for consistent sampling
+            const canvasEl = canvas.lowerCanvasEl;
+            const canvasRect = canvasEl.getBoundingClientRect();
+
+            // Calculate CSS coordinates
+            const cssX = e.e.clientX - canvasRect.left;
+            const cssY = e.e.clientY - canvasRect.top;
+
+            // Account for canvas internal scaling
+            const scaleX = canvasEl.width / canvasRect.width;
+            const scaleY = canvasEl.height / canvasRect.height;
+
+            // Convert to canvas pixel coordinates
+            const canvasX = Math.floor(cssX * scaleX);
+            const canvasY = Math.floor(cssY * scaleY);
+
+            const ctx = canvasEl.getContext('2d', { willReadFrequently: true });
+
+            // Sample from scaled coordinates
+            const pixelData = ctx.getImageData(canvasX, canvasY, 1, 1).data;
+            const r = pixelData[0];
+            const g = pixelData[1];
+            const b = pixelData[2];
+            const a = pixelData[3] / 255;
+
+            const color = `rgba(${r}, ${g}, ${b}, ${a})`;
+            const targetType = eyedropperTarget; // Store before deactivating
+
+            // Object is still selected, just re-enable interaction
+            eyedropperActive = false;
+            eyedropperTarget = null;
+            canvas.defaultCursor = 'default';
+            canvas.hoverCursor = 'move';
+            canvas.selection = true;
+            canvas.forEachObject(obj => {
+                if (!obj.lockMovementX && !obj.isArtboard) {
+                    obj.selectable = true;
+                    obj.evented = true;
+                }
+            });
+
+            // Hide magnifier
+            document.getElementById('eyedropper-magnifier').style.display = 'none';
+
+            // Apply the color to the selected object (still active)
+            if (targetType === 'fill') {
+                changeFillColor(color);
+            } else if (targetType === 'stroke') {
+                changeStrokeColor(color);
+            }
+
+            eyedropperSelectedObject = null;
+            canvas.renderAll();
+        }
 
         function mmToPx(mm) { return mm * MM_TO_PX_SCREEN; }
 
@@ -1857,6 +2301,12 @@
             });
 
             canvas.on('mouse:down', function (opt) {
+                // Handle eyedropper sampling
+                if (eyedropperActive) {
+                    sampleColorFromCanvas(opt);
+                    return;
+                }
+
                 if (isSpacePressed) {
                     this.isDragging = true;
                     this.lastPosX = opt.e.clientX;
@@ -1868,6 +2318,12 @@
             });
 
             canvas.on('mouse:move', function (opt) {
+                // Update eyedropper magnifier if active
+                if (eyedropperActive) {
+                    updateEyedropperMagnifier(opt);
+                    return;
+                }
+
                 if (this.isDragging) {
                     const e = opt.e;
                     const vpt = this.viewportTransform;
@@ -1913,6 +2369,8 @@
                 updateImageInfoLabel();
                 document.getElementById('prop-text').style.display = 'none';
                 document.getElementById('prop-corner').style.display = 'none';
+                document.getElementById('prop-fill').style.display = 'none';
+                document.getElementById('prop-stroke').style.display = 'none';
                 hideFloatingToolbar();
                 renderLayerList();
             });
@@ -2335,6 +2793,105 @@
             iconContainer.innerHTML = icons[type] || icons['rect'];
         }
 
+        // Left toolbar tool selection
+        let currentTool = 'select';
+
+        function selectTool(tool) {
+            // Remove active class from all toolbar buttons
+            document.querySelectorAll('.left-toolbar-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Add active class to selected tool
+            const toolBtn = document.getElementById(`${tool}-tool-btn`);
+            if (toolBtn) {
+                toolBtn.classList.add('active');
+            }
+
+            currentTool = tool;
+
+            // Handle tool-specific actions
+            if (tool === 'select') {
+                canvas.defaultCursor = 'default';
+                canvas.selection = true;
+                // Show regular layer list
+                document.getElementById('print-presets-section').style.display = 'none';
+                document.getElementById('regular-layer-list').style.display = 'block';
+            } else if (tool === 'artboard') {
+                // Select artboard and show presets
+                if (artboard) {
+                    canvas.setActiveObject(artboard);
+                    canvas.renderAll();
+                }
+                document.getElementById('print-presets-section').style.display = 'block';
+                document.getElementById('regular-layer-list').style.display = 'none';
+            } else if (tool === 'text') {
+                addText();
+                // Reset to select tool after adding
+                setTimeout(() => selectTool('select'), 100);
+            } else if (tool === 'rect') {
+                addShape('rect');
+                setTimeout(() => selectTool('select'), 100);
+            } else if (tool === 'circle') {
+                addShape('circle');
+                setTimeout(() => selectTool('select'), 100);
+            } else if (tool === 'triangle') {
+                addShape('triangle');
+                setTimeout(() => selectTool('select'), 100);
+            } else if (tool === 'star') {
+                addShape('star');
+                setTimeout(() => selectTool('select'), 100);
+            } else if (tool === 'line') {
+                addShape('line');
+                setTimeout(() => selectTool('select'), 100);
+            } else if (tool === 'arrow') {
+                addShape('arrow');
+                setTimeout(() => selectTool('select'), 100);
+            } else if (tool === 'image') {
+                document.getElementById('img-upload').click();
+                setTimeout(() => selectTool('select'), 100);
+            }
+        }
+
+        // Apply print size preset
+        function applyPreset(width, height, name) {
+            // Remove active class from all presets
+            document.querySelectorAll('.preset-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Add active class to clicked preset
+            event.target.closest('.preset-item').classList.add('active');
+
+            // Apply the size
+            currentWidth = width;
+            currentHeight = height;
+
+            // Update artboard
+            if (artboard) {
+                const newWidth = mmToPx(width);
+                const newHeight = mmToPx(height);
+
+                artboard.set({
+                    width: newWidth,
+                    height: newHeight,
+                    scaleX: 1,
+                    scaleY: 1
+                });
+
+                artboard.setCoords();
+                canvas.renderAll();
+            }
+
+            // Update canvas label
+            document.getElementById('canvas-size-label').innerText = `Size : ${width} × ${height} mm`;
+
+            // Fit to screen
+            fitToScreen();
+
+            saveHistory();
+        }
+
         function addShape(type) {
             const center = artboard.getCenterPoint();
             const minDim = Math.min(artboard.width, artboard.height);
@@ -2347,6 +2904,8 @@
                 fill: '#3B82F6',
                 stroke: '#1F2937',
                 strokeWidth: 0,
+                strokeUniform: true,  // Uniform stroke scaling
+                paintFirst: 'fill',   // Paint fill before stroke
                 originX: 'center',
                 originY: 'center',
                 opacity: 1
@@ -2412,6 +2971,8 @@
                 fontFamily: 'Pretendard',
                 fontSize: dynamicFontSize,
                 fill: '#1F2937',
+                stroke: null,
+                strokeWidth: 0,
                 originX: 'center',
                 originY: 'center',
                 opacity: 1
@@ -2442,6 +3003,7 @@
                 });
             };
             reader.readAsDataURL(file);
+            input.value = '';  // Reset input to allow same file selection
         }
 
         function isTextObject(obj) {
@@ -2479,6 +3041,7 @@
                 linethrough: source.linethrough,
                 overline: source.overline,
                 direction: source.direction,
+                textBaseline: 'alphabetic',  // Fix: ensure valid textBaseline value
                 styles: JSON.parse(JSON.stringify(source.styles || {}))
             };
 
@@ -2491,36 +3054,100 @@
             return new fabric.IText(source.text, { ...commonProps, ...overrides });
         }
 
-        function createTextStrokeGroup(textObj, strokeWidth, strokeColor) {
-            // Outside stroke: draw a double-width stroke behind the fill to keep fill intact.
-            const stroke = buildTextClone(textObj, {
-                fill: 'transparent',
-                stroke: strokeColor,
-                strokeWidth: strokeWidth * 2,
-                strokeUniform: true,
-                selectable: false,
-                evented: false
-            });
-            stroke.isTextStrokeOutline = true;
+        function createTextStrokeGroup(textObj, strokeWidth, strokeColor, centerPoint) {
+            try {
+                console.log('[createTextStrokeGroup] Starting with:', {
+                    text: textObj.text,
+                    strokeWidth,
+                    strokeColor,
+                    textType: textObj.type,
+                    centerPoint
+                });
 
-            textObj.set({
-                strokeWidth: 0,
-                stroke: null
-            });
-            textObj.isTextFill = true;
+                // Save all original properties before modification
+                const originalProps = {
+                    left: textObj.left,
+                    top: textObj.top,
+                    angle: textObj.angle,
+                    scaleX: textObj.scaleX,
+                    scaleY: textObj.scaleY,
+                    originX: textObj.originX,
+                    originY: textObj.originY
+                };
+                const savedCenter = centerPoint || textObj.getCenterPoint();
+                console.log('[createTextStrokeGroup] Saved center:', savedCenter);
 
-            const group = new fabric.Group([stroke, textObj], {
-                subTargetCheck: true,
-                selectable: true,
-                evented: true
-            });
-            const center = textObj.getCenterPoint();
-            group.setPositionByOrigin(center, 'center', 'center');
-            group.isTextStrokeGroup = true;
-            group.textStrokeWidth = strokeWidth;
-            group.textStrokeColor = strokeColor;
-            group.setCoords();
-            return group;
+                // Create stroke clone with same position as text
+                const stroke = buildTextClone(textObj, {
+                    fill: 'transparent',
+                    stroke: strokeColor,
+                    strokeWidth: strokeWidth,  // Use actual width, not doubled
+                    strokeUniform: true,
+                    strokeLineCap: 'round',
+                    strokeLineJoin: 'round',
+                    selectable: false,
+                    evented: false
+                });
+                stroke.isTextStrokeOutline = true;
+                console.log('[createTextStrokeGroup] Stroke clone created:', stroke.type);
+
+                // Remove stroke from fill text
+                textObj.set({
+                    strokeWidth: 0,
+                    stroke: null
+                });
+                textObj.isTextFill = true;
+
+                // Create group without setting position (let Fabric calculate it)
+                const group = new fabric.Group([stroke, textObj], {
+                    subTargetCheck: true,
+                    selectable: true,
+                    evented: true,
+                    objectCaching: false
+                });
+                console.log('[createTextStrokeGroup] Group created:', group.type, group._objects?.length);
+
+                // Now position the group at the saved center point
+                group.set({
+                    left: savedCenter.x,
+                    top: savedCenter.y,
+                    angle: originalProps.angle,
+                    scaleX: originalProps.scaleX,
+                    scaleY: originalProps.scaleY,
+                    originX: 'center',
+                    originY: 'center'
+                });
+
+                group.isTextStrokeGroup = true;
+                group.textStrokeWidth = strokeWidth;
+                group.textStrokeColor = strokeColor;
+                group.setCoords();
+
+                // Mark as dirty to ensure proper rendering
+                stroke.dirty = true;
+                textObj.dirty = true;
+                group.dirty = true;
+
+                const bounds = group.getBoundingRect();
+                console.log('[createTextStrokeGroup] Success! Group bounds:', bounds);
+
+                // Verify the group has valid dimensions
+                if (!bounds || bounds.width === 0 || bounds.height === 0) {
+                    console.error('[createTextStrokeGroup] Invalid group bounds!', bounds);
+                    throw new Error('Group has invalid bounds');
+                }
+
+                return group;
+            } catch (error) {
+                console.error('[createTextStrokeGroup] Error:', error);
+                console.error('[createTextStrokeGroup] Stack:', error.stack);
+                // Restore textObj to its original state
+                textObj.set({
+                    strokeWidth: 0,
+                    stroke: null
+                });
+                return textObj;
+            }
         }
 
         function syncTextStrokeGroup(group) {
@@ -2544,6 +3171,10 @@
                 direction: fill.direction,
                 styles: JSON.parse(JSON.stringify(fill.styles || {}))
             });
+            // Mark objects as dirty to force re-render
+            stroke.dirty = true;
+            fill.dirty = true;
+            group.dirty = true;
             group._calcBounds();
             group._updateObjectsCoords();
             group.setCoords();
@@ -2553,6 +3184,11 @@
         function updateColorPickers() {
             const obj = canvas.getActiveObject();
             if (!obj) return;
+
+            // Show fill and stroke panels when object is selected
+            const isLine = obj.type === 'line';
+            document.getElementById('prop-fill').style.display = isLine ? 'none' : 'block';
+            document.getElementById('prop-stroke').style.display = 'block';
 
             const textTarget = obj.isTextStrokeGroup ? (getTextStrokeGroupParts(obj)?.fill || obj) : obj;
             if (isTextObject(textTarget)) {
@@ -2595,16 +3231,15 @@
                 document.getElementById('prop-corner').style.display = 'none';
             }
 
-            // Line/Arrow specificity
-            const isLine = obj.type === 'line';
-            document.getElementById('prop-fill').style.display = isLine ? 'none' : 'block';
-
+            // Fill sync
             const fill = textTarget.fill;
+            const hasFill = fill && fill !== 'transparent';
+            document.getElementById('fill-enabled').checked = hasFill;
+            document.getElementById('fill-settings').style.display = hasFill ? 'block' : 'none';
+
             if (typeof fill === 'string') {
-                const color = fill === 'transparent' ? 'transparent' : fill;
+                const color = fill === 'transparent' ? '#3B82F6' : fill;
                 document.getElementById('fill-swatch').style.background = color;
-                document.getElementById('fill-color-hex').value = color.toUpperCase();
-                document.getElementById('transparent-check').checked = (fill === 'transparent');
                 document.getElementById('gradient-check').checked = false;
             }
             if (fill && fill.colorStops) {
@@ -2625,26 +3260,63 @@
                 toggleGradientMode();
             }
 
+            // Stroke sync
             const strokeTarget = obj.isTextStrokeGroup ? (getTextStrokeGroupParts(obj)?.stroke || obj) : obj;
             const stroke = strokeTarget.stroke || '#000000';
+
+            // Get stroke width - treat null, undefined, and 0 as no stroke
+            let strokePx = 0;
+            if (obj.isTextStrokeGroup) {
+                // Old text stroke group format - will be converted to simple stroke
+                strokePx = Math.round(obj.textStrokeWidth || 0);
+            } else {
+                const rawWidth = strokeTarget.strokeWidth;
+                if (rawWidth !== null && rawWidth !== undefined && rawWidth > 0) {
+                    // Use actual strokeWidth value directly
+                    strokePx = Math.round(rawWidth);
+                }
+            }
+
+            const hasStroke = strokePx > 0;
+            document.getElementById('stroke-enabled').checked = hasStroke;
+            document.getElementById('stroke-settings').style.display = hasStroke ? 'block' : 'none';
+
             document.getElementById('stroke-swatch').style.background = stroke;
-            const strokePx = obj.isTextStrokeGroup
-                ? Math.round(obj.textStrokeWidth || 0)
-                : (strokeTarget.strokeWidth ? Math.round(strokeTarget.strokeWidth) : 0);
-            document.getElementById('stroke-width').value = strokePx;
-            document.getElementById('stroke-width-val').innerText = strokePx;
-            const isDashed = strokeTarget._userStrokeDashed || false;
-            document.getElementById('stroke-dashed').checked = isDashed;
-            document.getElementById('dash-settings').style.display = isDashed ? 'flex' : 'none';
-            if (isDashed) {
-                document.getElementById('dash-length').value = strokeTarget._dashLength || 8;
-                document.getElementById('dash-gap').value = strokeTarget._dashGap || 4;
+
+            // Only update stroke width input if stroke is enabled
+            if (hasStroke) {
+                document.getElementById('stroke-width-input').value = strokePx;
+                const dashLen = strokeTarget._dashLength || 0;
+                const dashGap = strokeTarget._dashGap || 0;
+                document.getElementById('dash-length').value = dashLen;
+                document.getElementById('dash-gap').value = dashGap;
+            } else {
+                // Set default values when stroke is disabled
+                document.getElementById('stroke-width-input').value = 1;
+                document.getElementById('dash-length').value = 0;
+                document.getElementById('dash-gap').value = 0;
             }
 
             // Opacity
             const opacity = Math.round((obj.opacity || 1) * 100);
             document.getElementById('global-opacity').value = opacity;
             document.getElementById('global-opacity-val').innerText = opacity;
+
+            // Shadow
+            const hasShadow = obj.shadow !== null && obj.shadow !== undefined;
+            document.getElementById('shadow-enabled').checked = hasShadow;
+            document.getElementById('shadow-settings').style.display = hasShadow ? 'block' : 'none';
+            if (hasShadow) {
+                const shadow = obj.shadow;
+                const shadowColor = shadow.color || 'rgba(0,0,0,0.5)';
+                document.getElementById('shadow-color-swatch').style.background = shadowColor;
+                document.getElementById('shadow-blur').value = shadow.blur || 10;
+                document.getElementById('shadow-blur-val').innerText = shadow.blur || 10;
+                document.getElementById('shadow-offset-x').value = shadow.offsetX || 5;
+                document.getElementById('shadow-offset-x-val').innerText = shadow.offsetX || 5;
+                document.getElementById('shadow-offset-y').value = shadow.offsetY || 5;
+                document.getElementById('shadow-offset-y-val').innerText = shadow.offsetY || 5;
+            }
 
             const layerTab = document.getElementById('tab-layers');
             if (!layerTab || layerTab.style.display === 'block') {
@@ -2675,7 +3347,6 @@
         function changeFillColor(val) {
             const obj = canvas.getActiveObject();
             if (!obj) return;
-            document.getElementById('transparent-check').checked = false;
             if (obj.isTextStrokeGroup) {
                 const parts = getTextStrokeGroupParts(obj);
                 if (parts && parts.fill) {
@@ -2688,7 +3359,6 @@
                 setObjectColorData(obj, 'fill', val);
             }
             document.getElementById('fill-swatch').style.background = val;
-            document.getElementById('fill-color-hex').value = val.toUpperCase();
             canvas.renderAll();
             saveHistory();
         }
@@ -2713,6 +3383,92 @@
             saveHistory();
         }
 
+        function toggleFillEnabled() {
+            const obj = canvas.getActiveObject();
+            if (!obj) return;
+
+            const isEnabled = document.getElementById('fill-enabled').checked;
+            const fillSettings = document.getElementById('fill-settings');
+
+            if (isEnabled) {
+                const color = document.getElementById('fill-swatch').style.background || '#3B82F6';
+                if (obj.isTextStrokeGroup) {
+                    const parts = getTextStrokeGroupParts(obj);
+                    if (parts && parts.fill) {
+                        parts.fill.set('fill', color);
+                        syncTextStrokeGroup(obj);
+                        setObjectColorData(parts.fill, 'fill', color);
+                    }
+                } else {
+                    obj.set('fill', color);
+                    setObjectColorData(obj, 'fill', color);
+                }
+                fillSettings.style.display = 'block';
+            } else {
+                if (obj.isTextStrokeGroup) {
+                    const parts = getTextStrokeGroupParts(obj);
+                    if (parts && parts.fill) {
+                        parts.fill.set('fill', 'transparent');
+                        syncTextStrokeGroup(obj);
+                    }
+                } else {
+                    obj.set('fill', 'transparent');
+                }
+                fillSettings.style.display = 'none';
+            }
+            canvas.renderAll();
+            saveHistory();
+        }
+
+        function toggleStrokeEnabled() {
+            const obj = canvas.getActiveObject();
+            if (!obj) return;
+
+            const isEnabled = document.getElementById('stroke-enabled').checked;
+            const strokeSettings = document.getElementById('stroke-settings');
+
+            if (isEnabled) {
+                const strokeWidth = parseInt(document.getElementById('stroke-width-input').value) || 1;
+                applyStrokeWidth(obj, strokeWidth);
+                strokeSettings.style.display = 'block';
+            } else {
+                applyStrokeWidth(obj, 0);
+                strokeSettings.style.display = 'none';
+            }
+            canvas.renderAll();
+            saveHistory();
+        }
+
+        function updateStrokeDash() {
+            const obj = canvas.getActiveObject();
+            if (!obj) return;
+
+            const dashLen = parseInt(document.getElementById('dash-length').value) || 0;
+            const dashGap = parseInt(document.getElementById('dash-gap').value) || 0;
+
+            const target = obj.isTextStrokeGroup ? getTextStrokeGroupParts(obj)?.stroke : obj;
+            if (!target) return;
+
+            if (dashLen > 0 && dashGap > 0) {
+                target.set('strokeDashArray', [dashLen, dashGap]);
+                target._userStrokeDashed = true;
+                target._dashLength = dashLen;
+                target._dashGap = dashGap;
+            } else {
+                target.set('strokeDashArray', null);
+                target._userStrokeDashed = false;
+            }
+
+            // Mark as dirty to force re-render for text stroke groups
+            if (obj.isTextStrokeGroup) {
+                target.dirty = true;
+                obj.dirty = true;
+            }
+
+            canvas.renderAll();
+            saveHistory();
+        }
+
         function changeStrokeColor(val) {
             const obj = canvas.getActiveObject();
             if (obj) {
@@ -2722,6 +3478,9 @@
                         parts.stroke.set('stroke', val);
                         obj.textStrokeColor = val;
                         setObjectColorData(parts.stroke, 'stroke', val);
+                        // Mark as dirty to force re-render
+                        parts.stroke.dirty = true;
+                        obj.dirty = true;
                     }
                 } else {
                     obj.set('stroke', val);
@@ -2738,7 +3497,9 @@
             if (obj) {
                 const px = parseFloat(valPx);
                 applyStrokeWidth(obj, px);
-                document.getElementById('stroke-width-val').innerText = px;
+                // Update the input value
+                const widthInput = document.getElementById('stroke-width-input');
+                if (widthInput) widthInput.value = Math.max(1, px);
                 canvas.renderAll();
                 saveHistory();
             }
@@ -2767,6 +3528,96 @@
                 target._userStrokeDashed = false;
                 dashSettings.style.display = 'none';
             }
+            // Mark as dirty to force re-render for text stroke groups
+            if (obj.isTextStrokeGroup) {
+                target.dirty = true;
+                obj.dirty = true;
+            }
+            canvas.renderAll();
+            saveHistory();
+        }
+
+        function toggleShadow() {
+            const obj = canvas.getActiveObject();
+            if (!obj) return;
+
+            const isEnabled = document.getElementById('shadow-enabled').checked;
+            const shadowSettings = document.getElementById('shadow-settings');
+
+            if (isEnabled) {
+                const shadowColor = document.getElementById('shadow-color-swatch').style.background || 'rgba(0,0,0,0.5)';
+                const blur = parseInt(document.getElementById('shadow-blur').value) || 10;
+                const offsetX = parseInt(document.getElementById('shadow-offset-x').value) || 5;
+                const offsetY = parseInt(document.getElementById('shadow-offset-y').value) || 5;
+
+                const target = obj.isTextStrokeGroup ? obj : obj;
+                target.set({
+                    shadow: new fabric.Shadow({
+                        color: shadowColor,
+                        blur: blur,
+                        offsetX: offsetX,
+                        offsetY: offsetY
+                    })
+                });
+                shadowSettings.style.display = 'block';
+            } else {
+                const target = obj.isTextStrokeGroup ? obj : obj;
+                target.set('shadow', null);
+                shadowSettings.style.display = 'none';
+            }
+
+            canvas.renderAll();
+            saveHistory();
+        }
+
+        function changeShadowColor(val) {
+            const obj = canvas.getActiveObject();
+            if (!obj) return;
+
+            const target = obj.isTextStrokeGroup ? obj : obj;
+            if (!target.shadow) return;
+
+            target.shadow.color = val;
+            document.getElementById('shadow-color-swatch').style.background = val;
+            canvas.renderAll();
+            saveHistory();
+        }
+
+        function changeShadowBlur(val) {
+            const obj = canvas.getActiveObject();
+            if (!obj) return;
+
+            const target = obj.isTextStrokeGroup ? obj : obj;
+            if (!target.shadow) return;
+
+            target.shadow.blur = parseInt(val);
+            document.getElementById('shadow-blur-val').innerText = val;
+            canvas.renderAll();
+            saveHistory();
+        }
+
+        function changeShadowOffsetX(val) {
+            const obj = canvas.getActiveObject();
+            if (!obj) return;
+
+            const target = obj.isTextStrokeGroup ? obj : obj;
+            if (!target.shadow) return;
+
+            target.shadow.offsetX = parseInt(val);
+            document.getElementById('shadow-offset-x-val').innerText = val;
+            canvas.renderAll();
+            saveHistory();
+        }
+
+        function changeShadowOffsetY(val) {
+            const obj = canvas.getActiveObject();
+            if (!obj) return;
+
+            const target = obj.isTextStrokeGroup ? obj : obj;
+            if (!target.shadow) return;
+
+            target.shadow.offsetY = parseInt(val);
+            document.getElementById('shadow-offset-y-val').innerText = val;
             canvas.renderAll();
             saveHistory();
         }
@@ -2776,64 +3627,92 @@
             const strokePx = Math.max(0, px || 0);
 
             const applyTo = (target) => {
+                // Handle text stroke groups - convert back to simple text with stroke
                 if (target.isTextStrokeGroup) {
                     const parts = getTextStrokeGroupParts(target);
-                    if (!parts || !parts.stroke) return;
-                    parts.stroke.set({
-                        strokeWidth: strokePx * 2,
-                        strokeUniform: true
-                    });
-                    target.textStrokeWidth = strokePx;
-                    target._calcBounds();
-                    target._updateObjectsCoords();
-                    target.setCoords();
+                    if (!parts || !parts.fill) return;
+                    const fillText = parts.fill;
+                    const center = target.getCenterPoint();
+
+                    // Extract text properties
+                    const textProps = {
+                        text: fillText.text,
+                        fontFamily: fillText.fontFamily,
+                        fontSize: fillText.fontSize,
+                        fontWeight: fillText.fontWeight,
+                        fontStyle: fillText.fontStyle,
+                        fill: fillText.fill,
+                        textAlign: fillText.textAlign,
+                        lineHeight: fillText.lineHeight,
+                        charSpacing: fillText.charSpacing,
+                        underline: fillText.underline,
+                        linethrough: fillText.linethrough,
+                        overline: fillText.overline,
+                        angle: target.angle,
+                        scaleX: target.scaleX,
+                        scaleY: target.scaleY,
+                        stroke: strokePx > 0 ? (target.textStrokeColor || '#000000') : null,
+                        strokeWidth: strokePx,  // Use actual pixel value
+                        strokeUniform: true,
+                        strokeLineCap: 'round',
+                        strokeLineJoin: 'round',
+                        paintFirst: 'stroke'  // Paint stroke first, then fill on top
+                    };
+
+                    // Create new text with native stroke
+                    const newText = new fabric.IText(textProps.text, textProps);
+                    ensureObjectId(newText);
+                    canvas.remove(target);
+                    canvas.add(newText);
+                    newText.setPositionByOrigin(center, 'center', 'center');
+                    newText.setCoords();
+                    canvas.setActiveObject(newText);
+                    canvas.renderAll();
                     return;
                 }
 
+                // Handle regular text objects
                 if (isTextObject(target)) {
                     if (strokePx === 0) {
-                        target.set('strokeWidth', 0);
-                        target.setCoords();
-                        return;
+                        target.set({
+                            stroke: null,
+                            strokeWidth: 0
+                        });
+                    } else {
+                        const strokeColor = target.stroke || document.getElementById('stroke-swatch').style.background || '#000000';
+                        target.set({
+                            stroke: strokeColor,
+                            strokeWidth: strokePx,  // Use actual pixel value
+                            strokeUniform: true,
+                            strokeLineCap: 'round',
+                            strokeLineJoin: 'round',
+                            paintFirst: 'stroke'  // Paint stroke first, then fill on top
+                        });
                     }
-                    const strokeColor = target.stroke || document.getElementById('stroke-swatch').style.background || '#000000';
-                    canvas.remove(target);
-                    const group = createTextStrokeGroup(target, strokePx, strokeColor);
-                    canvas.add(group);
-                    canvas.setActiveObject(group);
+                    target.setCoords();
+                    canvas.renderAll();
                     return;
                 }
 
+                // Handle non-text objects (shapes, etc.)
+                const preservedDashArray = target.strokeDashArray;
                 target.set('strokeUniform', true);
-
-                if (target.type === 'rect' || target.type === 'triangle') {
-                    const baseWidth = target._strokeBaseWidth ?? (target.width - (target._strokeOutsideWidth || 0));
-                    const baseHeight = target._strokeBaseHeight ?? (target.height - (target._strokeOutsideWidth || 0));
-                    target._strokeBaseWidth = baseWidth;
-                    target._strokeBaseHeight = baseHeight;
-                    target._strokeOutsideWidth = strokePx;
-                    target.set({
-                        width: baseWidth + strokePx,
-                        height: baseHeight + strokePx
-                    });
-                } else if (target.type === 'circle') {
-                    const baseRadius = target._strokeBaseRadius ?? (target.radius - ((target._strokeOutsideWidth || 0) / 2));
-                    target._strokeBaseRadius = baseRadius;
-                    target._strokeOutsideWidth = strokePx;
-                    target.set('radius', baseRadius + strokePx / 2);
-                }
-
+                target.set('paintFirst', 'fill');
                 target.set('strokeWidth', strokePx);
+
+                if (preservedDashArray) {
+                    target.set('strokeDashArray', preservedDashArray);
+                }
                 target.setCoords();
             };
 
-            if (obj.type === 'activeSelection') {
-                const objects = obj.getObjects();
-                canvas.discardActiveObject();
-                objects.forEach(o => applyTo(o));
+            if (obj._objects) {
+                obj.forEachObject(child => applyTo(child));
             } else {
                 applyTo(obj);
             }
+            canvas.renderAll();
+            saveHistory();
         }
 
         function setObjectColorData(obj, target, color) {
@@ -3183,7 +4062,8 @@
                         'isFrameGroup',
                         'frameTargetId',
                         'isFrameShape',
-                        'isFrameContent'
+                        'isFrameContent',
+                        'objectCaching'
                     ]))
             };
             history = history.slice(0, historyStep + 1);
@@ -3214,13 +4094,18 @@
                 }
 
                 canvas.discardActiveObject();
-                canvas.renderAll();
+
+                // CRITICAL: Rebuild structures BEFORE rendering
+                // to avoid cache corruption
                 rebuildMasksAfterLoad(canvas);
                 rebuildFramesAfterLoad(canvas);
                 rebuildTextStrokeGroups(canvas);
                 isUndoing = false;
+
+                // Now render with all structures properly set up
                 canvas.getObjects().forEach(o => updateObjectClipping(o));
                 checkCanvasBoundaries();
+                canvas.renderAll();
                 hideFloatingToolbar();
                 renderLayerList();
             });
@@ -3456,7 +4341,8 @@
 
         // --- LAYERS ---
         function renderLayerList() {
-            const list = document.getElementById('layer-list');
+            const list = document.getElementById('regular-layer-list');
+            if (!list) return; // Panel might not be visible
             list.innerHTML = '';
             // Exclude artboard
             const objects = canvas.getObjects().filter(o => !o.excludeFromExport).reverse();
@@ -3477,7 +4363,13 @@
 
                 // Get SVG icon based on type (Figma style)
                 let iconSvg = '';
-                if (obj.type === 'i-text' || obj.type === 'textbox' || obj.type === 'text') {
+                let displayType = obj.type;
+
+                // Text stroke groups should display as text
+                if (obj.isTextStrokeGroup) {
+                    displayType = 'text';
+                    iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>';
+                } else if (obj.type === 'i-text' || obj.type === 'textbox' || obj.type === 'text') {
                     iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>';
                 } else if (obj.type === 'image') {
                     iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
@@ -3509,7 +4401,7 @@
 
                 item.innerHTML = `
                     <div class="layer-icon">${iconSvg}</div>
-                    <span class="layer-name">${obj.name || obj.type}</span>
+                    <span class="layer-name">${obj.name || displayType}</span>
                     <div class="layer-actions">
                         <div class="layer-action-btn" title="${isLocked ? '잠금 해제' : '잠금'}" onclick="event.stopPropagation(); toggleLayerLock(${actualIndex})">${lockIcon}</div>
                         <div class="layer-action-btn" title="${isHidden ? '표시' : '숨기기'}" onclick="event.stopPropagation(); toggleLayerVisibility(${actualIndex})">${visibilityIcon}</div>
@@ -3627,7 +4519,8 @@
 
             // Toggle Group/Ungroup buttons
             document.getElementById('btn-group').style.display = (obj.type === 'activeSelection') ? 'flex' : 'none';
-            document.getElementById('btn-ungroup').style.display = (obj.type === 'group') ? 'flex' : 'none';
+            // Hide ungroup button for text stroke groups
+            document.getElementById('btn-ungroup').style.display = (obj.type === 'group' && !obj.isTextStrokeGroup) ? 'flex' : 'none';
 
             // Mask buttons
             const isMulti = obj.type === 'activeSelection' && obj._objects && obj._objects.length === 2;
@@ -3732,6 +4625,13 @@
         function ungroupSelected() {
             const active = canvas.getActiveObject();
             if (!active || active.type !== 'group') return;
+
+            // Prevent ungrouping text stroke groups
+            if (active.isTextStrokeGroup) {
+                console.warn('Text stroke groups cannot be ungrouped');
+                return;
+            }
+
             active.toActiveSelection();
             canvas.requestRenderAll();
             saveHistory();
@@ -3911,30 +4811,62 @@
                     contentImage.isFrameContent = true;
                 }
                 obj.subTargetCheck = true;
-                obj.clipTo = buildFrameClipper(frameShape);
+                obj.objectCaching = false;  // CRITICAL: required for clipPath
+                obj.clipPath = buildFrameClipPath(frameShape);  // CORRECTED: use clipPath
                 normalizeFrameGroupBounds(obj, frameShape ? frameShape.getCenterPoint() : null);
+                obj.dirty = true;  // Force re-render
             });
+            targetCanvas.requestRenderAll();
         }
 
-        function buildFrameClipper(frameShape) {
+        function buildFrameClipPath(frameShape) {
             if (!frameShape) return null;
-            const isCircle = frameShape.type === 'circle';
-            return function (ctx) {
-                ctx.save();
-                ctx.beginPath();
-                if (isCircle) {
-                    ctx.arc(0, 0, frameShape.radius, 0, Math.PI * 2);
-                } else {
-                    ctx.rect(
-                        -frameShape.width / 2,
-                        -frameShape.height / 2,
-                        frameShape.width,
-                        frameShape.height
-                    );
-                }
-                ctx.closePath();
-                ctx.restore();
-            };
+
+            // Create new clip shape based on type instead of cloning
+            // This avoids clone() issues with complex objects
+            let clipShape;
+
+            if (frameShape.type === 'circle') {
+                clipShape = new fabric.Circle({
+                    radius: frameShape.radius,
+                    scaleX: frameShape.scaleX || 1,
+                    scaleY: frameShape.scaleY || 1
+                });
+            } else if (frameShape.type === 'rect') {
+                clipShape = new fabric.Rect({
+                    width: frameShape.width,
+                    height: frameShape.height,
+                    scaleX: frameShape.scaleX || 1,
+                    scaleY: frameShape.scaleY || 1,
+                    rx: frameShape.rx || 0,
+                    ry: frameShape.ry || 0
+                });
+            } else if (frameShape.type === 'polygon' || frameShape.type === 'path') {
+                // For complex shapes, use toObject/fromObject for deep copy
+                clipShape = new fabric[frameShape.type.charAt(0).toUpperCase() + frameShape.type.slice(1)](
+                    frameShape.points || frameShape.path,
+                    {
+                        scaleX: frameShape.scaleX || 1,
+                        scaleY: frameShape.scaleY || 1
+                    }
+                );
+            } else {
+                // Fallback: try clone for other types
+                clipShape = fabric.util.object.clone(frameShape);
+            }
+
+            clipShape.set({
+                left: 0,
+                top: 0,
+                originX: 'center',
+                originY: 'center',
+                absolutePositioned: false,  // CRITICAL: relative to group
+                fill: 'transparent',
+                stroke: null,
+                strokeWidth: 0
+            });
+
+            return clipShape;
         }
 
         function createMaskGroup(maskShape, targetObject) {
@@ -3985,7 +4917,8 @@
                 originY: 'center',
                 subTargetCheck: true,
                 selectable: true,
-                evented: true
+                evented: true,
+                objectCaching: false  // CRITICAL: required for clipPath to render correctly
             });
             group.isFrameGroup = true;
             group.frameTargetId = contentImage.customId;
@@ -3998,10 +4931,10 @@
             contentImage.selectable = false;
             contentImage.evented = false;
 
-            group.clipTo = buildFrameClipper(frameShape);
+            // CORRECT APPROACH: Use clipPath, not clipTo
+            group.clipPath = buildFrameClipPath(frameShape);
+
             normalizeFrameGroupBounds(group, frameCenter);
-            group._calcBounds();
-            group._updateObjectsCoords();
             group.setCoords();
 
             // 4) Restore content image's original world center inside the group.
@@ -4015,7 +4948,6 @@
                 originY: 'center'
             });
             contentImage.setCoords();
-            group._updateObjectsCoords();
             group.setCoords();
 
             return group;
@@ -4071,34 +5003,60 @@
             canvas.setActiveObject(frameGroup);
         }
         function rebuildTextStrokeGroups(targetCanvas) {
+            // Convert old text stroke groups to new native stroke format
+            const objectsToConvert = [];
+
             targetCanvas.getObjects().forEach(obj => {
                 if (!obj.isTextStrokeGroup || obj.type !== 'group') return;
+
                 const parts = getTextStrokeGroupParts(obj);
                 if (!parts) return;
+
                 const { stroke, fill } = parts;
-                if (stroke) {
-                    stroke.set({
-                        fill: 'transparent',
-                        strokeUniform: true,
-                        selectable: false,
-                        evented: false
-                    });
-                    if (obj.textStrokeWidth !== undefined) {
-                        stroke.set('strokeWidth', obj.textStrokeWidth * 2);
-                    } else if (stroke.strokeWidth) {
-                        obj.textStrokeWidth = stroke.strokeWidth / 2;
-                    }
-                }
-                if (fill) {
-                    fill.set({
-                        strokeWidth: 0,
-                        stroke: null
-                    });
-                }
-                obj.subTargetCheck = true;
-                obj._calcBounds();
-                obj._updateObjectsCoords();
-                obj.setCoords();
+                if (!fill) return;
+
+                // Extract properties from old group
+                const strokePx = obj.textStrokeWidth || 0;
+                const strokeColor = obj.textStrokeColor || (stroke ? stroke.stroke : '#000000');
+
+                // Create new text object with native stroke
+                const newText = new fabric.Text(fill.text || '', {
+                    left: obj.left,
+                    top: obj.top,
+                    originX: obj.originX || 'left',
+                    originY: obj.originY || 'top',
+                    fontFamily: fill.fontFamily,
+                    fontSize: fill.fontSize,
+                    fontWeight: fill.fontWeight,
+                    fontStyle: fill.fontStyle,
+                    fill: fill.fill,
+                    textAlign: fill.textAlign,
+                    angle: obj.angle,
+                    scaleX: obj.scaleX,
+                    scaleY: obj.scaleY,
+                    opacity: obj.opacity,
+                    // Native stroke properties
+                    stroke: strokePx > 0 ? strokeColor : null,
+                    strokeWidth: strokePx,
+                    strokeUniform: true,
+                    strokeLineCap: 'round',
+                    strokeLineJoin: 'round',
+                    paintFirst: 'stroke',
+                    // Preserve metadata
+                    customId: obj.customId,
+                    selectable: obj.selectable,
+                    evented: obj.evented,
+                    excludeFromExport: obj.excludeFromExport
+                });
+
+                objectsToConvert.push({ old: obj, new: newText });
+            });
+
+            // Replace old groups with new text objects
+            objectsToConvert.forEach(({ old, new: newText }) => {
+                const index = targetCanvas.getObjects().indexOf(old);
+                targetCanvas.remove(old);
+                targetCanvas.insertAt(newText, index, false);
             });
         }
 
@@ -4156,10 +5114,32 @@
             if (!group || (!group.isMaskGroup && !group.isFrameGroup)) return;
 
             const objects = group._objects || [];
+
+            // Calculate absolute positions before destroying group
+            const objectsWithPositions = objects.map(obj => {
+                // Get object's center point in canvas coordinates
+                const matrix = group.calcTransformMatrix();
+                const point = fabric.util.transformPoint(
+                    { x: obj.left, y: obj.top },
+                    matrix
+                );
+
+                return {
+                    obj: obj,
+                    left: point.x,
+                    top: point.y,
+                    angle: obj.angle + group.angle,
+                    scaleX: obj.scaleX * group.scaleX,
+                    scaleY: obj.scaleY * group.scaleY
+                };
+            });
+
+            // Clear group and remove it
             group._objects = [];
             canvas.remove(group);
 
-            objects.forEach(obj => {
+            // Add objects back with restored positions
+            objectsWithPositions.forEach(({ obj, left, top, angle, scaleX, scaleY }) => {
                 if (obj.isFrameShape) {
                     obj.set({ selectable: true, evented: true });
                     obj.isFrameShape = false;
@@ -4177,6 +5157,17 @@
                     });
                     obj.maskTargetId = null;
                 }
+
+                // Restore absolute position and transforms
+                obj.set({
+                    left: left,
+                    top: top,
+                    angle: angle,
+                    scaleX: scaleX,
+                    scaleY: scaleY
+                });
+
+                obj.setCoords();
                 ensureObjectId(obj);
                 canvas.add(obj);
             });
@@ -4301,26 +5292,43 @@
                 updatePickerUI(true);
             });
 
+            // CMYK slider and input sync
+            const handleCmykChange = () => {
+                const c = parseFloat(document.getElementById('picker-cmyk-c').value) || 0;
+                const m = parseFloat(document.getElementById('picker-cmyk-m').value) || 0;
+                const y = parseFloat(document.getElementById('picker-cmyk-y').value) || 0;
+                const k = parseFloat(document.getElementById('picker-cmyk-k').value) || 0;
+                pickerCmyk = {
+                    c: Math.max(0, Math.min(100, c)),
+                    m: Math.max(0, Math.min(100, m)),
+                    y: Math.max(0, Math.min(100, y)),
+                    k: Math.max(0, Math.min(100, k))
+                };
+                const rgb = cmykToRgb(pickerCmyk.c, pickerCmyk.m, pickerCmyk.y, pickerCmyk.k);
+                const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+                pickerHue = hsv.h;
+                pickerSaturation = hsv.s;
+                pickerBrightness = hsv.v;
+                updatePickerUI(false);
+                const rgbaStr = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${pickerAlpha})`;
+                applyColorToTarget(rgbaStr, pickerCmyk);
+            };
+
             ['c', 'm', 'y', 'k'].forEach((channel) => {
-                document.getElementById(`picker-cmyk-${channel}`).addEventListener('change', () => {
-                    const c = parseFloat(document.getElementById('picker-cmyk-c').value) || 0;
-                    const m = parseFloat(document.getElementById('picker-cmyk-m').value) || 0;
-                    const y = parseFloat(document.getElementById('picker-cmyk-y').value) || 0;
-                    const k = parseFloat(document.getElementById('picker-cmyk-k').value) || 0;
-                    pickerCmyk = {
-                        c: Math.max(0, Math.min(100, c)),
-                        m: Math.max(0, Math.min(100, m)),
-                        y: Math.max(0, Math.min(100, y)),
-                        k: Math.max(0, Math.min(100, k))
-                    };
-                    const rgb = cmykToRgb(pickerCmyk.c, pickerCmyk.m, pickerCmyk.y, pickerCmyk.k);
-                    const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
-                    pickerHue = hsv.h;
-                    pickerSaturation = hsv.s;
-                    pickerBrightness = hsv.v;
-                    updatePickerUI(false);
-                    const rgbaStr = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${pickerAlpha})`;
-                    applyColorToTarget(rgbaStr, pickerCmyk);
+                const slider = document.getElementById(`picker-cmyk-${channel}-slider`);
+                const input = document.getElementById(`picker-cmyk-${channel}`);
+
+                // Slider → Input sync
+                slider.addEventListener('input', (e) => {
+                    input.value = e.target.value;
+                    handleCmykChange();
+                });
+
+                // Input → Slider sync
+                input.addEventListener('input', (e) => {
+                    const val = Math.max(0, Math.min(100, parseFloat(e.target.value) || 0));
+                    slider.value = val;
+                    handleCmykChange();
                 });
             });
 
@@ -4332,13 +5340,69 @@
             });
         }
 
+        // Constrain popup position within viewport boundaries
+        function constrainPopupPosition(popup, anchorRect, preferredLeft, preferredTop) {
+            // Show popup temporarily to measure its actual size
+            const wasVisible = popup.classList.contains('show');
+            if (!wasVisible) {
+                popup.style.visibility = 'hidden';
+                popup.classList.add('show');
+            }
+
+            const popupRect = popup.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const padding = 10; // Minimum distance from viewport edge
+
+            let left = preferredLeft;
+            let top = preferredTop;
+
+            // Adjust horizontal position
+            if (left < padding) {
+                left = padding;
+            } else if (left + popupRect.width > viewportWidth - padding) {
+                // Try positioning to the right of anchor instead
+                left = anchorRect.right + padding;
+                if (left + popupRect.width > viewportWidth - padding) {
+                    // Still doesn't fit, align to right edge
+                    left = viewportWidth - popupRect.width - padding;
+                }
+            }
+
+            // Adjust vertical position
+            if (top < padding) {
+                top = padding;
+            } else if (top + popupRect.height > viewportHeight - padding) {
+                // Position above anchor instead
+                top = anchorRect.top - popupRect.height - padding;
+                if (top < padding) {
+                    // Still doesn't fit, align to bottom edge
+                    top = viewportHeight - popupRect.height - padding;
+                }
+            }
+
+            // Hide popup if it was hidden before
+            if (!wasVisible) {
+                popup.classList.remove('show');
+                popup.style.visibility = '';
+            }
+
+            return { left, top };
+        }
+
         function openPicker(target, el) {
             pickerTarget = target;
             const picker = document.getElementById('color-picker');
             const rect = el.getBoundingClientRect();
 
-            picker.style.left = `${rect.left - 250}px`;
-            picker.style.top = `${Math.min(window.innerHeight - 400, rect.top)}px`;
+            // Calculate preferred position (left of anchor)
+            const preferredLeft = rect.left - 250;
+            const preferredTop = rect.top;
+
+            // Constrain to viewport
+            const position = constrainPopupPosition(picker, rect, preferredLeft, preferredTop);
+            picker.style.left = `${position.left}px`;
+            picker.style.top = `${position.top}px`;
             picker.classList.add('show');
 
             const color = el.style.background || '#ffffff';
@@ -4354,7 +5418,6 @@
                 setPickerColor(color, { apply: false });
             }
             renderPalette('doc-colors', getDocumentColors());
-            renderPalette('recent-colors', recentColors);
         }
 
         function setPickerColor(color, options = {}) {
@@ -4408,15 +5471,12 @@
             } else if (pickerTarget === 'stroke') {
                 changeStrokeColor(color);
                 if (activeObj) activeObj.strokeColorData = { colorMode: 'cmyk', cmyk: { ...effectiveCmyk }, rgb: { r: rgba.r, g: rgba.g, b: rgba.b } };
+            } else if (pickerTarget === 'shadow') {
+                changeShadowColor(color);
             }
             else if (pickerTarget === 'grad-start' || pickerTarget === 'grad-end') {
                 document.getElementById(pickerTarget + '-swatch').style.background = color;
                 updateGradient();
-            }
-
-            if (!recentColors.includes(color)) {
-                recentColors.unshift(color);
-                if (recentColors.length > 10) recentColors.pop();
             }
         }
 
@@ -4440,6 +5500,11 @@
             document.getElementById('picker-cmyk-m').value = cmyk.m;
             document.getElementById('picker-cmyk-y').value = cmyk.y;
             document.getElementById('picker-cmyk-k').value = cmyk.k;
+            // Sync sliders
+            document.getElementById('picker-cmyk-c-slider').value = cmyk.c;
+            document.getElementById('picker-cmyk-m-slider').value = cmyk.m;
+            document.getElementById('picker-cmyk-y-slider').value = cmyk.y;
+            document.getElementById('picker-cmyk-k-slider').value = cmyk.k;
         }
 
         function drawSbCanvas() {
