@@ -4774,34 +4774,60 @@
             canvas.setActiveObject(frameGroup);
         }
         function rebuildTextStrokeGroups(targetCanvas) {
+            // Convert old text stroke groups to new native stroke format
+            const objectsToConvert = [];
+
             targetCanvas.getObjects().forEach(obj => {
                 if (!obj.isTextStrokeGroup || obj.type !== 'group') return;
+
                 const parts = getTextStrokeGroupParts(obj);
                 if (!parts) return;
+
                 const { stroke, fill } = parts;
-                if (stroke) {
-                    stroke.set({
-                        fill: 'transparent',
-                        strokeUniform: true,
-                        selectable: false,
-                        evented: false
-                    });
-                    if (obj.textStrokeWidth !== undefined) {
-                        stroke.set('strokeWidth', obj.textStrokeWidth * 2);
-                    } else if (stroke.strokeWidth) {
-                        obj.textStrokeWidth = stroke.strokeWidth / 2;
-                    }
-                }
-                if (fill) {
-                    fill.set({
-                        strokeWidth: 0,
-                        stroke: null
-                    });
-                }
-                obj.subTargetCheck = true;
-                obj._calcBounds();
-                obj._updateObjectsCoords();
-                obj.setCoords();
+                if (!fill) return;
+
+                // Extract properties from old group
+                const strokePx = obj.textStrokeWidth || 0;
+                const strokeColor = obj.textStrokeColor || (stroke ? stroke.stroke : '#000000');
+
+                // Create new text object with native stroke
+                const newText = new fabric.Text(fill.text || '', {
+                    left: obj.left,
+                    top: obj.top,
+                    originX: obj.originX || 'left',
+                    originY: obj.originY || 'top',
+                    fontFamily: fill.fontFamily,
+                    fontSize: fill.fontSize,
+                    fontWeight: fill.fontWeight,
+                    fontStyle: fill.fontStyle,
+                    fill: fill.fill,
+                    textAlign: fill.textAlign,
+                    angle: obj.angle,
+                    scaleX: obj.scaleX,
+                    scaleY: obj.scaleY,
+                    opacity: obj.opacity,
+                    // Native stroke properties
+                    stroke: strokePx > 0 ? strokeColor : null,
+                    strokeWidth: strokePx,
+                    strokeUniform: true,
+                    strokeLineCap: 'round',
+                    strokeLineJoin: 'round',
+                    paintFirst: 'stroke',
+                    // Preserve metadata
+                    customId: obj.customId,
+                    selectable: obj.selectable,
+                    evented: obj.evented,
+                    excludeFromExport: obj.excludeFromExport
+                });
+
+                objectsToConvert.push({ old: obj, new: newText });
+            });
+
+            // Replace old groups with new text objects
+            objectsToConvert.forEach(({ old, new: newText }) => {
+                const index = targetCanvas.getObjects().indexOf(old);
+                targetCanvas.remove(old);
+                targetCanvas.insertAt(newText, index, false);
             });
         }
 
