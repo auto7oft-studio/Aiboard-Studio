@@ -30,6 +30,8 @@
             --warning-bg: #FFFBEB;
             --warning-border: #FDE68A;
             --warning-text: #92400E;
+            --workspace-offset-left: 288px;
+            --workspace-padding-right: 24px;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -155,6 +157,7 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            padding-right: var(--workspace-padding-right);
         }
 
         .canvas-wrapper {
@@ -615,7 +618,7 @@
         .bottom-toolbar {
             position: absolute;
             bottom: 20px;
-            left: calc(50% - 116px);
+            left: 50%;
             transform: translateX(-50%);
             display: flex;
             align-items: center;
@@ -795,6 +798,28 @@
             font-weight: 600;
             font-size: 12px;
             color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .panel-close-btn {
+            border: none;
+            background: var(--bg-app);
+            color: var(--text-sub);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: none;
+        }
+
+        .panel-close-btn:hover {
+            color: var(--text-main);
+            background: var(--bg-panel);
+            box-shadow: var(--shadow-sm);
         }
 
         .layer-panel-content {
@@ -1248,7 +1273,10 @@
 
             <!-- Layer Panel (Always Visible) -->
             <div class="layer-panel-fixed" id="layer-panel-fixed">
-                <div class="layer-panel-header">레이어 & 프리셋</div>
+            <div class="layer-panel-header">
+                <span>레이어 & 프리셋</span>
+                <button id="panel-close-btn" class="panel-close-btn" onclick="exitArtboardMode()">닫기</button>
+            </div>
                 <div class="layer-panel-content" id="layer-panel-fixed-content">
                     <!-- Print Size Presets (shown when artboard selected) -->
                     <div id="print-presets-section" style="display: none;">
@@ -1324,7 +1352,7 @@
 
                 <!-- Canvas size info -->
                 <div id="canvas-info-bar"
-                    style="position: absolute; top: 8px; left: 56px; background: #1F2937; color: #fff; font-size: 11px; z-index: 100; pointer-events: none; font-weight: 500; padding: 6px 12px; border-radius: 6px;">
+                    style="position: absolute; top: 12px; left: calc(var(--workspace-offset-left) + 12px); background: #1F2937; color: #fff; font-size: 11px; z-index: 100; pointer-events: none; font-weight: 500; padding: 6px 12px; border-radius: 6px;">
                     <span id="canvas-size-label">Size : 90 × 50 mm</span><span id="image-info-label"></span>
                 </div>
                 <!-- Eyedropper magnifier -->
@@ -1892,6 +1920,8 @@
         const PRINT_DPI = 300;
         const MM_TO_PX_SCREEN = SCREEN_DPI / 25.4;
         const MM_TO_PX_PRINT = PRINT_DPI / 25.4;
+        const WORKSPACE_OFFSET_LEFT = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--workspace-offset-left')) || 288;
+        const WORKSPACE_PADDING_RIGHT = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--workspace-padding-right')) || 24;
 
         // --- PRINT SAFETY (opentype.js) ---
         const fontCache = new Map();
@@ -2147,6 +2177,18 @@
         }
 
         function mmToPx(mm) { return mm * MM_TO_PX_SCREEN; }
+        function getWorkspaceCenterX() {
+            return WORKSPACE_OFFSET_LEFT + (workspaceWidth - WORKSPACE_OFFSET_LEFT - WORKSPACE_PADDING_RIGHT) / 2;
+        }
+        function updateWorkspaceUIPositions() {
+            const centerX = getWorkspaceCenterX();
+            const bottomToolbar = document.querySelector('.bottom-toolbar');
+            if (bottomToolbar) bottomToolbar.style.left = `${centerX}px`;
+            const topToolbar = document.querySelector('.top-toolbar');
+            if (topToolbar) topToolbar.style.left = `${centerX}px`;
+            const warning = document.getElementById('boundary-warning');
+            if (warning) warning.style.left = `${centerX}px`;
+        }
 
         // --- INIT ---
         let objectIdCounter = 0;
@@ -2162,6 +2204,7 @@
             const wrapper = document.getElementById('canvas-container');
             workspaceWidth = wrapper.clientWidth;
             workspaceHeight = wrapper.clientHeight;
+            updateWorkspaceUIPositions();
 
             const baseToObject = fabric.Object.prototype.toObject;
             fabric.Object.prototype.toObject = function (propertiesToInclude) {
@@ -2232,9 +2275,10 @@
 
             const w = mmToPx(widthMm);
             const h = mmToPx(heightMm);
+            const centerX = getWorkspaceCenterX();
 
             artboard = new fabric.Rect({
-                left: (workspaceWidth - w) / 2 - 116,
+                left: centerX - w / 2,
                 top: (workspaceHeight - h) / 2,
                 width: w,
                 height: h,
@@ -2256,6 +2300,7 @@
             document.getElementById('custom-height-input').value = heightMm;
 
             fitToScreen();
+            updateWorkspaceUIPositions();
         }
 
         // --- EVENTS ---
@@ -2475,7 +2520,7 @@
             const ratioY = newH / oldH;
 
             // New artboard position (same logic as createArtboard)
-            const nextArtLeft = (workspaceWidth - newW) / 2 - 116;
+            const nextArtLeft = getWorkspaceCenterX() - newW / 2;
             const nextArtTop = (workspaceHeight - newH) / 2;
 
             const objects = canvas.getObjects().filter(o => !o.excludeFromExport);
@@ -2799,7 +2844,27 @@
         // Left toolbar tool selection
         let currentTool = 'select';
 
+        function exitArtboardMode() {
+            const presets = document.getElementById('print-presets-section');
+            const layerList = document.getElementById('regular-layer-list');
+            const closeBtn = document.getElementById('panel-close-btn');
+            currentTool = 'select';
+            document.querySelectorAll('.left-toolbar-btn').forEach(btn => btn.classList.remove('active'));
+            if (presets) presets.style.display = 'none';
+            if (layerList) layerList.style.display = 'block';
+            if (closeBtn) closeBtn.style.display = 'none';
+            canvas.defaultCursor = 'default';
+            canvas.selection = true;
+            canvas.discardActiveObject();
+            canvas.requestRenderAll();
+        }
+
         function selectTool(tool) {
+            if (tool === 'artboard' && currentTool === 'artboard') {
+                exitArtboardMode();
+                return;
+            }
+
             // Remove active class from all toolbar buttons
             document.querySelectorAll('.left-toolbar-btn').forEach(btn => {
                 btn.classList.remove('active');
@@ -2820,6 +2885,8 @@
                 // Show regular layer list
                 document.getElementById('print-presets-section').style.display = 'none';
                 document.getElementById('regular-layer-list').style.display = 'block';
+                const closeBtn = document.getElementById('panel-close-btn');
+                if (closeBtn) closeBtn.style.display = 'none';
             } else if (tool === 'artboard') {
                 // Select artboard and show presets
                 if (artboard) {
@@ -2828,6 +2895,8 @@
                 }
                 document.getElementById('print-presets-section').style.display = 'block';
                 document.getElementById('regular-layer-list').style.display = 'none';
+                const closeBtn = document.getElementById('panel-close-btn');
+                if (closeBtn) closeBtn.style.display = 'inline-flex';
             } else if (tool === 'text') {
                 addText();
                 // Reset to select tool after adding
@@ -2874,12 +2943,15 @@
             if (artboard) {
                 const newWidth = mmToPx(width);
                 const newHeight = mmToPx(height);
+                const centerX = getWorkspaceCenterX();
 
                 artboard.set({
                     width: newWidth,
                     height: newHeight,
                     scaleX: 1,
-                    scaleY: 1
+                    scaleY: 1,
+                    left: centerX - newWidth / 2,
+                    top: (workspaceHeight - newHeight) / 2
                 });
 
                 artboard.setCoords();
@@ -2891,6 +2963,7 @@
 
             // Fit to screen
             fitToScreen();
+            updateWorkspaceUIPositions();
 
             saveHistory();
         }
