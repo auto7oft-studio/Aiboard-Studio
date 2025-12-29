@@ -777,16 +777,6 @@
             flex: 1;
         }
 
-        .left-toolbar-btn.export-btn {
-            background: var(--primary);
-            color: white;
-        }
-
-        .left-toolbar-btn.export-btn:hover {
-            background: var(--primary-hover);
-            color: white;
-        }
-
         /* --- Layer Panel (Always Visible) --- */
         .layer-panel-fixed {
             position: absolute;
@@ -1333,7 +1323,7 @@
             </div>
 
             <div id="canvas-info-bar"
-                style="position: absolute; top: 8px; left: 8px; background: #1F2937; color: #fff; font-size: 11px; z-index: 100; pointer-events: none; font-weight: 500; padding: 6px 12px; border-radius: 6px;">
+                style="position: absolute; top: 8px; left: 56px; background: #1F2937; color: #fff; font-size: 11px; z-index: 100; pointer-events: none; font-weight: 500; padding: 6px 12px; border-radius: 6px;">
                 <span id="canvas-size-label">Size : 90 × 50 mm</span><span id="image-info-label"></span>
             </div>
 
@@ -2018,9 +2008,19 @@
             const canvasEl = canvas.lowerCanvasEl;
             const canvasRect = canvasEl.getBoundingClientRect();
 
+            // Get accurate pointer position from Fabric.js event
+            let clientX, clientY;
+            if (e.e) {
+                clientX = e.e.clientX || e.e.touches?.[0]?.clientX;
+                clientY = e.e.clientY || e.e.touches?.[0]?.clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
             // Calculate mouse position relative to canvas element (CSS pixels)
-            const cssX = e.e.clientX - canvasRect.left;
-            const cssY = e.e.clientY - canvasRect.top;
+            const cssX = clientX - canvasRect.left;
+            const cssY = clientY - canvasRect.top;
 
             // Position magnifier near cursor (offset to bottom-right to not block view)
             const magnifierSize = 140;
@@ -2097,11 +2097,21 @@
             const canvasEl = canvas.lowerCanvasEl;
             const canvasRect = canvasEl.getBoundingClientRect();
 
-            // Calculate CSS coordinates
-            const cssX = e.e.clientX - canvasRect.left;
-            const cssY = e.e.clientY - canvasRect.top;
+            // Get accurate pointer position from Fabric.js event
+            let clientX, clientY;
+            if (e.e) {
+                clientX = e.e.clientX || e.e.touches?.[0]?.clientX;
+                clientY = e.e.clientY || e.e.touches?.[0]?.clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
 
-            // Account for canvas internal scaling
+            // Calculate CSS coordinates relative to canvas element
+            const cssX = clientX - canvasRect.left;
+            const cssY = clientY - canvasRect.top;
+
+            // Account for canvas internal scaling (retina display support)
             const scaleX = canvasEl.width / canvasRect.width;
             const scaleY = canvasEl.height / canvasRect.height;
 
