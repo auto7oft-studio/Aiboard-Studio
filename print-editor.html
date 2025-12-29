@@ -1322,14 +1322,14 @@
                 <button class="warning-btn" onclick="selectOutsideObjects()">확인 및 선택</button>
             </div>
 
-            <div id="canvas-info-bar"
-                style="position: absolute; top: 8px; left: 56px; background: #1F2937; color: #fff; font-size: 11px; z-index: 100; pointer-events: none; font-weight: 500; padding: 6px 12px; border-radius: 6px;">
-                <span id="canvas-size-label">Size : 90 × 50 mm</span><span id="image-info-label"></span>
-            </div>
-
-
             <div class="canvas-wrapper" id="canvas-container">
                 <canvas id="editor-canvas"></canvas>
+
+                <!-- Canvas size info -->
+                <div id="canvas-info-bar"
+                    style="position: absolute; top: 8px; left: 8px; background: #1F2937; color: #fff; font-size: 11px; z-index: 100; pointer-events: none; font-weight: 500; padding: 6px 12px; border-radius: 6px;">
+                    <span id="canvas-size-label">Size : 90 × 50 mm</span><span id="image-info-label"></span>
+                </div>
                 <!-- Eyedropper magnifier -->
                 <div id="eyedropper-magnifier" style="display: none; position: absolute; width: 140px; height: 140px; border: 4px solid #fff; border-radius: 70px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); pointer-events: none; z-index: 10000;">
                     <div style="position: relative; width: 100%; height: 100%; border-radius: 70px; overflow: hidden;">
@@ -1342,10 +1342,9 @@
                     </div>
                     <div id="magnifier-color" style="position: absolute; bottom: -35px; left: 50%; transform: translateX(-50%); background: #fff; padding: 6px 10px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); font-size: 12px; font-family: monospace; white-space: nowrap; font-weight: 600;"></div>
                 </div>
-            </div>
 
-            <!-- Bottom Toolbar (Figma Style) -->
-            <div class="bottom-toolbar">
+                <!-- Bottom Toolbar (Figma Style) -->
+                <div class="bottom-toolbar">
                 <!-- Undo/Redo -->
                 <button class="figma-tool-btn" onclick="undo()" title="실행 취소 (Ctrl+Z)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1490,15 +1489,7 @@
                         </svg>
                     </button>
                 </div>
-
-                <div class="toolbar-divider"></div>
-
-                <!-- PDF Export -->
-                <button class="figma-tool-btn" onclick="handleExportRequest()" title="PDF 내보내기" style="color: white; background: var(--primary);">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                    </svg>
-                </button>
+            </div>
             </div>
         </main>
 
