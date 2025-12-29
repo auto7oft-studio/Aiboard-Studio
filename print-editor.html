@@ -1274,7 +1274,7 @@
             <!-- Layer Panel (Always Visible) -->
             <div class="layer-panel-fixed" id="layer-panel-fixed">
             <div class="layer-panel-header">
-                <span>레이어 & 프리셋</span>
+                <span id="layer-panel-title">레이어</span>
                 <button id="panel-close-btn" class="panel-close-btn" onclick="exitArtboardMode()">닫기</button>
             </div>
                 <div class="layer-panel-content" id="layer-panel-fixed-content">
@@ -2726,7 +2726,8 @@
             );
             canvas.setZoom(scale);
             const vpt = canvas.viewportTransform;
-            vpt[4] = workspaceWidth / 2 - (artboard.left + w / 2) * scale;
+            const workspaceCenter = getWorkspaceCenterX();
+            vpt[4] = workspaceCenter - (artboard.left + w / 2) * scale;
             vpt[5] = workspaceHeight / 2 - (artboard.top + h / 2) * scale;
             canvas.requestRenderAll();
             updateZoomDisplay();
@@ -2844,6 +2845,11 @@
         // Left toolbar tool selection
         let currentTool = 'select';
 
+        function setPanelTitle(text) {
+            const titleEl = document.getElementById('layer-panel-title');
+            if (titleEl) titleEl.innerText = text;
+        }
+
         function exitArtboardMode() {
             const presets = document.getElementById('print-presets-section');
             const layerList = document.getElementById('regular-layer-list');
@@ -2853,6 +2859,7 @@
             if (presets) presets.style.display = 'none';
             if (layerList) layerList.style.display = 'block';
             if (closeBtn) closeBtn.style.display = 'none';
+            setPanelTitle('레이어');
             canvas.defaultCursor = 'default';
             canvas.selection = true;
             canvas.discardActiveObject();
@@ -2887,6 +2894,7 @@
                 document.getElementById('regular-layer-list').style.display = 'block';
                 const closeBtn = document.getElementById('panel-close-btn');
                 if (closeBtn) closeBtn.style.display = 'none';
+                setPanelTitle('레이어');
             } else if (tool === 'artboard') {
                 // Select artboard and show presets
                 if (artboard) {
@@ -2897,6 +2905,7 @@
                 document.getElementById('regular-layer-list').style.display = 'none';
                 const closeBtn = document.getElementById('panel-close-btn');
                 if (closeBtn) closeBtn.style.display = 'inline-flex';
+                setPanelTitle('프리셋');
             } else if (tool === 'text') {
                 addText();
                 // Reset to select tool after adding
