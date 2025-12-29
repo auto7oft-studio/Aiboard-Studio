@@ -615,7 +615,8 @@
         .bottom-toolbar {
             position: absolute;
             bottom: 20px;
-            left: 0;
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
             align-items: center;
             gap: 2px;
@@ -2688,7 +2689,7 @@
         }
 
         function updateCanvasSizeLabel() {
-            // Pixel-perfect alignment: center canvas size label and bottom toolbar to artboard
+            // Position canvas size label at artboard's top-left corner
             if (!artboard) return;
 
             const vpt = canvas.viewportTransform;
@@ -2697,24 +2698,12 @@
             // Calculate artboard's actual screen position after zoom and pan
             const artboardScreenLeft = artboard.left * zoom + vpt[4];
             const artboardScreenTop = artboard.top * zoom + vpt[5];
-            const artboardScreenWidth = artboard.width * zoom;
 
-            // Calculate artboard's center X in screen coordinates
-            const artboardCenterX = artboardScreenLeft + artboardScreenWidth / 2;
-
-            // Update canvas size label position
+            // Update canvas size label position (artboard top-left + 8px offset)
             const sizeLabel = document.getElementById('canvas-info-bar');
             if (sizeLabel) {
-                const labelWidth = sizeLabel.offsetWidth;
-                sizeLabel.style.left = Math.round(artboardCenterX - labelWidth / 2) + 'px';
-            }
-
-            // Update bottom toolbar position
-            const bottomToolbar = document.querySelector('.bottom-toolbar');
-            if (bottomToolbar) {
-                const toolbarWidth = bottomToolbar.offsetWidth;
-                bottomToolbar.style.left = Math.round(artboardCenterX - toolbarWidth / 2) + 'px';
-                bottomToolbar.style.transform = 'none'; // Remove any transform-based centering
+                sizeLabel.style.left = Math.round(artboardScreenLeft + 8) + 'px';
+                sizeLabel.style.top = Math.round(artboardScreenTop + 8) + 'px';
             }
         }
 
