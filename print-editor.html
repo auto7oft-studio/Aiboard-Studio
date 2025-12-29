@@ -31,7 +31,7 @@
             --warning-border: #FDE68A;
             --warning-text: #92400E;
             --workspace-offset-left: 288px;
-            --workspace-padding-right: 24px;
+            --workspace-padding-right: 0px;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -157,7 +157,6 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            padding-right: var(--workspace-padding-right);
         }
 
         .canvas-wrapper {
@@ -1319,13 +1318,13 @@
                         </div>
 
                         <div class="preset-category">배너</div>
-                        <div class="preset-item" onclick="applyPreset(1000, 3000, '세로 배너')">
+                        <div class="preset-item" onclick="applyPreset(600, 1800, '세로 배너')">
                             <span class="preset-name">세로 배너</span>
-                            <span class="preset-size">1000 × 3000</span>
+                            <span class="preset-size">600 × 1800</span>
                         </div>
-                        <div class="preset-item" onclick="applyPreset(3000, 1000, '가로 배너')">
+                        <div class="preset-item" onclick="applyPreset(5000, 900, '가로 배너')">
                             <span class="preset-name">가로 배너</span>
-                            <span class="preset-size">3000 × 1000</span>
+                            <span class="preset-size">5000 × 900</span>
                         </div>
                     </div>
 
