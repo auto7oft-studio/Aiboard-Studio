@@ -1324,7 +1324,7 @@
 
                 <!-- Canvas size info -->
                 <div id="canvas-info-bar"
-                    style="position: absolute; top: 8px; left: 0; background: #1F2937; color: #fff; font-size: 11px; z-index: 100; pointer-events: none; font-weight: 500; padding: 6px 12px; border-radius: 6px;">
+                    style="position: absolute; top: 8px; left: 56px; background: #1F2937; color: #fff; font-size: 11px; z-index: 100; pointer-events: none; font-weight: 500; padding: 6px 12px; border-radius: 6px;">
                     <span id="canvas-size-label">Size : 90 × 50 mm</span><span id="image-info-label"></span>
                 </div>
                 <!-- Eyedropper magnifier -->
@@ -2689,22 +2689,7 @@
         }
 
         function updateCanvasSizeLabel() {
-            // Position canvas size label at artboard's top-left corner
-            if (!artboard) return;
-
-            const vpt = canvas.viewportTransform;
-            const zoom = canvas.getZoom();
-
-            // Calculate artboard's actual screen position after zoom and pan
-            const artboardScreenLeft = artboard.left * zoom + vpt[4];
-            const artboardScreenTop = artboard.top * zoom + vpt[5];
-
-            // Update canvas size label position (artboard top-left + 8px offset)
-            const sizeLabel = document.getElementById('canvas-info-bar');
-            if (sizeLabel) {
-                sizeLabel.style.left = Math.round(artboardScreenLeft + 8) + 'px';
-                sizeLabel.style.top = Math.round(artboardScreenTop + 8) + 'px';
-            }
+            // Fixed positions via CSS - no dynamic updates needed
         }
 
         function updateImageInfoLabel() {
