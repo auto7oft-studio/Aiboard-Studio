@@ -13,6 +13,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+KR:wght@400;700&family=Roboto:wght@400;700&display=swap"
         rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/opentype.js/1.3.4/opentype.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.min.js"></script>
     <style>
         :root {
             --bg-app: #F5F6F8;
@@ -1180,7 +1181,7 @@
 
     <div class="container">
         <!-- Image upload input (hidden) -->
-        <input type="file" id="img-upload" style="display: none;" accept="image/*" onchange="handleImageUpload(this)">
+        <input type="file" id="img-upload" style="display: none;" accept="image/*,.svg,.pdf,.ai" onchange="handleImageUpload(this)">
 
         <!-- Canvas Area -->
         <main class="canvas-area">
@@ -3067,27 +3068,105 @@
             canvas.renderAll();
         }
 
-        function handleImageUpload(input) {
+        function placeAtCenterAndSelect(obj, targetWidthFraction = 0.4) {
+            const center = artboard.getCenterPoint();
+            const minDim = Math.min(artboard.width, artboard.height);
+            const targetWidth = minDim * targetWidthFraction;
+            obj.set({ left: center.x, top: center.y, originX: 'center', originY: 'center', opacity: 1 });
+            if (obj.scaleToWidth) obj.scaleToWidth(targetWidth);
+            ensureObjectId(obj);
+            canvas.add(obj);
+            canvas.setActiveObject(obj);
+            canvas.renderAll();
+        }
+
+        async function handleImageUpload(input) {
             const file = input.files[0];
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                fabric.Image.fromURL(e.target.result, (img) => {
-                    const center = artboard.getCenterPoint();
-                    const minDim = Math.min(artboard.width, artboard.height);
-                    const targetWidth = minDim * 0.4; // 40% of artboard
 
-                    img.set({ left: center.x, top: center.y, originX: 'center', originY: 'center', opacity: 1 });
-                    img.src = e.target.result;
-                    ensureObjectId(img);
-                    img.scaleToWidth(targetWidth);
-                    canvas.add(img);
-                    canvas.setActiveObject(img);
-                    canvas.renderAll();
+            const nameLower = file.name.toLowerCase();
+            const type = file.type;
+
+            try {
+                if (nameLower.endsWith('.ai')) {
+                    alert('AI 파일은 현재 직접 불러올 수 없습니다. PDF/SVG/PNG로 변환 후 업로드해주세요.');
+                    return;
+                }
+
+                if (nameLower.endsWith('.pdf') || type === 'application/pdf') {
+                    await importPdf(file);
+                    return;
+                }
+
+                if (nameLower.endsWith('.svg') || type === 'image/svg+xml') {
+                    await importSvg(file);
+                    return;
+                }
+
+                // Fallback to raster image
+                const dataUrl = await fileToDataURL(file);
+                fabric.Image.fromURL(dataUrl, (img) => {
+                    placeAtCenterAndSelect(img);
                 });
-            };
-            reader.readAsDataURL(file);
-            input.value = '';  // Reset input to allow same file selection
+            } catch (err) {
+                console.error('파일 불러오기 실패:', err);
+                alert('파일을 불러오는 중 문제가 발생했습니다: ' + err.message);
+            } finally {
+                input.value = '';
+            }
+        }
+
+        function fileToDataURL(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function fileToText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsText(file);
+            });
+        }
+
+        async function importSvg(file) {
+            const svgText = await fileToText(file);
+            return new Promise((resolve, reject) => {
+                fabric.loadSVGFromString(svgText, (objects, options) => {
+                    if (!objects || !objects.length) {
+                        reject(new Error('SVG를 파싱할 수 없습니다.'));
+                        return;
+                    }
+                    const svgObj = fabric.util.groupSVGElements(objects, options);
+                    placeAtCenterAndSelect(svgObj, 0.6); // 조금 더 크게
+                    resolve();
+                });
+            });
+        }
+
+        async function importPdf(file) {
+            if (!window['pdfjsLib']) throw new Error('PDF.js가 로드되지 않았습니다.');
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            const page = await pdf.getPage(1);
+            const viewport = page.getViewport({ scale: 2 });
+            const canvasEl = document.createElement('canvas');
+            canvasEl.width = viewport.width;
+            canvasEl.height = viewport.height;
+            const ctx = canvasEl.getContext('2d');
+            await page.render({ canvasContext: ctx, viewport }).promise;
+            const dataUrl = canvasEl.toDataURL('image/png');
+            return new Promise((resolve) => {
+                fabric.Image.fromURL(dataUrl, (img) => {
+                    placeAtCenterAndSelect(img, 0.7);
+                    resolve();
+                });
+            });
         }
 
         function isTextObject(obj) {
