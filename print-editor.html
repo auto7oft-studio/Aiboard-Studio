@@ -615,7 +615,7 @@
         .bottom-toolbar {
             position: absolute;
             bottom: 20px;
-            left: calc(50% + 24px);
+            left: calc(50% - 116px);
             transform: translateX(-50%);
             display: flex;
             align-items: center;
@@ -2234,7 +2234,7 @@
             const h = mmToPx(heightMm);
 
             artboard = new fabric.Rect({
-                left: (workspaceWidth - w) / 2 + 24,
+                left: (workspaceWidth - w) / 2 - 116,
                 top: (workspaceHeight - h) / 2,
                 width: w,
                 height: h,
@@ -2475,7 +2475,7 @@
             const ratioY = newH / oldH;
 
             // New artboard position (same logic as createArtboard)
-            const nextArtLeft = (workspaceWidth - newW) / 2 + 24;
+            const nextArtLeft = (workspaceWidth - newW) / 2 - 116;
             const nextArtTop = (workspaceHeight - newH) / 2;
 
             const objects = canvas.getObjects().filter(o => !o.excludeFromExport);
