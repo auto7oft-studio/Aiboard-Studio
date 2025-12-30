@@ -3369,8 +3369,15 @@
 
             // Show fill and stroke panels when object is selected
             const isLine = obj.type === 'line';
-            document.getElementById('prop-fill').style.display = isLine ? 'none' : 'block';
-            document.getElementById('prop-stroke').style.display = 'block';
+            const isGroupLike = obj.type === 'group' || obj.isMaskGroup || obj.isFrameGroup;
+            const isImageLike = obj.type === 'image' || obj.isFrameContent || obj.isMaskGroup || obj.isFrameGroup;
+
+            const fillPanel = document.getElementById('prop-fill');
+            const strokePanel = document.getElementById('prop-stroke');
+
+            const allowFillStroke = !isLine && !isGroupLike && !isImageLike;
+            if (fillPanel) fillPanel.style.display = allowFillStroke ? 'block' : 'none';
+            if (strokePanel) strokePanel.style.display = allowFillStroke ? 'block' : 'none';
 
             const textTarget = obj.isTextStrokeGroup ? (getTextStrokeGroupParts(obj)?.fill || obj) : obj;
             if (isTextObject(textTarget)) {
@@ -3485,10 +3492,14 @@
             document.getElementById('global-opacity-val').innerText = opacity;
 
             // Shadow
-            const hasShadow = obj.shadow !== null && obj.shadow !== undefined;
-            document.getElementById('shadow-enabled').checked = hasShadow;
-            document.getElementById('shadow-settings').style.display = hasShadow ? 'block' : 'none';
-            if (hasShadow) {
+            const shadowAllowed = !(obj.isMaskGroup || obj.isFrameGroup);
+            const hasShadow = shadowAllowed && obj.shadow !== null && obj.shadow !== undefined;
+            const shadowEnabled = document.getElementById('shadow-enabled');
+            const shadowSettings = document.getElementById('shadow-settings');
+            if (shadowEnabled) shadowEnabled.disabled = !shadowAllowed;
+            if (shadowSettings) shadowSettings.style.display = hasShadow ? 'block' : 'none';
+            if (shadowEnabled) shadowEnabled.checked = hasShadow && shadowAllowed;
+            if (hasShadow && shadowAllowed) {
                 const shadow = obj.shadow;
                 const shadowColor = shadow.color || 'rgba(0,0,0,0.5)';
                 document.getElementById('shadow-color-swatch').style.background = shadowColor;
@@ -3498,6 +3509,8 @@
                 document.getElementById('shadow-offset-x-val').innerText = shadow.offsetX || 5;
                 document.getElementById('shadow-offset-y').value = shadow.offsetY || 5;
                 document.getElementById('shadow-offset-y-val').innerText = shadow.offsetY || 5;
+            } else if (shadowSettings) {
+                shadowSettings.style.display = 'none';
             }
 
             const layerTab = document.getElementById('tab-layers');
@@ -4235,18 +4248,23 @@
                         '_strokeOutsideWidth',
                         '_strokeBaseWidth',
                         '_strokeBaseHeight',
-                        '_strokeBaseRadius',
-                        'isTextStrokeGroup',
-                        'textStrokeWidth',
-                        'textStrokeColor',
-                        'isTextStrokeOutline',
-                        'isTextFill',
-                        'isFrameGroup',
-                        'frameTargetId',
-                        'isFrameShape',
-                        'isFrameContent',
-                        'objectCaching'
-                    ]))
+                    '_strokeBaseRadius',
+                    'isTextStrokeGroup',
+                    'textStrokeWidth',
+                    'textStrokeColor',
+                    'isTextStrokeOutline',
+                    'isTextFill',
+                    'isFrameGroup',
+                    'frameTargetId',
+                    'isFrameShape',
+                    'isFrameContent',
+                    'objectCaching',
+                    'isMaskGroup',
+                    'isMask',
+                    'maskTargetId',
+                    '_maskBoundsNormalized',
+                    '_frameBoundsNormalized'
+                ]))
             };
             history = history.slice(0, historyStep + 1);
             history.push(JSON.stringify(json));
