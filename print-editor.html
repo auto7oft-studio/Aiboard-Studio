@@ -1372,13 +1372,15 @@
                 <div class="bottom-toolbar">
                 <!-- Undo/Redo -->
                 <button class="figma-tool-btn" onclick="undo()" title="실행 취소 (Ctrl+Z)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 7v6h6M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M7 7H4l4-4m-4 4 4 4" />
+                        <path d="M20 17a9 9 0 0 0-9-9H6" />
                     </svg>
                 </button>
                 <button class="figma-tool-btn" onclick="redo()" title="다시 실행 (Ctrl+Shift+Z)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 7v6h-6M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7" />
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 7h3l-4-4m4 4-4 4" />
+                        <path d="M4 17a9 9 0 0 1 9-9h5" />
                     </svg>
                 </button>
 
@@ -1392,8 +1394,11 @@
                         onblur="handleZoomInput(this.value)">
                 </div>
                 <button class="figma-tool-btn" onclick="fitToScreen()" title="화면에 맞춤">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M8 4H6a2 2 0 0 0-2 2v2" />
+                        <path d="M16 4h2a2 2 0 0 1 2 2v2" />
+                        <path d="M18 16v2a2 2 0 0 1-2 2h-2" />
+                        <path d="M6 16v2a2 2 0 0 0 2 2h2" />
                     </svg>
                 </button>
 
@@ -1402,74 +1407,85 @@
                     <div class="toolbar-divider"></div>
 
                     <button class="figma-tool-btn" onclick="duplicateSelected()" title="복제">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="8" y="8" width="11" height="11" rx="2" />
+                            <rect x="5" y="5" width="11" height="11" rx="2" />
                         </svg>
                     </button>
 
                     <div class="toolbar-divider"></div>
 
                     <button class="figma-tool-btn" onclick="moveLayerAction('up')" title="앞으로">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 15l-6-6-6 6" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 5v14" />
+                            <path d="M8 9l4-4 4 4" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="moveLayerAction('down')" title="뒤로">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M6 9l6 6 6-6" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 19V5" />
+                            <path d="M16 15l-4 4-4-4" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="moveLayerAction('front')" title="맨 앞으로">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M17 11l-5-5-5 5M17 18l-5-5-5 5" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 4v16" />
+                            <path d="M8 9l4-5 4 5" />
+                            <path d="M8 15l4 5 4-5" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="moveLayerAction('back')" title="맨 뒤로">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M7 13l5 5 5-5M7 6l5 5 5-5" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 20V4" />
+                            <path d="M16 15l-4 5-4-5" />
+                            <path d="M16 9l-4-5-4 5" />
                         </svg>
                     </button>
 
                     <div class="toolbar-divider"></div>
 
                     <button class="figma-tool-btn" id="btn-group" onclick="groupSelected()" title="그룹화" style="display:none;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="4" y="4" width="7" height="7" rx="2" />
+                            <rect x="13" y="4" width="7" height="7" rx="2" />
+                            <rect x="4" y="13" width="7" height="7" rx="2" />
+                            <rect x="13" y="13" width="7" height="7" rx="2" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" id="btn-ungroup" onclick="ungroupSelected()" title="그룹 해제" style="display:none;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 3v18M3 12h18" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 12h16" />
+                            <path d="M12 4v16" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" id="btn-mask" onclick="maskWithShape()" title="마스크 적용" style="display:none;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="4" y="4" width="16" height="16" rx="3" />
                             <circle cx="12" cy="12" r="5" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" id="btn-unmask" onclick="releaseMask()" title="마스크 해제" style="display:none;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M7 21v-2a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v2" />
-                            <circle cx="12" cy="7" r="4" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="4" y="4" width="16" height="16" rx="3" />
+                            <path d="M8 16c.7-1.8 2.3-3 4-3s3.3 1.2 4 3" />
+                            <circle cx="12" cy="9" r="3" />
                         </svg>
                     </button>
 
                     <div class="toolbar-divider"></div>
 
                     <button class="figma-tool-btn" onclick="flipHorizontal()" title="가로 뒤집기">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 4v16" />
-                            <rect x="3" y="7" width="6" height="10" />
-                            <rect x="15" y="7" width="6" height="10" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 3v18" />
+                            <path d="M9 6H5v12h4l3 0" />
+                            <path d="M15 6h4v12h-4l-3 0" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="flipVertical()" title="세로 뒤집기">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M4 12h16" />
-                            <rect x="7" y="3" width="10" height="6" />
-                            <rect x="7" y="15" width="10" height="6" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 12h18" />
+                            <path d="M6 9V5h12v4l0 3" />
+                            <path d="M6 15v4h12v-4l0-3" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="rotateCCW()" title="90° 반시계 회전">
@@ -1485,24 +1501,25 @@
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="rotate180()" title="180° 회전">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M7 7a8 8 0 1 1 0 10" />
-                            <path d="M7 3v4H3" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 4a8 8 0 1 1 0 16" />
+                            <path d="M12 4H8m4 0V2" />
+                            <path d="M12 20h4m-4 0v2" />
                         </svg>
                     </button>
 
                     <div class="toolbar-divider"></div>
 
                     <button class="figma-tool-btn" onclick="lockSelectedAction()" title="잠금">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="5" y="11" width="14" height="10" rx="2" />
+                            <path d="M8 11V8a4 4 0 0 1 8 0v3" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="unlockSelectedAction()" title="잠금 해제">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="5" y="11" width="14" height="10" rx="2" />
+                            <path d="M8 11V8a4 4 0 1 1 7.5-2" />
                         </svg>
                     </button>
 
@@ -2022,9 +2039,9 @@
             const magnifierCtx = magnifierCanvas.getContext('2d');
             const colorLabel = document.getElementById('magnifier-color');
 
-            // Use lowerCanvasEl - the actual rendered canvas with all objects
             const canvasEl = canvas.lowerCanvasEl;
             const canvasRect = canvasEl.getBoundingClientRect();
+            const wrapperRect = document.getElementById('canvas-container').getBoundingClientRect();
 
             // Get accurate pointer position from Fabric.js event
             let clientX, clientY;
@@ -2036,23 +2053,25 @@
                 clientY = e.clientY;
             }
 
-            // Calculate mouse position relative to canvas element (CSS pixels)
-            const cssX = clientX - canvasRect.left;
-            const cssY = clientY - canvasRect.top;
+            // Positioning relative to wrapper (for magnifier) and canvas (for sampling)
+            const cssXCanvas = clientX - canvasRect.left;
+            const cssYCanvas = clientY - canvasRect.top;
+            const cssXWrapper = clientX - wrapperRect.left;
+            const cssYWrapper = clientY - wrapperRect.top;
 
             // Position magnifier near cursor (offset to bottom-right to not block view)
             const magnifierSize = 140;
             const offset = 30;
 
-            let left = cssX + offset;
-            let top = cssY + offset;
+            let left = cssXWrapper + offset;
+            let top = cssYWrapper + offset;
 
             // Keep magnifier within canvas bounds
-            if (left + magnifierSize > canvasRect.width) {
-                left = cssX - magnifierSize - offset;
+            if (left + magnifierSize > wrapperRect.width) {
+                left = cssXWrapper - magnifierSize - offset;
             }
-            if (top + magnifierSize + 40 > canvasRect.height) { // +40 for color label
-                top = cssY - magnifierSize - offset;
+            if (top + magnifierSize + 40 > wrapperRect.height) { // +40 for color label
+                top = cssYWrapper - magnifierSize - offset;
             }
 
             magnifier.style.left = left + 'px';
@@ -2066,8 +2085,8 @@
             const scaleY = canvasEl.height / canvasRect.height;
 
             // Convert CSS coordinates to canvas pixel coordinates
-            const canvasX = Math.floor(cssX * scaleX);
-            const canvasY = Math.floor(cssY * scaleY);
+            const canvasX = Math.floor(cssXCanvas * scaleX);
+            const canvasY = Math.floor(cssYCanvas * scaleY);
 
             const size = 14; // Sample size in canvas pixels (14x14 grid)
 
