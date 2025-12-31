@@ -3990,6 +3990,9 @@
                 } else {
                     o.set(prop, val);
                 }
+                o.dirty = true;
+                if (o.initDimensions) o.initDimensions();
+                if (o.setCoords) o.setCoords();
             };
 
             const update = (o) => {
@@ -3998,9 +4001,9 @@
                     if (!parts) return;
                     applyTypography(parts.fill);
                     applyTypography(parts.stroke);
-                    o._calcBounds();
-                    o._updateObjectsCoords();
-                    o.setCoords();
+                    if (o._calcBounds) o._calcBounds();
+                    if (o._updateObjectsCoords) o._updateObjectsCoords();
+                    if (o.setCoords) o.setCoords();
                     return;
                 }
                 applyTypography(o);
