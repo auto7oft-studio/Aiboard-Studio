@@ -1415,36 +1415,28 @@
 
                     <button class="figma-tool-btn" onclick="moveLayerAction('up')" title="앞으로">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="5.5" y="7" width="10" height="10" rx="1.3" />
-                            <rect x="8.5" y="10" width="10" height="10" rx="1.3" />
-                            <line x1="12.5" y1="4" x2="12.5" y2="10" />
-                            <path d="M9.5 7l3-3 3 3" />
+                            <path d="M12 5v14" />
+                            <path d="M8 9l4-4 4 4" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="moveLayerAction('down')" title="뒤로">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="5.5" y="7" width="10" height="10" rx="1.3" />
-                            <rect x="8.5" y="4" width="10" height="10" rx="1.3" />
-                            <line x1="12.5" y1="14" x2="12.5" y2="20" />
-                            <path d="M15.5 17l-3 3-3-3" />
+                            <path d="M12 19V5" />
+                            <path d="M16 15l-4 4-4-4" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="moveLayerAction('front')" title="맨 앞으로">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="6" y="8" width="9" height="9" rx="1.2" />
-                            <rect x="9" y="5" width="9" height="9" rx="1.2" />
-                            <line x1="12.5" y1="3" x2="12.5" y2="9" />
-                            <path d="M9.5 6l3-3 3 3" />
-                            <path d="M9.5 9.5l3-3 3 3" />
+                            <line x1="12" y1="5" x2="12" y2="17" />
+                            <path d="M8 9l4-4 4 4" />
+                            <line x1="6" y1="19" x2="18" y2="19" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="moveLayerAction('back')" title="맨 뒤로">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="6" y="7" width="9" height="9" rx="1.2" />
-                            <rect x="9" y="10" width="9" height="9" rx="1.2" />
-                            <line x1="12.5" y1="15" x2="12.5" y2="21" />
-                            <path d="M15.5 18l-3 3-3-3" />
-                            <path d="M15.5 14.5l-3 3-3-3" />
+                            <line x1="12" y1="7" x2="12" y2="19" />
+                            <path d="M16 15l-4 4-4-4" />
+                            <line x1="6" y1="5" x2="18" y2="5" />
                         </svg>
                     </button>
 
@@ -1480,17 +1472,17 @@
                     <div class="toolbar-divider"></div>
 
                     <button class="figma-tool-btn" onclick="flipHorizontal()" title="가로 뒤집기">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 4v16" />
-                            <rect x="3" y="7" width="6" height="10" />
-                            <rect x="15" y="7" width="6" height="10" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19" stroke-dasharray="1.5 2" />
+                            <polygon points="6,12 9,9 9,15" fill="currentColor" stroke="none" />
+                            <polygon points="18,12 15,9 15,15" fill="currentColor" stroke="none" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="flipVertical()" title="세로 뒤집기">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M4 12h16" />
-                            <rect x="7" y="3" width="10" height="6" />
-                            <rect x="7" y="15" width="10" height="6" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12" stroke-dasharray="1.5 2" />
+                            <polygon points="12,6 9,9 15,9" fill="currentColor" stroke="none" />
+                            <polygon points="12,18 9,15 15,15" fill="currentColor" stroke="none" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="rotateCCW()" title="90° 반시계 회전">
@@ -1550,26 +1542,23 @@
                         <!-- Horizontal Align Group -->
                         <button class="xd-align-btn" onclick="alignObject('left')" title="왼쪽 정렬">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="5" y1="4" x2="5" y2="20" stroke-width="2" />
-                                <rect x="7" y="5" width="12" height="3" rx="0.8" fill="currentColor" />
-                                <rect x="7" y="10" width="10" height="3" rx="0.8" fill="currentColor" />
-                                <rect x="7" y="15" width="8" height="3" rx="0.8" fill="currentColor" />
+                                <line x1="3" y1="5" x2="3" y2="19" stroke-width="2"/>
+                                <rect x="5" y="7" width="12" height="3" fill="currentColor"/>
+                                <rect x="5" y="14" width="8" height="3" fill="currentColor"/>
                             </svg>
                         </button>
                         <button class="xd-align-btn" onclick="alignObject('center')" title="가로 가운데 정렬">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="12" y1="4" x2="12" y2="20" stroke-width="2" />
-                                <rect x="6" y="5" width="12" height="3" rx="0.8" fill="currentColor" />
-                                <rect x="7" y="10" width="10" height="3" rx="0.8" fill="currentColor" />
-                                <rect x="8" y="15" width="8" height="3" rx="0.8" fill="currentColor" />
+                                <line x1="12" y1="5" x2="12" y2="19" stroke-width="2"/>
+                                <rect x="6" y="7" width="12" height="3" fill="currentColor"/>
+                                <rect x="8" y="14" width="8" height="3" fill="currentColor"/>
                             </svg>
                         </button>
                         <button class="xd-align-btn" onclick="alignObject('right')" title="오른쪽 정렬">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="19" y1="4" x2="19" y2="20" stroke-width="2" />
-                                <rect x="5" y="5" width="12" height="3" rx="0.8" fill="currentColor" />
-                                <rect x="7" y="10" width="10" height="3" rx="0.8" fill="currentColor" />
-                                <rect x="9" y="15" width="8" height="3" rx="0.8" fill="currentColor" />
+                                <line x1="21" y1="5" x2="21" y2="19" stroke-width="2"/>
+                                <rect x="7" y="7" width="12" height="3" fill="currentColor"/>
+                                <rect x="11" y="14" width="8" height="3" fill="currentColor"/>
                             </svg>
                         </button>
 
@@ -1578,23 +1567,23 @@
                         <!-- Vertical Align Group -->
                         <button class="xd-align-btn" onclick="alignObject('top')" title="상단 정렬">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="4" y1="5" x2="20" y2="5" stroke-width="2" />
-                                <rect x="6" y="7" width="4" height="12" rx="0.8" fill="currentColor" />
-                                <rect x="12" y="7" width="6" height="9" rx="0.8" fill="currentColor" />
+                                <line x1="5" y1="3" x2="19" y2="3" stroke-width="2"/>
+                                <rect x="7" y="5" width="3" height="12" fill="currentColor"/>
+                                <rect x="14" y="5" width="3" height="8" fill="currentColor"/>
                             </svg>
                         </button>
                         <button class="xd-align-btn" onclick="alignObject('middle')" title="세로 가운데 정렬">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="4" y1="12" x2="20" y2="12" stroke-width="2" />
-                                <rect x="6" y="7" width="4" height="12" rx="0.8" fill="currentColor" />
-                                <rect x="12" y="9" width="6" height="8" rx="0.8" fill="currentColor" />
+                                <line x1="5" y1="12" x2="19" y2="12" stroke-width="2"/>
+                                <rect x="7" y="6" width="3" height="12" fill="currentColor"/>
+                                <rect x="14" y="8" width="3" height="8" fill="currentColor"/>
                             </svg>
                         </button>
                         <button class="xd-align-btn" onclick="alignObject('bottom')" title="하단 정렬">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="4" y1="19" x2="20" y2="19" stroke-width="2" />
-                                <rect x="6" y="5" width="4" height="12" rx="0.8" fill="currentColor" />
-                                <rect x="12" y="7" width="6" height="10" rx="0.8" fill="currentColor" />
+                                <line x1="5" y1="21" x2="19" y2="21" stroke-width="2"/>
+                                <rect x="7" y="7" width="3" height="12" fill="currentColor"/>
+                                <rect x="14" y="11" width="3" height="8" fill="currentColor"/>
                             </svg>
                         </button>
 
@@ -1603,18 +1592,18 @@
                         <!-- Distribute Group -->
                         <button class="xd-align-btn" onclick="distributeObjects('horizontal')" title="가로 간격 동일하게">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="5" y1="5" x2="5" y2="19" stroke-width="1.8" />
-                                <line x1="19" y1="5" x2="19" y2="19" stroke-width="1.8" />
-                                <rect x="9" y="8" width="2.5" height="8" rx="0.7" fill="currentColor" />
-                                <rect x="13" y="6" width="2.5" height="12" rx="0.7" fill="currentColor" />
+                                <line x1="4" y1="4" x2="4" y2="20" stroke-width="2"/>
+                                <line x1="20" y1="4" x2="20" y2="20" stroke-width="2"/>
+                                <rect x="9" y="8" width="2" height="8" fill="currentColor"/>
+                                <rect x="13" y="7" width="2" height="10" fill="currentColor"/>
                             </svg>
                         </button>
                         <button class="xd-align-btn" onclick="distributeObjects('vertical')" title="세로 간격 동일하게">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="5" y1="5" x2="19" y2="5" stroke-width="1.8" />
-                                <line x1="5" y1="19" x2="19" y2="19" stroke-width="1.8" />
-                                <rect x="8" y="9" width="8" height="2.5" rx="0.7" fill="currentColor" />
-                                <rect x="6" y="13" width="12" height="2.5" rx="0.7" fill="currentColor" />
+                                <line x1="4" y1="4" x2="20" y2="4" stroke-width="2"/>
+                                <line x1="4" y1="20" x2="20" y2="20" stroke-width="2"/>
+                                <rect x="8" y="9" width="8" height="2" fill="currentColor"/>
+                                <rect x="7" y="13" width="10" height="2" fill="currentColor"/>
                             </svg>
                         </button>
                     </div>
@@ -3382,8 +3371,8 @@
             const fillPanel = document.getElementById('prop-fill');
             const strokePanel = document.getElementById('prop-stroke');
 
-            const allowFillStroke = !isLine && !isGroupLike && !isImageLike;
-            if (fillPanel) fillPanel.style.display = allowFillStroke ? 'block' : 'none';
+            const allowFillStroke = !isGroupLike && !isImageLike;
+            if (fillPanel) fillPanel.style.display = allowFillStroke && !isLine ? 'block' : 'none';
             if (strokePanel) strokePanel.style.display = allowFillStroke ? 'block' : 'none';
 
             const textTarget = obj.isTextStrokeGroup ? (getTextStrokeGroupParts(obj)?.fill || obj) : obj;
