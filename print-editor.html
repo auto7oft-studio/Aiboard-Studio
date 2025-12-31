@@ -2744,6 +2744,7 @@
         function toggleSection(sectionId) {
             const content = document.getElementById(`content-${sectionId}`);
             const icon = document.getElementById(`icon-${sectionId}`);
+            if (!content || !icon) return;
 
             if (content.classList.contains('collapsed')) {
                 content.classList.remove('collapsed');
@@ -2765,7 +2766,9 @@
         window.addEventListener('load', () => {
             ['presets', 'custom-size', 'layers'].forEach(id => {
                 const content = document.getElementById(`content-${id}`);
-                content.style.maxHeight = content.scrollHeight + 'px';
+                if (content) {
+                    content.style.maxHeight = content.scrollHeight + 'px';
+                }
             });
         });
 
