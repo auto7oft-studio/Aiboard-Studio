@@ -2037,19 +2037,14 @@
             const scaleX = canvasEl.width / canvasRect.width;
             const scaleY = canvasEl.height / canvasRect.height;
 
-            let x = (clientX - canvasRect.left) * scaleX;
-            let y = (clientY - canvasRect.top) * scaleY;
+            const screenX = (clientX - canvasRect.left) * scaleX;
+            const screenY = (clientY - canvasRect.top) * scaleY;
 
-            const vpt = canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
-            const panX = vpt[4] || 0;
-            const panY = vpt[5] || 0;
-            const zoom = canvas.getZoom ? canvas.getZoom() : 1;
-
-            x -= panX;
-            y -= panY;
-
-            x /= zoom;
-            y /= zoom;
+            const vpt = canvas.viewportTransform || fabric.iMatrix;
+            const inverted = fabric.util.invertTransform(vpt);
+            const local = fabric.util.transformPoint(new fabric.Point(screenX, screenY), inverted);
+            const x = local.x;
+            const y = local.y;
 
             return {
                 clientX,
@@ -2127,7 +2122,9 @@
             const ctx = canvas.lowerCanvasEl.getContext('2d', { willReadFrequently: true });
 
             // Sample from scaled coordinates
-            const pixelData = ctx.getImageData(canvasX, canvasY, 1, 1).data;
+            const clampedX = Math.min(Math.max(0, canvasX), canvas.width - 1);
+            const clampedY = Math.min(Math.max(0, canvasY), canvas.height - 1);
+            const pixelData = ctx.getImageData(clampedX, clampedY, 1, 1).data;
             const r = pixelData[0];
             const g = pixelData[1];
             const b = pixelData[2];
@@ -2973,9 +2970,9 @@
             const props = {
                 left: center.x,
                 top: center.y,
-                fill: '#3B82F6',
+                fill: 'transparent',
                 stroke: '#1F2937',
-                strokeWidth: 0,
+                strokeWidth: 1,
                 strokeUniform: true,  // Uniform stroke scaling
                 paintFirst: 'fill',   // Paint fill before stroke
                 originX: 'center',
