@@ -1536,7 +1536,9 @@
             <div class="sidebar-content">
                 <!-- 정렬 -->
                 <div class="panel-section">
-                    <div class="panel-title">정렬</div>
+                    <div class="panel-title" style="display: flex; align-items: center; gap: 8px;">
+                        <span style="display: inline-flex; align-items: center;">정렬</span>
+                    </div>
                     <div class="xd-align-container">
                         <!-- Horizontal Align Group -->
                         <button class="xd-align-btn" onclick="alignObject('left')" title="왼쪽 정렬">
@@ -4052,6 +4054,13 @@
         function handleFontUpload(input) {
             const file = input.files[0];
             if (!file) return;
+            const allowed = ['ttf', 'otf'];
+            const ext = (file.name.split('.').pop() || '').toLowerCase();
+            if (!allowed.includes(ext)) {
+                alert('지원되지 않는 글꼴 형식입니다. .ttf 또는 .otf 파일을 사용해주세요.');
+                input.value = '';
+                return;
+            }
 
             const reader = new FileReader();
             reader.onload = async function (e) {
@@ -4059,7 +4068,7 @@
                 const fontData = e.target.result;
 
                 try {
-                    const fontFace = new FontFace(fontName, fontData);
+                    const fontFace = new FontFace(fontName, `url(${fontData}) format("${ext === 'otf' ? 'opentype' : 'truetype'}")`);
                     await fontFace.load();
                     document.fonts.add(fontFace);
 
@@ -4079,7 +4088,7 @@
                     alert(`글꼴 '${file.name}'이 업로드되었습니다.`);
                 } catch (err) {
                     console.error('Font Load Error:', err);
-                    alert('글꼴을 불러오는 중 오류가 발생했습니다.');
+                    alert('글꼴을 불러오는 중 오류가 발생했습니다. 지원되는 .ttf / .otf 파일인지 확인해주세요.');
                 }
             };
             reader.readAsDataURL(file);
