@@ -1473,15 +1473,15 @@
                     <button class="figma-tool-btn" onclick="flipHorizontal()" title="가로 뒤집기">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="12" y1="4.5" x2="12" y2="19.5" stroke-dasharray="2 2" />
-                            <path d="M6.5 6.5 L10.5 9.5 L10.5 14.5 L6.5 17.5 Z" />
-                            <path d="M17.5 6.5 L13.5 9.5 L13.5 14.5 L17.5 17.5 Z" />
+                            <path d="M4.5 6.5 L10 9.75 L10 14.25 L4.5 17.5 Z" />
+                            <path d="M19.5 6.5 L14 9.75 L14 14.25 L19.5 17.5 Z" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="flipVertical()" title="세로 뒤집기">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="4.5" y1="12" x2="19.5" y2="12" stroke-dasharray="2 2" />
-                            <path d="M6.5 7 L9.5 10 L14.5 10 L17.5 7 Z" />
-                            <path d="M6.5 17 L9.5 14 L14.5 14 L17.5 17 Z" />
+                            <path d="M6.5 5.5 L9.75 11 L14.25 11 L17.5 5.5 Z" />
+                            <path d="M6.5 18.5 L9.75 13 L14.25 13 L17.5 18.5 Z" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="rotateCCW()" title="90° 반시계 회전">
@@ -2036,22 +2036,20 @@
 
             const scaleX = canvasEl.width / canvasRect.width;
             const scaleY = canvasEl.height / canvasRect.height;
+            const retina = canvas.getRetinaScaling ? canvas.getRetinaScaling() : 1;
 
             let x = (clientX - canvasRect.left) * scaleX;
             let y = (clientY - canvasRect.top) * scaleY;
 
             const vpt = canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
-            const panX = vpt[4] || 0;
-            const panY = vpt[5] || 0;
+            const panX = (vpt[4] || 0) * retina;
+            const panY = (vpt[5] || 0) * retina;
             const zoom = canvas.getZoom ? canvas.getZoom() : 1;
+            const effectiveZoomX = zoom * retina;
+            const effectiveZoomY = zoom * retina;
 
-            x -= panX;
-            y -= panY;
-
-            if (zoom) {
-                x /= zoom;
-                y /= zoom;
-            }
+            x = (x - panX) / effectiveZoomX;
+            y = (y - panY) / effectiveZoomY;
 
             return {
                 clientX,
