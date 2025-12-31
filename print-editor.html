@@ -1473,16 +1473,18 @@
 
                     <button class="figma-tool-btn" onclick="flipHorizontal()" title="가로 뒤집기">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="6" y1="12" x2="18" y2="12" stroke-dasharray="2.2 2.2" />
-                            <polygon points="6.5,12 10.5,8.5 10.5,15.5" fill="currentColor" stroke="none" />
-                            <polygon points="17.5,12 13.5,8.5 13.5,15.5" fill="currentColor" stroke="none" />
+                            <line x1="12" y1="5" x2="12" y2="19" stroke-dasharray="2 2" />
+                            <polygon points="6.5,12 10.5,8.5 10.5,15.5" fill="none" />
+                            <polygon points="17.5,12 13.5,8.5 13.5,15.5" fill="none" />
+                            <circle cx="12" cy="12" r="0.8" fill="currentColor" stroke="none" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="flipVertical()" title="세로 뒤집기">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="12" y1="6" x2="12" y2="18" stroke-dasharray="2.2 2.2" />
-                            <polygon points="12,6.5 15.5,10.5 8.5,10.5" fill="currentColor" stroke="none" />
-                            <polygon points="12,17.5 15.5,13.5 8.5,13.5" fill="currentColor" stroke="none" />
+                            <line x1="5" y1="12" x2="19" y2="12" stroke-dasharray="2 2" />
+                            <polygon points="12,6.5 15.5,10.5 8.5,10.5" fill="none" />
+                            <polygon points="12,17.5 15.5,13.5 8.5,13.5" fill="none" />
+                            <circle cx="12" cy="12" r="0.8" fill="currentColor" stroke="none" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="rotateCCW()" title="90° 반시계 회전">
@@ -2030,17 +2032,20 @@
         function getEyedropperCanvasCoords(e) {
             const canvasEl = canvas.lowerCanvasEl;
             const canvasRect = canvasEl.getBoundingClientRect();
-            const vpt = canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
-            const pointer = canvas.getPointer(e.e || e, false);
+            const evt = e.e || e;
+            const touch = evt.touches?.[0];
+            const clientX = touch?.clientX ?? evt.clientX;
+            const clientY = touch?.clientY ?? evt.clientY;
 
-            // CSS coordinates on the canvas element after zoom/pan
-            const cssXCanvas = pointer.x * vpt[0] + vpt[4];
-            const cssYCanvas = pointer.y * vpt[3] + vpt[5];
+            const cssXCanvas = clientX - canvasRect.left;
+            const cssYCanvas = clientY - canvasRect.top;
 
             const scaleX = canvasEl.width / canvasRect.width;
             const scaleY = canvasEl.height / canvasRect.height;
 
             return {
+                clientX,
+                clientY,
                 cssXCanvas,
                 cssYCanvas,
                 canvasX: Math.floor(cssXCanvas * scaleX),
@@ -2058,18 +2063,7 @@
             const colorLabel = document.getElementById('magnifier-color');
 
             const wrapperRect = document.getElementById('canvas-container').getBoundingClientRect();
-
-            // Get accurate pointer position from Fabric.js event
-            let clientX, clientY;
-            if (e.e) {
-                clientX = e.e.clientX || e.e.touches?.[0]?.clientX;
-                clientY = e.e.clientY || e.e.touches?.[0]?.clientY;
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
-            }
-
-            const { cssXCanvas, canvasX, canvasY, canvasRect } = getEyedropperCanvasCoords(e);
+            const { cssXCanvas, canvasX, canvasY, clientX, clientY } = getEyedropperCanvasCoords(e);
             const cssXWrapper = clientX - wrapperRect.left;
             const cssYWrapper = clientY - wrapperRect.top;
 
