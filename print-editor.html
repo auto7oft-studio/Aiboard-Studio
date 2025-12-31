@@ -2028,8 +2028,10 @@
 
         function getEyedropperPosition(e) {
             const canvasEl = canvas.lowerCanvasEl;
-            const canvasRect = canvasEl.getBoundingClientRect();
+            const rect = canvasEl.getBoundingClientRect();
             const retina = typeof canvas.getRetinaScaling === 'function' ? canvas.getRetinaScaling() : (window.devicePixelRatio || 1);
+            const vpt = canvas.viewportTransform || fabric.iMatrix.concat();
+            const zoom = canvas.getZoom() || 1;
 
             let clientX, clientY;
             if (e?.e) {
@@ -2042,22 +2044,28 @@
             clientX = clientX ?? 0;
             clientY = clientY ?? 0;
 
-            // Fabric pointer in canvas coordinates (unaffected by viewport transform)
-            const pointer = canvas.getPointer(e?.e || e, false) || { x: 0, y: 0 };
-            const viewportPoint = fabric.util.transformPoint(new fabric.Point(pointer.x, pointer.y), canvas.viewportTransform);
+            // Screen → canvas pixel space (includes devicePixelRatio)
+            const scaleX = canvasEl.width / rect.width;
+            const scaleY = canvasEl.height / rect.height;
+            const sampleX = Math.round((clientX - rect.left) * scaleX);
+            const sampleY = Math.round((clientY - rect.top) * scaleY);
 
-            const canvasX = Math.round(viewportPoint.x * retina);
-            const canvasY = Math.round(viewportPoint.y * retina);
+            // Remove retina + viewport to get fabric object coords (for future use / debugging)
+            const viewX = sampleX / retina;
+            const viewY = sampleY / retina;
+            const fabricX = (viewX - vpt[4]) / zoom;
+            const fabricY = (viewY - vpt[5]) / zoom;
 
             return {
                 canvasEl,
-                canvasRect,
+                rect,
                 retina,
                 clientX,
                 clientY,
-                canvasX,
-                canvasY,
-                viewportPoint
+                sampleX,
+                sampleY,
+                fabricX,
+                fabricY
             };
         }
 
@@ -2071,12 +2079,12 @@
 
             const {
                 canvasEl,
-                canvasRect,
+                rect,
                 retina,
                 clientX,
                 clientY,
-                canvasX,
-                canvasY
+                sampleX,
+                sampleY
             } = getEyedropperPosition(e);
             const wrapperRect = document.getElementById('canvas-container').getBoundingClientRect();
             const cssXWrapper = clientX - wrapperRect.left;
@@ -2105,8 +2113,8 @@
 
             const size = Math.max(1, Math.round(14 * retina)); // Sample size in canvas pixels (about 14 CSS px)
             const halfSize = Math.floor(size / 2);
-            const sampleStartX = Math.max(0, Math.min(canvasX - halfSize, canvasEl.width - 1));
-            const sampleStartY = Math.max(0, Math.min(canvasY - halfSize, canvasEl.height - 1));
+            const sampleStartX = Math.max(0, Math.min(sampleX - halfSize, canvasEl.width - 1));
+            const sampleStartY = Math.max(0, Math.min(sampleY - halfSize, canvasEl.height - 1));
             const sampleWidth = Math.min(size, canvasEl.width - sampleStartX);
             const sampleHeight = Math.min(size, canvasEl.height - sampleStartY);
 
@@ -2126,8 +2134,8 @@
                 magnifierCtx.drawImage(tempCanvas, 0, 0, sampleWidth, sampleHeight, 0, 0, 140, 140);
 
                 // Get center pixel color
-                const clampedCanvasX = Math.min(Math.max(0, canvasX), canvasEl.width - 1);
-                const clampedCanvasY = Math.min(Math.max(0, canvasY), canvasEl.height - 1);
+                const clampedCanvasX = Math.min(Math.max(0, sampleX), canvasEl.width - 1);
+                const clampedCanvasY = Math.min(Math.max(0, sampleY), canvasEl.height - 1);
                 const centerPixel = ctx.getImageData(clampedCanvasX, clampedCanvasY, 1, 1).data;
                 const r = centerPixel[0];
                 const g = centerPixel[1];
@@ -2147,17 +2155,13 @@
         function sampleColorFromCanvas(e) {
             if (!eyedropperActive) return;
 
-            const {
-                canvasEl,
-                canvasX,
-                canvasY
-            } = getEyedropperPosition(e);
+            const { canvasEl, sampleX, sampleY } = getEyedropperPosition(e);
 
             const ctx = canvasEl.getContext('2d', { willReadFrequently: true });
 
             // Sample from scaled coordinates
-            const clampedX = Math.min(Math.max(0, canvasX), canvasEl.width - 1);
-            const clampedY = Math.min(Math.max(0, canvasY), canvasEl.height - 1);
+            const clampedX = Math.min(Math.max(0, sampleX), canvasEl.width - 1);
+            const clampedY = Math.min(Math.max(0, sampleY), canvasEl.height - 1);
             const pixelData = ctx.getImageData(clampedX, clampedY, 1, 1).data;
             const r = pixelData[0];
             const g = pixelData[1];
