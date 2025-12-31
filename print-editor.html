@@ -3382,9 +3382,11 @@
             const textTarget = obj.isTextStrokeGroup ? (getTextStrokeGroupParts(obj)?.fill || obj) : obj;
             if (isTextObject(textTarget)) {
                 document.getElementById('prop-text').style.display = 'block';
-                document.getElementById('font-family').value = textTarget.fontFamily || 'Pretendard';
+                const fontFamily = textTarget.fontFamily || 'Pretendard';
+                const chosenWeight = setFontWeightOptions(fontFamily, textTarget.fontWeight || '400');
+                document.getElementById('font-family').value = fontFamily;
                 document.getElementById('font-size').value = Math.round(textTarget.fontSize || 24);
-                document.getElementById('font-weight').value = textTarget.fontWeight || 'normal';
+                document.getElementById('font-weight').value = chosenWeight;
                 document.getElementById('line-height').value = textTarget.lineHeight || 1.16;
                 document.getElementById('char-spacing').value = textTarget.charSpacing || 0;
             } else {
@@ -4009,9 +4011,60 @@
             canvas.renderAll();
         }
 
+        const FONT_WEIGHT_MAP = {
+            'Pretendard': ['400', '500', '700', '900'],
+            'Noto Sans KR': ['400', '700'],
+            'Noto Serif KR': ['400', '700'],
+            'Nanum Gothic': ['400', '700'],
+            'Nanum Myeongjo': ['400', '700'],
+            'Black Han Sans': ['400'],
+            'Do Hyeon': ['400'],
+            'Gowun Dodum': ['400'],
+            'Inter': ['400', '700'],
+            'Roboto': ['400', '700'],
+            'Arial': ['400', '700'],
+            'Georgia': ['400', '700'],
+            '__default': ['400', '700']
+        };
+
+        function ensureFontWeight(family, weight) {
+            const list = FONT_WEIGHT_MAP[family] || FONT_WEIGHT_MAP['__default'];
+            const normalized = (weight || '400').toString();
+            return list.includes(normalized) ? normalized : list[0];
+        }
+
+        function setFontWeightOptions(family, currentWeight) {
+            const select = document.getElementById('font-weight');
+            const labels = {
+                '100': 'Thin (100)',
+                '300': 'Light (300)',
+                '400': 'Regular (400)',
+                '500': 'Medium (500)',
+                '700': 'Bold (700)',
+                '900': 'Black (900)'
+            };
+            const weights = FONT_WEIGHT_MAP[family] || FONT_WEIGHT_MAP['__default'];
+            const chosen = ensureFontWeight(family, currentWeight);
+            if (!select) return chosen;
+            select.innerHTML = '';
+            weights.forEach(w => {
+                const opt = document.createElement('option');
+                opt.value = w;
+                opt.innerText = labels[w] || w;
+                select.appendChild(opt);
+            });
+            select.value = chosen;
+            return chosen;
+        }
+
         function updateTypography(prop, val) {
             const active = canvas.getActiveObject();
             if (!active) return;
+
+            let normalizedWeight = null;
+            if (prop === 'fontFamily') {
+                normalizedWeight = setFontWeightOptions(val, active.fontWeight || '400');
+            }
 
             const applyTypography = (o) => {
                 if (!isTextObject(o)) return;
@@ -4019,6 +4072,12 @@
                     o.set(prop, parseFloat(val));
                 } else if (prop === 'lineHeight') {
                     o.set(prop, parseFloat(val));
+                } else if (prop === 'fontFamily') {
+                    o.set(prop, val);
+                    if (normalizedWeight) o.set('fontWeight', normalizedWeight);
+                } else if (prop === 'fontWeight') {
+                    const safeWeight = ensureFontWeight(o.fontFamily || active.fontFamily || 'Pretendard', val);
+                    o.set('fontWeight', safeWeight);
                 } else {
                     o.set(prop, val);
                 }
@@ -4081,6 +4140,8 @@
                     opt.innerText = `Custom: ${file.name}`;
                     sel.add(opt);
                     sel.value = fontName;
+                    const chosenWeight = setFontWeightOptions(fontName, '400');
+                    document.getElementById('font-weight').value = chosenWeight;
 
                     // Store for PDF export (jsPDF needs base64)
                     const base64 = fontData.split(',')[1];
@@ -5388,14 +5449,24 @@
             if (!group || (!group.isMaskGroup && !group.isFrameGroup)) return;
 
             const objects = group._objects || [];
-            if (group._restoreObjectsState) {
-                group._restoreObjectsState();
-            }
+            const matrix = group.calcTransformMatrix();
+
+            const objectsWithPositions = objects.map(obj => {
+                const point = fabric.util.transformPoint(new fabric.Point(obj.left, obj.top), matrix);
+                return {
+                    obj,
+                    left: point.x,
+                    top: point.y,
+                    angle: obj.angle + group.angle,
+                    scaleX: obj.scaleX * group.scaleX,
+                    scaleY: obj.scaleY * group.scaleY
+                };
+            });
 
             group._objects = [];
             canvas.remove(group);
 
-            objects.forEach(obj => {
+            objectsWithPositions.forEach(({ obj, left, top, angle, scaleX, scaleY }) => {
                 if (obj.isFrameShape) {
                     obj.set({ selectable: true, evented: true });
                     obj.isFrameShape = false;
@@ -5415,9 +5486,13 @@
                 }
 
                 obj.group = null;
-                obj.left = obj.left;
-                obj.top = obj.top;
-                obj.angle = obj.angle;
+                obj.set({
+                    left,
+                    top,
+                    angle,
+                    scaleX,
+                    scaleY
+                });
 
                 obj.setCoords();
                 ensureObjectId(obj);
