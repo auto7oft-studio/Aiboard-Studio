@@ -2380,13 +2380,30 @@
                 });
             });
 
-            canvas.on('selection:created', () => {
+            const sanitizeSelection = (e) => {
+                const selected = (e && e.selected) || [];
+                const filtered = selected.filter(o => !o.isArtboard && !o.excludeFromExport);
+                if (selected.length && filtered.length !== selected.length) {
+                    if (filtered.length === 0) {
+                        canvas.discardActiveObject();
+                    } else if (filtered.length === 1) {
+                        canvas.setActiveObject(filtered[0]);
+                    } else {
+                        const sel = new fabric.ActiveSelection(filtered, { canvas });
+                        canvas.setActiveObject(sel);
+                    }
+                }
+            };
+
+            canvas.on('selection:created', (e) => {
+                sanitizeSelection(e);
                 updateFloatingToolbar();
                 requestAnimationFrame(updateColorPickers);
                 updateImageInfoLabel();
                 renderLayerList();
             });
-            canvas.on('selection:updated', () => {
+            canvas.on('selection:updated', (e) => {
+                sanitizeSelection(e);
                 updateFloatingToolbar();
                 requestAnimationFrame(updateColorPickers);
                 updateImageInfoLabel();
