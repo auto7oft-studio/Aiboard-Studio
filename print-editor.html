@@ -1472,18 +1472,16 @@
 
                     <button class="figma-tool-btn" onclick="flipHorizontal()" title="가로 뒤집기">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="12" y1="5" x2="12" y2="19" stroke-dasharray="2 2" />
-                            <polygon points="6.5,12 10.5,8.5 10.5,15.5" fill="none" />
-                            <polygon points="17.5,12 13.5,8.5 13.5,15.5" fill="none" />
-                            <circle cx="12" cy="12" r="0.8" fill="currentColor" stroke="none" />
+                            <line x1="12" y1="4.5" x2="12" y2="19.5" stroke-dasharray="2 2" />
+                            <path d="M6.5 6.5 L10.5 9.5 L10.5 14.5 L6.5 17.5 Z" />
+                            <path d="M17.5 6.5 L13.5 9.5 L13.5 14.5 L17.5 17.5 Z" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="flipVertical()" title="세로 뒤집기">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="5" y1="12" x2="19" y2="12" stroke-dasharray="2 2" />
-                            <polygon points="12,6.5 15.5,10.5 8.5,10.5" fill="none" />
-                            <polygon points="12,17.5 15.5,13.5 8.5,13.5" fill="none" />
-                            <circle cx="12" cy="12" r="0.8" fill="currentColor" stroke="none" />
+                            <line x1="4.5" y1="12" x2="19.5" y2="12" stroke-dasharray="2 2" />
+                            <path d="M6.5 7 L9.5 10 L14.5 10 L17.5 7 Z" />
+                            <path d="M6.5 17 L9.5 14 L14.5 14 L17.5 17 Z" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="rotateCCW()" title="90° 반시계 회전">
@@ -2036,19 +2034,32 @@
             const clientX = touch?.clientX ?? evt.clientX;
             const clientY = touch?.clientY ?? evt.clientY;
 
-            const cssXCanvas = clientX - canvasRect.left;
-            const cssYCanvas = clientY - canvasRect.top;
-
             const scaleX = canvasEl.width / canvasRect.width;
             const scaleY = canvasEl.height / canvasRect.height;
+
+            let x = (clientX - canvasRect.left) * scaleX;
+            let y = (clientY - canvasRect.top) * scaleY;
+
+            const vpt = canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
+            const panX = vpt[4] || 0;
+            const panY = vpt[5] || 0;
+            const zoom = canvas.getZoom ? canvas.getZoom() : 1;
+
+            x -= panX;
+            y -= panY;
+
+            if (zoom) {
+                x /= zoom;
+                y /= zoom;
+            }
 
             return {
                 clientX,
                 clientY,
-                cssXCanvas,
-                cssYCanvas,
-                canvasX: Math.floor(cssXCanvas * scaleX),
-                canvasY: Math.floor(cssYCanvas * scaleY),
+                cssXCanvas: clientX - canvasRect.left,
+                cssYCanvas: clientY - canvasRect.top,
+                canvasX: Math.floor(x),
+                canvasY: Math.floor(y),
                 canvasRect
             };
         }
