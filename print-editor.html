@@ -1473,24 +1473,16 @@
 
                     <button class="figma-tool-btn" onclick="flipHorizontal()" title="가로 뒤집기">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="12" y1="4" x2="12" y2="20" stroke-dasharray="2 2" />
-                            <path d="M7 8l-3 4 3 4" />
-                            <path d="M17 8l3 4-3 4" />
-                            <path d="M12 4l-2 2" />
-                            <path d="M12 4l2 2" />
-                            <path d="M12 20l-2-2" />
-                            <path d="M12 20l2-2" />
+                            <line x1="6" y1="12" x2="18" y2="12" stroke-dasharray="2.2 2.2" />
+                            <polygon points="6.5,12 10.5,8.5 10.5,15.5" fill="currentColor" stroke="none" />
+                            <polygon points="17.5,12 13.5,8.5 13.5,15.5" fill="currentColor" stroke="none" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="flipVertical()" title="세로 뒤집기">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="4" y1="12" x2="20" y2="12" stroke-dasharray="2 2" />
-                            <path d="M8 7l4-3 4 3" />
-                            <path d="M8 17l4 3 4-3" />
-                            <path d="M4 12l2-2" />
-                            <path d="M4 12l2 2" />
-                            <path d="M20 12l-2-2" />
-                            <path d="M20 12l-2 2" />
+                            <line x1="12" y1="6" x2="12" y2="18" stroke-dasharray="2.2 2.2" />
+                            <polygon points="12,6.5 15.5,10.5 8.5,10.5" fill="currentColor" stroke="none" />
+                            <polygon points="12,17.5 15.5,13.5 8.5,13.5" fill="currentColor" stroke="none" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="rotateCCW()" title="90° 반시계 회전">
@@ -2035,6 +2027,28 @@
             canvas.renderAll();
         }
 
+        function getEyedropperCanvasCoords(e) {
+            const canvasEl = canvas.lowerCanvasEl;
+            const canvasRect = canvasEl.getBoundingClientRect();
+            const vpt = canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
+            const pointer = canvas.getPointer(e.e || e, false);
+
+            // CSS coordinates on the canvas element after zoom/pan
+            const cssXCanvas = pointer.x * vpt[0] + vpt[4];
+            const cssYCanvas = pointer.y * vpt[3] + vpt[5];
+
+            const scaleX = canvasEl.width / canvasRect.width;
+            const scaleY = canvasEl.height / canvasRect.height;
+
+            return {
+                cssXCanvas,
+                cssYCanvas,
+                canvasX: Math.floor(cssXCanvas * scaleX),
+                canvasY: Math.floor(cssYCanvas * scaleY),
+                canvasRect
+            };
+        }
+
         function updateEyedropperMagnifier(e) {
             if (!eyedropperActive) return;
 
@@ -2043,8 +2057,6 @@
             const magnifierCtx = magnifierCanvas.getContext('2d');
             const colorLabel = document.getElementById('magnifier-color');
 
-            const canvasEl = canvas.lowerCanvasEl;
-            const canvasRect = canvasEl.getBoundingClientRect();
             const wrapperRect = document.getElementById('canvas-container').getBoundingClientRect();
 
             // Get accurate pointer position from Fabric.js event
@@ -2057,9 +2069,7 @@
                 clientY = e.clientY;
             }
 
-            // Positioning relative to wrapper (for magnifier) and canvas (for sampling)
-            const cssXCanvas = clientX - canvasRect.left;
-            const cssYCanvas = clientY - canvasRect.top;
+            const { cssXCanvas, canvasX, canvasY, canvasRect } = getEyedropperCanvasCoords(e);
             const cssXWrapper = clientX - wrapperRect.left;
             const cssYWrapper = clientY - wrapperRect.top;
 
@@ -2081,17 +2091,7 @@
             magnifier.style.left = left + 'px';
             magnifier.style.top = top + 'px';
 
-            // Get 2D context from the lower canvas (actual rendered content)
-            const ctx = canvasEl.getContext('2d', { willReadFrequently: true });
-
-            // Account for canvas internal scaling (devicePixelRatio and canvas size vs display size)
-            const scaleX = canvasEl.width / canvasRect.width;
-            const scaleY = canvasEl.height / canvasRect.height;
-
-            // Convert CSS coordinates to canvas pixel coordinates
-            const canvasX = Math.floor(cssXCanvas * scaleX);
-            const canvasY = Math.floor(cssYCanvas * scaleY);
-
+            const ctx = canvas.lowerCanvasEl.getContext('2d', { willReadFrequently: true });
             const size = 14; // Sample size in canvas pixels (14x14 grid)
 
             try {
@@ -2134,33 +2134,8 @@
         function sampleColorFromCanvas(e) {
             if (!eyedropperActive) return;
 
-            // Use lowerCanvasEl for consistent sampling
-            const canvasEl = canvas.lowerCanvasEl;
-            const canvasRect = canvasEl.getBoundingClientRect();
-
-            // Get accurate pointer position from Fabric.js event
-            let clientX, clientY;
-            if (e.e) {
-                clientX = e.e.clientX || e.e.touches?.[0]?.clientX;
-                clientY = e.e.clientY || e.e.touches?.[0]?.clientY;
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
-            }
-
-            // Calculate CSS coordinates relative to canvas element
-            const cssX = clientX - canvasRect.left;
-            const cssY = clientY - canvasRect.top;
-
-            // Account for canvas internal scaling (retina display support)
-            const scaleX = canvasEl.width / canvasRect.width;
-            const scaleY = canvasEl.height / canvasRect.height;
-
-            // Convert to canvas pixel coordinates
-            const canvasX = Math.floor(cssX * scaleX);
-            const canvasY = Math.floor(cssY * scaleY);
-
-            const ctx = canvasEl.getContext('2d', { willReadFrequently: true });
+            const { canvasX, canvasY } = getEyedropperCanvasCoords(e);
+            const ctx = canvas.lowerCanvasEl.getContext('2d', { willReadFrequently: true });
 
             // Sample from scaled coordinates
             const pixelData = ctx.getImageData(canvasX, canvasY, 1, 1).data;
