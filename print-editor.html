@@ -2045,14 +2045,16 @@
             const scaleX = canvasEl.width / canvasRect.width;
             const scaleY = canvasEl.height / canvasRect.height;
 
-            const screenX = (clientX - canvasRect.left) * scaleX;
-            const screenY = (clientY - canvasRect.top) * scaleY;
+            let x = (clientX - canvasRect.left) * scaleX;
+            let y = (clientY - canvasRect.top) * scaleY;
 
-            const vpt = canvas.viewportTransform || fabric.iMatrix;
-            const inverted = fabric.util.invertTransform(vpt);
-            const local = fabric.util.transformPoint(new fabric.Point(screenX, screenY), inverted);
-            const x = local.x;
-            const y = local.y;
+            const vpt = canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
+            const panX = vpt[4] || 0;
+            const panY = vpt[5] || 0;
+            const zoom = canvas.getZoom ? canvas.getZoom() : 1;
+
+            x = (x - panX) / zoom;
+            y = (y - panY) / zoom;
 
             return {
                 clientX,
@@ -5386,32 +5388,14 @@
             if (!group || (!group.isMaskGroup && !group.isFrameGroup)) return;
 
             const objects = group._objects || [];
-
-            const vpt = canvas.viewportTransform;
-            const matrix = group.calcTransformMatrix();
-            const absoluteMatrix = fabric.util.multiplyTransformMatrices(vpt, matrix);
-            const inverseMatrix = fabric.util.invertTransform(vpt);
-
-            const objectsWithPositions = objects.map(obj => {
-                const point = fabric.util.transformPoint(
-                    new fabric.Point(obj.left, obj.top),
-                    absoluteMatrix
-                );
-                const localPoint = fabric.util.transformPoint(point, inverseMatrix);
-                return {
-                    obj: obj,
-                    left: localPoint.x,
-                    top: localPoint.y,
-                    angle: obj.angle + group.angle,
-                    scaleX: obj.scaleX * group.scaleX,
-                    scaleY: obj.scaleY * group.scaleY
-                };
-            });
+            if (group._restoreObjectsState) {
+                group._restoreObjectsState();
+            }
 
             group._objects = [];
             canvas.remove(group);
 
-            objectsWithPositions.forEach(({ obj, left, top, angle, scaleX, scaleY }) => {
+            objects.forEach(obj => {
                 if (obj.isFrameShape) {
                     obj.set({ selectable: true, evented: true });
                     obj.isFrameShape = false;
@@ -5430,13 +5414,10 @@
                     obj.maskTargetId = null;
                 }
 
-                obj.set({
-                    left: left,
-                    top: top,
-                    angle: angle,
-                    scaleX: scaleX,
-                    scaleY: scaleY
-                });
+                obj.group = null;
+                obj.left = obj.left;
+                obj.top = obj.top;
+                obj.angle = obj.angle;
 
                 obj.setCoords();
                 ensureObjectId(obj);
