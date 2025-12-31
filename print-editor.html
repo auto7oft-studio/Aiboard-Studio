@@ -1471,17 +1471,17 @@
                     <div class="toolbar-divider"></div>
 
                     <button class="figma-tool-btn" onclick="flipHorizontal()" title="가로 뒤집기">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 4v16" />
-                            <rect x="3" y="7" width="6" height="10" />
-                            <rect x="15" y="7" width="6" height="10" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 3v18" />
+                            <path d="M11 4 5 12l6 8V4Z" fill="currentColor" stroke="none" />
+                            <path d="M13 4v16l6-8-6-8Z" fill="currentColor" stroke="none" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="flipVertical()" title="세로 뒤집기">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M4 12h16" />
-                            <rect x="7" y="3" width="10" height="6" />
-                            <rect x="7" y="15" width="10" height="6" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 12h18" />
+                            <path d="M4 11 12 5l8 6H4Z" fill="currentColor" stroke="none" />
+                            <path d="m4 13 8 6 8-6H4Z" fill="currentColor" stroke="none" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="rotateCCW()" title="90° 반시계 회전">
@@ -2026,6 +2026,41 @@
             canvas.renderAll();
         }
 
+        function getEyedropperPosition(e) {
+            const canvasEl = canvas.lowerCanvasEl;
+            const canvasRect = canvasEl.getBoundingClientRect();
+            const retina = typeof canvas.getRetinaScaling === 'function' ? canvas.getRetinaScaling() : (window.devicePixelRatio || 1);
+
+            let clientX, clientY;
+            if (e?.e) {
+                clientX = e.e.clientX ?? e.e.touches?.[0]?.clientX;
+                clientY = e.e.clientY ?? e.e.touches?.[0]?.clientY;
+            } else {
+                clientX = e?.clientX;
+                clientY = e?.clientY;
+            }
+            clientX = clientX ?? 0;
+            clientY = clientY ?? 0;
+
+            // Fabric pointer in canvas coordinates (unaffected by viewport transform)
+            const pointer = canvas.getPointer(e?.e || e, false) || { x: 0, y: 0 };
+            const viewportPoint = fabric.util.transformPoint(new fabric.Point(pointer.x, pointer.y), canvas.viewportTransform);
+
+            const canvasX = Math.round(viewportPoint.x * retina);
+            const canvasY = Math.round(viewportPoint.y * retina);
+
+            return {
+                canvasEl,
+                canvasRect,
+                retina,
+                clientX,
+                clientY,
+                canvasX,
+                canvasY,
+                viewportPoint
+            };
+        }
+
         function updateEyedropperMagnifier(e) {
             if (!eyedropperActive) return;
 
@@ -2034,23 +2069,16 @@
             const magnifierCtx = magnifierCanvas.getContext('2d');
             const colorLabel = document.getElementById('magnifier-color');
 
-            const canvasEl = canvas.lowerCanvasEl;
-            const canvasRect = canvasEl.getBoundingClientRect();
+            const {
+                canvasEl,
+                canvasRect,
+                retina,
+                clientX,
+                clientY,
+                canvasX,
+                canvasY
+            } = getEyedropperPosition(e);
             const wrapperRect = document.getElementById('canvas-container').getBoundingClientRect();
-
-            // Get accurate pointer position from Fabric.js event
-            let clientX, clientY;
-            if (e.e) {
-                clientX = e.e.clientX || e.e.touches?.[0]?.clientX;
-                clientY = e.e.clientY || e.e.touches?.[0]?.clientY;
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
-            }
-
-            // Positioning relative to wrapper (for magnifier) and canvas (for sampling)
-            const cssXCanvas = clientX - canvasRect.left;
-            const cssYCanvas = clientY - canvasRect.top;
             const cssXWrapper = clientX - wrapperRect.left;
             const cssYWrapper = clientY - wrapperRect.top;
 
@@ -2075,38 +2103,32 @@
             // Get 2D context from the lower canvas (actual rendered content)
             const ctx = canvasEl.getContext('2d', { willReadFrequently: true });
 
-            // Account for canvas internal scaling (devicePixelRatio and canvas size vs display size)
-            const scaleX = canvasEl.width / canvasRect.width;
-            const scaleY = canvasEl.height / canvasRect.height;
-
-            // Convert CSS coordinates to canvas pixel coordinates
-            const canvasX = Math.floor(cssXCanvas * scaleX);
-            const canvasY = Math.floor(cssYCanvas * scaleY);
-
-            const size = 14; // Sample size in canvas pixels (14x14 grid)
+            const size = Math.max(1, Math.round(14 * retina)); // Sample size in canvas pixels (about 14 CSS px)
+            const halfSize = Math.floor(size / 2);
+            const sampleStartX = Math.max(0, Math.min(canvasX - halfSize, canvasEl.width - 1));
+            const sampleStartY = Math.max(0, Math.min(canvasY - halfSize, canvasEl.height - 1));
+            const sampleWidth = Math.min(size, canvasEl.width - sampleStartX);
+            const sampleHeight = Math.min(size, canvasEl.height - sampleStartY);
 
             try {
                 // Get image data from canvas at the scaled coordinates
-                const imageData = ctx.getImageData(
-                    canvasX - Math.floor(size / 2),
-                    canvasY - Math.floor(size / 2),
-                    size,
-                    size
-                );
+                const imageData = ctx.getImageData(sampleStartX, sampleStartY, sampleWidth, sampleHeight);
 
                 // Draw zoomed image on magnifier canvas
                 magnifierCtx.imageSmoothingEnabled = false; // Pixelated zoom
                 const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = size;
-                tempCanvas.height = size;
+                tempCanvas.width = sampleWidth;
+                tempCanvas.height = sampleHeight;
                 const tempCtx = tempCanvas.getContext('2d');
                 tempCtx.putImageData(imageData, 0, 0);
 
                 magnifierCtx.clearRect(0, 0, 140, 140);
-                magnifierCtx.drawImage(tempCanvas, 0, 0, size, size, 0, 0, 140, 140);
+                magnifierCtx.drawImage(tempCanvas, 0, 0, sampleWidth, sampleHeight, 0, 0, 140, 140);
 
                 // Get center pixel color
-                const centerPixel = ctx.getImageData(canvasX, canvasY, 1, 1).data;
+                const clampedCanvasX = Math.min(Math.max(0, canvasX), canvasEl.width - 1);
+                const clampedCanvasY = Math.min(Math.max(0, canvasY), canvasEl.height - 1);
+                const centerPixel = ctx.getImageData(clampedCanvasX, clampedCanvasY, 1, 1).data;
                 const r = centerPixel[0];
                 const g = centerPixel[1];
                 const b = centerPixel[2];
@@ -2125,36 +2147,18 @@
         function sampleColorFromCanvas(e) {
             if (!eyedropperActive) return;
 
-            // Use lowerCanvasEl for consistent sampling
-            const canvasEl = canvas.lowerCanvasEl;
-            const canvasRect = canvasEl.getBoundingClientRect();
-
-            // Get accurate pointer position from Fabric.js event
-            let clientX, clientY;
-            if (e.e) {
-                clientX = e.e.clientX || e.e.touches?.[0]?.clientX;
-                clientY = e.e.clientY || e.e.touches?.[0]?.clientY;
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
-            }
-
-            // Calculate CSS coordinates relative to canvas element
-            const cssX = clientX - canvasRect.left;
-            const cssY = clientY - canvasRect.top;
-
-            // Account for canvas internal scaling (retina display support)
-            const scaleX = canvasEl.width / canvasRect.width;
-            const scaleY = canvasEl.height / canvasRect.height;
-
-            // Convert to canvas pixel coordinates
-            const canvasX = Math.floor(cssX * scaleX);
-            const canvasY = Math.floor(cssY * scaleY);
+            const {
+                canvasEl,
+                canvasX,
+                canvasY
+            } = getEyedropperPosition(e);
 
             const ctx = canvasEl.getContext('2d', { willReadFrequently: true });
 
             // Sample from scaled coordinates
-            const pixelData = ctx.getImageData(canvasX, canvasY, 1, 1).data;
+            const clampedX = Math.min(Math.max(0, canvasX), canvasEl.width - 1);
+            const clampedY = Math.min(Math.max(0, canvasY), canvasEl.height - 1);
+            const pixelData = ctx.getImageData(clampedX, clampedY, 1, 1).data;
             const r = pixelData[0];
             const g = pixelData[1];
             const b = pixelData[2];
