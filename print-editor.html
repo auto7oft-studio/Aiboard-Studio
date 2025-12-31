@@ -5387,30 +5387,30 @@
 
             const objects = group._objects || [];
 
-            // Calculate absolute positions before destroying group
-            const objectsWithPositions = objects.map(obj => {
-                // Get object's center point in canvas coordinates
-                const matrix = group.calcTransformMatrix();
-                const point = fabric.util.transformPoint(
-                    { x: obj.left, y: obj.top },
-                    matrix
-                );
+            const vpt = canvas.viewportTransform;
+            const matrix = group.calcTransformMatrix();
+            const absoluteMatrix = fabric.util.multiplyTransformMatrices(vpt, matrix);
+            const inverseMatrix = fabric.util.invertTransform(vpt);
 
+            const objectsWithPositions = objects.map(obj => {
+                const point = fabric.util.transformPoint(
+                    new fabric.Point(obj.left, obj.top),
+                    absoluteMatrix
+                );
+                const localPoint = fabric.util.transformPoint(point, inverseMatrix);
                 return {
                     obj: obj,
-                    left: point.x,
-                    top: point.y,
+                    left: localPoint.x,
+                    top: localPoint.y,
                     angle: obj.angle + group.angle,
                     scaleX: obj.scaleX * group.scaleX,
                     scaleY: obj.scaleY * group.scaleY
                 };
             });
 
-            // Clear group and remove it
             group._objects = [];
             canvas.remove(group);
 
-            // Add objects back with restored positions
             objectsWithPositions.forEach(({ obj, left, top, angle, scaleX, scaleY }) => {
                 if (obj.isFrameShape) {
                     obj.set({ selectable: true, evented: true });
@@ -5430,7 +5430,6 @@
                     obj.maskTargetId = null;
                 }
 
-                // Restore absolute position and transforms
                 obj.set({
                     left: left,
                     top: top,
