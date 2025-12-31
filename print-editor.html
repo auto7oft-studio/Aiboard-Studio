@@ -2725,11 +2725,12 @@
                 (workspaceWidth - padding) / w,
                 (workspaceHeight - padding) / h
             );
-            canvas.setZoom(scale);
+            const finalScale = Math.min(scale, 2); // Cap zoom to ~200% for small presets
+            canvas.setZoom(finalScale);
             const vpt = canvas.viewportTransform;
             const workspaceCenter = getWorkspaceCenterX();
-            vpt[4] = workspaceCenter - (artboard.left + w / 2) * scale;
-            vpt[5] = workspaceHeight / 2 - (artboard.top + h / 2) * scale;
+            vpt[4] = workspaceCenter - (artboard.left + w / 2) * finalScale;
+            vpt[5] = workspaceHeight / 2 - (artboard.top + h / 2) * finalScale;
             canvas.requestRenderAll();
             updateZoomDisplay();
             updateCanvasSizeLabel();
