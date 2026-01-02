@@ -2010,14 +2010,6 @@
                 obj.evented = false;
             });
 
-            // Highlight the active button
-            const fillBtn = document.getElementById('eyedropper-btn-fill');
-            const strokeBtn = document.getElementById('eyedropper-btn-stroke');
-            if (fillBtn) fillBtn.style.background = target === 'fill' ? '#3B82F6' : 'var(--bg-panel)';
-            if (strokeBtn) strokeBtn.style.background = target === 'stroke' ? '#3B82F6' : 'var(--bg-panel)';
-            if (fillBtn) fillBtn.style.color = target === 'fill' ? 'white' : 'currentColor';
-            if (strokeBtn) strokeBtn.style.color = target === 'stroke' ? 'white' : 'currentColor';
-
             canvas.renderAll();
         }
 
@@ -2033,18 +2025,6 @@
                     obj.evented = true;
                 }
             });
-
-            // Remove button highlights
-            const fillBtn = document.getElementById('eyedropper-btn-fill');
-            const strokeBtn = document.getElementById('eyedropper-btn-stroke');
-            if (fillBtn) {
-                fillBtn.style.background = 'var(--bg-panel)';
-                fillBtn.style.color = 'currentColor';
-            }
-            if (strokeBtn) {
-                strokeBtn.style.background = 'var(--bg-panel)';
-                strokeBtn.style.color = 'currentColor';
-            }
 
             // Restore the previously selected object
             if (eyedropperSelectedObject) {
@@ -5490,6 +5470,7 @@
                 }
 
                 obj.group = null;
+                obj.clipPath = null; // Remove any clipPath from the mask group
                 obj.set({
                     angle,
                     scaleX,
@@ -5500,6 +5481,7 @@
                 obj.setCoords();
                 ensureObjectId(obj);
                 canvas.add(obj);
+                obj.setCoords(); // Update coords after adding to canvas
                 restored.push(obj);
             });
 
