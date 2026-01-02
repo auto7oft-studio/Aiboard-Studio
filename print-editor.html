@@ -4048,6 +4048,10 @@
                 } else {
                     o.set(prop, val);
                 }
+                // Force cache invalidation for text objects
+                if (o._clearCache) o._clearCache();
+                if (o._cacheCanvas) o._cacheCanvas = null;
+                if (o._cacheContext) o._cacheContext = null;
                 o.dirty = true;
                 if (o.initDimensions) o.initDimensions();
                 if (o.setCoords) o.setCoords();
@@ -4059,6 +4063,10 @@
                     if (!parts) return;
                     applyTypography(parts.fill);
                     applyTypography(parts.stroke);
+                    // Clear group cache as well
+                    if (o._clearCache) o._clearCache();
+                    if (o._cacheCanvas) o._cacheCanvas = null;
+                    if (o._cacheContext) o._cacheContext = null;
                     o.dirty = true;
                     o.addWithUpdate();
                     if (o._calcBounds) o._calcBounds();
@@ -4075,9 +4083,10 @@
                 update(active);
             }
 
-            canvas.requestRenderAll();
-            // Force another render after a short delay to ensure font changes are visible
-            setTimeout(() => canvas.requestRenderAll(), 10);
+            // Force immediate canvas render for font changes
+            canvas.renderAll();
+            // Force another render after font loads
+            setTimeout(() => canvas.renderAll(), 50);
             saveHistory();
         }
 
