@@ -2036,6 +2036,7 @@
 
         function getEyedropperCanvasCoords(e) {
             if (!canvas) return { clientX: 0, clientY: 0, cssXCanvas: 0, cssYCanvas: 0, canvasX: 0, canvasY: 0, canvasRect: { left: 0, top: 0 } };
+
             const canvasEl = canvas.lowerCanvasEl;
             const canvasRect = canvasEl.getBoundingClientRect();
             const evt = e.e || e;
@@ -2043,34 +2044,29 @@
             const clientX = touch?.clientX ?? evt.clientX;
             const clientY = touch?.clientY ?? evt.clientY;
 
-            // Use Fabric.js built-in pointer conversion for accuracy
-            // This accounts for all transforms, scaling, and viewport settings
-            const pointer = canvas.getPointer(evt);
+            // Step 1: Get CSS coordinates relative to canvas element
+            const cssX = clientX - canvasRect.left;
+            const cssY = clientY - canvasRect.top;
 
-            // Convert logical canvas coordinates to physical pixel coordinates
-            // Account for devicePixelRatio and canvas element sizing
-            const vpt = canvas.viewportTransform;
+            // Step 2: Convert CSS pixels to canvas physical pixels
+            // This accounts for devicePixelRatio and canvas element scaling
+            const scaleX = canvasEl.width / canvasRect.width;
+            const scaleY = canvasEl.height / canvasRect.height;
 
-            // Apply viewport transform to get screen position
-            const screenX = pointer.x * vpt[0] + vpt[4];
-            const screenY = pointer.y * vpt[3] + vpt[5];
+            const pixelX = cssX * scaleX;
+            const pixelY = cssY * scaleY;
 
-            // Convert to physical canvas pixels (accounting for retina displays)
-            const retinaScaling = canvasEl.width / canvas.getWidth();
-            const canvasX = Math.floor(screenX * retinaScaling);
-            const canvasY = Math.floor(screenY * retinaScaling);
-
-            // Clamp to canvas bounds
-            const x = Math.min(Math.max(canvasX, 0), canvasEl.width - 1);
-            const y = Math.min(Math.max(canvasY, 0), canvasEl.height - 1);
+            // Step 3: Clamp to canvas bounds
+            const canvasX = Math.floor(Math.min(Math.max(pixelX, 0), canvasEl.width - 1));
+            const canvasY = Math.floor(Math.min(Math.max(pixelY, 0), canvasEl.height - 1));
 
             return {
                 clientX,
                 clientY,
-                cssXCanvas: clientX - canvasRect.left,
-                cssYCanvas: clientY - canvasRect.top,
-                canvasX: x,
-                canvasY: y,
+                cssXCanvas: cssX,
+                cssYCanvas: cssY,
+                canvasX,
+                canvasY,
                 canvasRect
             };
         }
