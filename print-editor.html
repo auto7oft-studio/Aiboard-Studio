@@ -2070,45 +2070,41 @@
             const clientX = touch?.clientX ?? evt.clientX;
             const clientY = touch?.clientY ?? evt.clientY;
 
-            // Use offsetX/offsetY which are relative to the canvas element
-            // This is more reliable than manual calculation
-            let offsetX = evt.offsetX;
-            let offsetY = evt.offsetY;
+            // ALWAYS calculate relative to lowerCanvasEl, don't trust offsetX/Y
+            // offsetX/Y might be relative to a different element in Fabric.js
+            const relX = clientX - canvasRect.left;
+            const relY = clientY - canvasRect.top;
 
-            // Fallback if offset is not available
-            if (offsetX === undefined || offsetY === undefined) {
-                offsetX = clientX - canvasRect.left;
-                offsetY = clientY - canvasRect.top;
-            }
+            // Canvas is rendered at physical pixel resolution
+            // If canvas CSS size != physical size, we need to scale
+            const scaleX = canvasEl.width / canvasRect.width;
+            const scaleY = canvasEl.height / canvasRect.height;
 
-            // Convert CSS pixels to physical canvas pixels
-            const scaleX = canvasEl.width / canvasEl.offsetWidth;
-            const scaleY = canvasEl.height / canvasEl.offsetHeight;
-
-            const canvasX = Math.floor(offsetX * scaleX);
-            const canvasY = Math.floor(offsetY * scaleY);
+            const pixelX = relX * scaleX;
+            const pixelY = relY * scaleY;
 
             // Clamp to valid range
-            const x = Math.min(Math.max(canvasX, 0), canvasEl.width - 1);
-            const y = Math.min(Math.max(canvasY, 0), canvasEl.height - 1);
+            const x = Math.floor(Math.min(Math.max(pixelX, 0), canvasEl.width - 1));
+            const y = Math.floor(Math.min(Math.max(pixelY, 0), canvasEl.height - 1));
 
             // DEBUG
             if (!window._eyedropperCallCount) window._eyedropperCallCount = 0;
             if (window._eyedropperCallCount++ % 10 === 0) {
                 console.log('[EYEDROPPER DEBUG]');
-                console.log('  Mouse client:', clientX, clientY);
-                console.log('  Mouse offset:', offsetX, offsetY);
-                console.log('  Canvas offsetWidth/Height:', canvasEl.offsetWidth, canvasEl.offsetHeight);
-                console.log('  Canvas width/height (physical):', canvasEl.width, canvasEl.height);
-                console.log('  Scale:', scaleX.toFixed(4), scaleY.toFixed(4));
-                console.log('  Final pixel:', x, y);
+                console.log('  clientX/Y:', clientX, clientY);
+                console.log('  canvasRect.left/top:', canvasRect.left.toFixed(0), canvasRect.top.toFixed(0));
+                console.log('  relX/Y (CSS):', relX.toFixed(1), relY.toFixed(1));
+                console.log('  canvasRect size:', canvasRect.width, canvasRect.height);
+                console.log('  canvas physical:', canvasEl.width, canvasEl.height);
+                console.log('  scale:', scaleX.toFixed(4), scaleY.toFixed(4));
+                console.log('  FINAL PIXEL:', x, y);
             }
 
             return {
                 clientX,
                 clientY,
-                cssXCanvas: offsetX,
-                cssYCanvas: offsetY,
+                cssXCanvas: relX,
+                cssYCanvas: relY,
                 canvasX: x,
                 canvasY: y,
                 canvasRect
