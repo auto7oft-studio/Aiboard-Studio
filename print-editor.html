@@ -1721,8 +1721,8 @@
                         </label>
                         <div id="fill-swatch" class="color-swatch" style="background: #3B82F6;"
                             onclick="openPicker('fill', this)"></div>
-                        <button onclick="activateEyedropper('fill')" title="스포이드로 색상 추출"
-                            style="width: 24px; height: 24px; padding: 4px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-panel); cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                        <button id="eyedropper-btn-fill" onclick="activateEyedropper('fill')" title="스포이드로 색상 추출"
+                            style="width: 24px; height: 24px; padding: 4px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-panel); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M2 22l1-1h3l9-9"></path>
                                 <path d="M3 21v-3l9-9"></path>
@@ -1773,8 +1773,8 @@
                         </label>
                         <div id="stroke-swatch" class="color-swatch" style="background: #000000;"
                             onclick="openPicker('stroke', this)"></div>
-                        <button onclick="activateEyedropper('stroke')" title="스포이드로 색상 추출"
-                            style="width: 24px; height: 24px; padding: 4px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-panel); cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                        <button id="eyedropper-btn-stroke" onclick="activateEyedropper('stroke')" title="스포이드로 색상 추출"
+                            style="width: 24px; height: 24px; padding: 4px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-panel); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M2 22l1-1h3l9-9"></path>
                                 <path d="M3 21v-3l9-9"></path>
@@ -1981,6 +1981,12 @@
         let eyedropperSelectedObject = null;
 
         function activateEyedropper(target) {
+            // Toggle: if already active with same target, deactivate
+            if (eyedropperActive && eyedropperTarget === target) {
+                deactivateEyedropper();
+                return;
+            }
+
             // Store the currently selected object
             eyedropperSelectedObject = canvas.getActiveObject();
 
@@ -2006,6 +2012,14 @@
             // Show magnifier
             document.getElementById('eyedropper-magnifier').style.display = 'block';
 
+            // Highlight the active button
+            const fillBtn = document.getElementById('eyedropper-btn-fill');
+            const strokeBtn = document.getElementById('eyedropper-btn-stroke');
+            if (fillBtn) fillBtn.style.background = target === 'fill' ? '#3B82F6' : 'var(--bg-panel)';
+            if (strokeBtn) strokeBtn.style.background = target === 'stroke' ? '#3B82F6' : 'var(--bg-panel)';
+            if (fillBtn) fillBtn.style.color = target === 'fill' ? 'white' : 'currentColor';
+            if (strokeBtn) strokeBtn.style.color = target === 'stroke' ? 'white' : 'currentColor';
+
             canvas.renderAll();
         }
 
@@ -2024,6 +2038,18 @@
 
             // Hide magnifier
             document.getElementById('eyedropper-magnifier').style.display = 'none';
+
+            // Remove button highlights
+            const fillBtn = document.getElementById('eyedropper-btn-fill');
+            const strokeBtn = document.getElementById('eyedropper-btn-stroke');
+            if (fillBtn) {
+                fillBtn.style.background = 'var(--bg-panel)';
+                fillBtn.style.color = 'currentColor';
+            }
+            if (strokeBtn) {
+                strokeBtn.style.background = 'var(--bg-panel)';
+                strokeBtn.style.color = 'currentColor';
+            }
 
             // Restore the previously selected object
             if (eyedropperSelectedObject) {
@@ -2360,8 +2386,15 @@
             });
 
             canvas.on('mouse:down', function (opt) {
-                // Handle eyedropper sampling
+                // Handle eyedropper: right-click to cancel, left-click to sample
                 if (eyedropperActive) {
+                    // Right-click (button === 2) or context menu event
+                    if (opt.e.button === 2 || opt.e.which === 3) {
+                        deactivateEyedropper();
+                        opt.e.preventDefault();
+                        return;
+                    }
+                    // Left-click to sample color
                     sampleColorFromCanvas(opt);
                     return;
                 }
