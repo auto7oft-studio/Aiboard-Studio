@@ -2043,25 +2043,34 @@
             const clientX = touch?.clientX ?? evt.clientX;
             const clientY = touch?.clientY ?? evt.clientY;
 
-            // Convert CSS coordinates to canvas pixel coordinates
-            // getImageData() reads physical canvas pixels, so we only need DPI scaling
-            const scaleX = canvasEl.width / canvasRect.width;
-            const scaleY = canvasEl.height / canvasRect.height;
+            // Use Fabric.js built-in pointer conversion for accuracy
+            // This accounts for all transforms, scaling, and viewport settings
+            const pointer = canvas.getPointer(evt);
 
-            const screenX = (clientX - canvasRect.left) * scaleX;
-            const screenY = (clientY - canvasRect.top) * scaleY;
+            // Convert logical canvas coordinates to physical pixel coordinates
+            // Account for devicePixelRatio and canvas element sizing
+            const vpt = canvas.viewportTransform;
 
-            // Clamp to canvas physical bounds
-            const x = Math.min(Math.max(screenX, 0), canvasEl.width - 1);
-            const y = Math.min(Math.max(screenY, 0), canvasEl.height - 1);
+            // Apply viewport transform to get screen position
+            const screenX = pointer.x * vpt[0] + vpt[4];
+            const screenY = pointer.y * vpt[3] + vpt[5];
+
+            // Convert to physical canvas pixels (accounting for retina displays)
+            const retinaScaling = canvasEl.width / canvas.getWidth();
+            const canvasX = Math.floor(screenX * retinaScaling);
+            const canvasY = Math.floor(screenY * retinaScaling);
+
+            // Clamp to canvas bounds
+            const x = Math.min(Math.max(canvasX, 0), canvasEl.width - 1);
+            const y = Math.min(Math.max(canvasY, 0), canvasEl.height - 1);
 
             return {
                 clientX,
                 clientY,
                 cssXCanvas: clientX - canvasRect.left,
                 cssYCanvas: clientY - canvasRect.top,
-                canvasX: Math.floor(x),
-                canvasY: Math.floor(y),
+                canvasX: x,
+                canvasY: y,
                 canvasRect
             };
         }
@@ -5129,6 +5138,9 @@
             const allObjects = targetCanvas.getObjects();
             allObjects.forEach(obj => {
                 if (obj.isMaskGroup) {
+                    // Save the group's current position before rebuilding
+                    const groupCenter = new fabric.Point(obj.left, obj.top);
+
                     const mask = obj._objects.find(child => child.isMask) || obj._objects[0];
                     const target = obj._objects.find(child => !child.isMask) || obj._objects[1];
 
@@ -5150,8 +5162,8 @@
                     }
 
                     obj.subTargetCheck = true;
-                    const maskCenter = mask ? mask.getCenterPoint() : null;
-                    normalizeMaskGroupBounds(obj, maskCenter);
+                    // Use the saved group center position, not the mask's center
+                    normalizeMaskGroupBounds(obj, groupCenter);
                 }
             });
         }
