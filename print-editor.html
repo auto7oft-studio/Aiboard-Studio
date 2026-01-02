@@ -1678,7 +1678,7 @@
                     </div>
                     <div class="property-row">
                         <label class="property-label">정렬</label>
-                        <div class="align-grid" style="border: none; padding: 0;">
+                        <div class="align-grid" style="border: none; padding: 0; align-items: center;">
                             <button class="align-btn" onclick="updateTypography('textAlign', 'left')" title="왼쪽">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <line x1="3" y1="7" x2="17" y2="7"/>
@@ -2045,16 +2045,14 @@
             const scaleX = canvasEl.width / canvasRect.width;
             const scaleY = canvasEl.height / canvasRect.height;
 
-            let x = (clientX - canvasRect.left) * scaleX;
-            let y = (clientY - canvasRect.top) * scaleY;
+            const screenX = (clientX - canvasRect.left) * scaleX;
+            const screenY = (clientY - canvasRect.top) * scaleY;
 
-            const vpt = canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
-            const panX = vpt[4] || 0;
-            const panY = vpt[5] || 0;
-            const zoom = canvas.getZoom ? canvas.getZoom() : 1;
-
-            x = (x - panX) / zoom;
-            y = (y - panY) / zoom;
+            const vpt = canvas.viewportTransform || fabric.iMatrix;
+            const inverted = fabric.util.invertTransform(vpt);
+            const local = fabric.util.transformPoint(new fabric.Point(screenX, screenY), inverted);
+            const x = local.x;
+            const y = local.y;
 
             return {
                 clientX,
@@ -4148,6 +4146,8 @@
                     sel.value = fontName;
                     const chosenWeight = setFontWeightOptions(fontName, '400');
                     document.getElementById('font-weight').value = chosenWeight;
+                    await document.fonts.load(`1em "${fontName}"`);
+                    canvas.requestRenderAll();
 
                     // Store for PDF export (jsPDF needs base64)
                     const base64 = fontData.split(',')[1];
