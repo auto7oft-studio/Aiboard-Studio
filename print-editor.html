@@ -2044,21 +2044,16 @@
             const clientY = touch?.clientY ?? evt.clientY;
 
             // Convert CSS coordinates to canvas pixel coordinates
+            // getImageData() reads physical canvas pixels, so we only need DPI scaling
             const scaleX = canvasEl.width / canvasRect.width;
             const scaleY = canvasEl.height / canvasRect.height;
 
             const screenX = (clientX - canvasRect.left) * scaleX;
             const screenY = (clientY - canvasRect.top) * scaleY;
 
-            // getImageData reads from the logical canvas, so we need to transform screen coords
-            // to account for viewport zoom/pan by inverting the viewport transform
-            const vpt = canvas.viewportTransform || fabric.iMatrix;
-            const inverted = fabric.util.invertTransform(vpt);
-            const localPoint = fabric.util.transformPoint(new fabric.Point(screenX, screenY), inverted);
-
-            // Clamp to canvas logical bounds
-            const x = Math.min(Math.max(localPoint.x, 0), canvasEl.width - 1);
-            const y = Math.min(Math.max(localPoint.y, 0), canvasEl.height - 1);
+            // Clamp to canvas physical bounds
+            const x = Math.min(Math.max(screenX, 0), canvasEl.width - 1);
+            const y = Math.min(Math.max(screenY, 0), canvasEl.height - 1);
 
             return {
                 clientX,
