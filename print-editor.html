@@ -2060,6 +2060,18 @@
             const canvasX = Math.floor(Math.min(Math.max(pixelX, 0), canvasEl.width - 1));
             const canvasY = Math.floor(Math.min(Math.max(pixelY, 0), canvasEl.height - 1));
 
+            // DEBUG: Log coordinates every 10 calls to avoid spam
+            if (!window._eyedropperCallCount) window._eyedropperCallCount = 0;
+            if (window._eyedropperCallCount++ % 10 === 0) {
+                console.log('[EYEDROPPER DEBUG]');
+                console.log('  Mouse:', clientX, clientY);
+                console.log('  Canvas Rect:', canvasRect.left, canvasRect.top, canvasRect.width, canvasRect.height);
+                console.log('  Canvas Element:', canvasEl.width, canvasEl.height);
+                console.log('  CSS:', cssX, cssY);
+                console.log('  Scale:', scaleX.toFixed(2), scaleY.toFixed(2));
+                console.log('  Final:', canvasX, canvasY);
+            }
+
             return {
                 clientX,
                 clientY,
@@ -2627,7 +2639,12 @@
 
             // Skip clipping updates for activeSelection during movement
             // Individual objects will be updated after movement completes
-            if (obj.type === 'activeSelection') return;
+            if (obj.type === 'activeSelection') {
+                console.log('[DEBUG] Skipping updateObjectClipping for activeSelection');
+                return;
+            }
+
+            console.log('[DEBUG] updateObjectClipping for:', obj.type, 'isMaskGroup:', obj.isMaskGroup);
 
             const artRect = getObjectBounds(artboard);
 
