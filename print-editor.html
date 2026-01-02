@@ -2043,18 +2043,17 @@
             const clientX = touch?.clientX ?? evt.clientX;
             const clientY = touch?.clientY ?? evt.clientY;
 
+            // Convert CSS coordinates to canvas pixel coordinates
             const scaleX = canvasEl.width / canvasRect.width;
             const scaleY = canvasEl.height / canvasRect.height;
 
             const screenX = (clientX - canvasRect.left) * scaleX;
             const screenY = (clientY - canvasRect.top) * scaleY;
 
-            const vpt = canvas.viewportTransform || fabric.iMatrix;
-            const inverted = fabric.util.invertTransform(vpt);
-            const local = fabric.util.transformPoint(new fabric.Point(screenX, screenY), inverted);
-            // Clamp to canvas drawable area
-            const x = Math.min(Math.max(local.x, 0), canvasEl.width);
-            const y = Math.min(Math.max(local.y, 0), canvasEl.height);
+            // For getImageData, we need physical canvas pixel coordinates (not viewport-transformed)
+            // screenX and screenY are already correct for sampling the rendered canvas
+            const x = Math.min(Math.max(screenX, 0), canvasEl.width - 1);
+            const y = Math.min(Math.max(screenY, 0), canvasEl.height - 1);
 
             return {
                 clientX,
@@ -4017,20 +4016,21 @@
             canvas.renderAll();
         }
 
+        // Extended font weight map with full range of weights for better typography control
         const FONT_WEIGHT_MAP = {
-            'Pretendard': ['400', '500', '700', '900'],
-            'Noto Sans KR': ['400', '700'],
-            'Noto Serif KR': ['400', '700'],
-            'Nanum Gothic': ['400', '700'],
+            'Pretendard': ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
+            'Noto Sans KR': ['100', '300', '400', '500', '700', '900'],
+            'Noto Serif KR': ['200', '300', '400', '500', '600', '700', '900'],
+            'Nanum Gothic': ['400', '700', '800'],
             'Nanum Myeongjo': ['400', '700'],
             'Black Han Sans': ['400'],
             'Do Hyeon': ['400'],
             'Gowun Dodum': ['400'],
-            'Inter': ['400', '700'],
-            'Roboto': ['400', '700'],
+            'Inter': ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
+            'Roboto': ['100', '300', '400', '500', '700', '900'],
             'Arial': ['400', '700'],
             'Georgia': ['400', '700'],
-            '__default': ['400', '700']
+            '__default': ['100', '200', '300', '400', '500', '600', '700', '800', '900']
         };
 
         function ensureFontWeight(family, weight) {
@@ -4043,10 +4043,13 @@
             const select = document.getElementById('font-weight');
             const labels = {
                 '100': 'Thin (100)',
+                '200': 'Extra Light (200)',
                 '300': 'Light (300)',
                 '400': 'Regular (400)',
                 '500': 'Medium (500)',
+                '600': 'Semi Bold (600)',
                 '700': 'Bold (700)',
+                '800': 'Extra Bold (800)',
                 '900': 'Black (900)'
             };
             const weights = FONT_WEIGHT_MAP[family] || FONT_WEIGHT_MAP['__default'];
@@ -5463,8 +5466,12 @@
             if (!group || (!group.isMaskGroup && !group.isFrameGroup)) return;
 
             const objects = group._objects || [];
+            const groupMatrix = group.calcTransformMatrix();
             const objectsWithPositions = objects.map(obj => {
-                const worldCenter = fabric.util.transformPoint(new fabric.Point(0, 0), obj.calcTransformMatrix());
+                // Combine group transform with object transform to get world coordinates
+                const objMatrix = obj.calcTransformMatrix();
+                const combinedMatrix = fabric.util.multiplyTransformMatrices(groupMatrix, objMatrix);
+                const worldCenter = fabric.util.transformPoint(new fabric.Point(0, 0), combinedMatrix);
                 return {
                     obj,
                     center: worldCenter,
