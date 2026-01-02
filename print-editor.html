@@ -2035,6 +2035,7 @@
         }
 
         function getEyedropperCanvasCoords(e) {
+            if (!canvas) return { clientX: 0, clientY: 0, cssXCanvas: 0, cssYCanvas: 0, canvasX: 0, canvasY: 0, canvasRect: { left: 0, top: 0 } };
             const canvasEl = canvas.lowerCanvasEl;
             const canvasRect = canvasEl.getBoundingClientRect();
             const evt = e.e || e;
@@ -4860,8 +4861,9 @@
 
             // Toggle Group/Ungroup buttons
             document.getElementById('btn-group').style.display = (obj.type === 'activeSelection') ? 'flex' : 'none';
-            // Hide ungroup button for text stroke groups
-            document.getElementById('btn-ungroup').style.display = (obj.type === 'group' && !obj.isTextStrokeGroup) ? 'flex' : 'none';
+            // Hide ungroup button for text stroke groups and mask groups
+            const canUngroup = obj.type === 'group' && !obj.isTextStrokeGroup && !obj.isMaskGroup && !obj.isFrameGroup;
+            document.getElementById('btn-ungroup').style.display = canUngroup ? 'flex' : 'none';
 
             // Mask buttons
             const isMulti = obj.type === 'activeSelection' && obj._objects && obj._objects.length === 2;
@@ -4970,6 +4972,11 @@
             // Prevent ungrouping text stroke groups
             if (active.isTextStrokeGroup) {
                 console.warn('Text stroke groups cannot be ungrouped');
+                return;
+            }
+            // Prevent ungrouping mask/frame groups; use mask release instead
+            if (active.isMaskGroup || active.isFrameGroup) {
+                console.warn('Mask or frame groups must be released with the mask action');
                 return;
             }
 
@@ -5458,8 +5465,8 @@
             const matrix = group.calcTransformMatrix();
 
             const objectsWithPositions = objects.map(obj => {
-                const center = obj.getCenterPoint();
-                const worldCenter = fabric.util.transformPoint(center, matrix);
+                const relCenter = obj.getRelativeCenterPoint();
+                const worldCenter = fabric.util.transformPoint(relCenter, matrix);
                 return {
                     obj,
                     center: worldCenter,
