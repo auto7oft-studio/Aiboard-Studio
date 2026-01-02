@@ -2052,8 +2052,9 @@
             const vpt = canvas.viewportTransform || fabric.iMatrix;
             const inverted = fabric.util.invertTransform(vpt);
             const local = fabric.util.transformPoint(new fabric.Point(screenX, screenY), inverted);
-            const x = local.x;
-            const y = local.y;
+            // Clamp to canvas drawable area
+            const x = Math.min(Math.max(local.x, 0), canvasEl.width);
+            const y = Math.min(Math.max(local.y, 0), canvasEl.height);
 
             return {
                 clientX,
