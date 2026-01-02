@@ -2457,7 +2457,16 @@
             canvas.on('object:rotating', (opt) => { updateFloatingToolbar(opt); updateObjectClipping(opt.target); });
 
             canvas.on('object:added', (opt) => { !isUndoing && saveHistory(); checkCanvasBoundaries(); updateObjectClipping(opt.target); renderLayerList(); });
-            canvas.on('object:modified', (opt) => { !isUndoing && saveHistory(); checkCanvasBoundaries(); updateObjectClipping(opt.target); });
+            canvas.on('object:modified', (opt) => {
+                !isUndoing && saveHistory();
+                checkCanvasBoundaries();
+                // If activeSelection, update clipping for each object individually
+                if (opt.target?.type === 'activeSelection') {
+                    opt.target.getObjects().forEach(obj => updateObjectClipping(obj));
+                } else {
+                    updateObjectClipping(opt.target);
+                }
+            });
             canvas.on('object:removed', () => { !isUndoing && saveHistory(); checkCanvasBoundaries(); });
             canvas.on('text:changed', (opt) => {
                 const target = opt.target;
@@ -2618,8 +2627,9 @@
             const artRect = getObjectBounds(artboard);
 
             const process = (o) => {
+                // For activeSelection during movement, don't process individual objects
+                // This prevents individual boundary checks that can cause objects to separate visually
                 if (o.type === 'activeSelection') {
-                    o.getObjects().forEach(process);
                     return;
                 }
 
