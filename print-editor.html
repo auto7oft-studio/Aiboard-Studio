@@ -2644,6 +2644,16 @@
                 return;
             }
 
+            // CRITICAL: Also skip if this object is part of an active selection
+            const activeObj = canvas.getActiveObject();
+            if (activeObj && activeObj.type === 'activeSelection') {
+                const isPartOfSelection = activeObj.getObjects().includes(obj);
+                if (isPartOfSelection) {
+                    console.log('[DEBUG] Skipping - object is part of activeSelection:', obj.type);
+                    return;
+                }
+            }
+
             console.log('[DEBUG] updateObjectClipping for:', obj.type, 'isMaskGroup:', obj.isMaskGroup);
 
             const artRect = getObjectBounds(artboard);
