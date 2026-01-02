@@ -10,9 +10,10 @@
     <link rel="stylesheet" as="style" crossorigin
         href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+KR:wght@400;700&family=Roboto:wght@400;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+KR:wght@400;700&family=Noto+Serif+KR:wght@400;700&family=Roboto:wght@400;700&family=Nanum+Gothic:wght@400;700&family=Nanum+Myeongjo:wght@400;700&family=Black+Han+Sans&family=Do+Hyeon&family=Gowun+Dodum&display=swap"
         rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/opentype.js/1.3.4/opentype.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.min.js"></script>
     <style>
         :root {
             --bg-app: #F5F6F8;
@@ -30,6 +31,8 @@
             --warning-bg: #FFFBEB;
             --warning-border: #FDE68A;
             --warning-text: #92400E;
+            --workspace-offset-left: 288px;
+            --workspace-padding-right: 0px;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -162,6 +165,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
+            position: relative;
         }
 
         .canvas-wrapper canvas {
@@ -261,9 +265,7 @@
             display: flex;
             gap: 8px;
             align-items: center;
-            background: var(--bg-app);
-            padding: 12px;
-            border-radius: var(--radius-md);
+            padding: 8px 0;
             margin-top: 8px;
         }
 
@@ -420,9 +422,7 @@
             display: flex;
             align-items: center;
             gap: 4px;
-            padding: 6px;
-            background: var(--bg-app);
-            border-radius: 6px;
+            padding: 6px 0;
         }
 
         .xd-align-btn {
@@ -777,16 +777,6 @@
             flex: 1;
         }
 
-        .left-toolbar-btn.export-btn {
-            background: var(--primary);
-            color: white;
-        }
-
-        .left-toolbar-btn.export-btn:hover {
-            background: var(--primary-hover);
-            color: white;
-        }
-
         /* --- Layer Panel (Always Visible) --- */
         .layer-panel-fixed {
             position: absolute;
@@ -808,6 +798,28 @@
             font-weight: 600;
             font-size: 12px;
             color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .panel-close-btn {
+            border: none;
+            background: var(--bg-app);
+            color: var(--text-sub);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: none;
+        }
+
+        .panel-close-btn:hover {
+            color: var(--text-main);
+            background: var(--bg-panel);
+            box-shadow: var(--shadow-sm);
         }
 
         .layer-panel-content {
@@ -1169,7 +1181,7 @@
 
     <div class="container">
         <!-- Image upload input (hidden) -->
-        <input type="file" id="img-upload" style="display: none;" accept="image/*" onchange="handleImageUpload(this)">
+        <input type="file" id="img-upload" style="display: none;" accept="image/*,.svg,.pdf,.ai" onchange="handleImageUpload(this)">
 
         <!-- Canvas Area -->
         <main class="canvas-area">
@@ -1226,14 +1238,15 @@
                 <!-- Line Tool -->
                 <button class="left-toolbar-btn" id="line-tool-btn-left" onclick="selectTool('line')" title="라인 (L)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="5" y1="12" x2="19" y2="12" />
+                        <line x1="6" y1="18" x2="18" y2="6" stroke-linecap="round" />
                     </svg>
                 </button>
 
                 <!-- Arrow Tool -->
                 <button class="left-toolbar-btn" id="arrow-tool-btn" onclick="selectTool('arrow')" title="화살표">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M5 12h14M13 5l7 7-7 7" />
+                        <path d="M6 18l8-8" stroke-linecap="round" />
+                        <path d="M11 6h7v7" stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                 </button>
 
@@ -1261,7 +1274,10 @@
 
             <!-- Layer Panel (Always Visible) -->
             <div class="layer-panel-fixed" id="layer-panel-fixed">
-                <div class="layer-panel-header">레이어 & 프리셋</div>
+            <div class="layer-panel-header">
+                <span id="layer-panel-title">레이어</span>
+                <button id="panel-close-btn" class="panel-close-btn" onclick="exitArtboardMode()">닫기</button>
+            </div>
                 <div class="layer-panel-content" id="layer-panel-fixed-content">
                     <!-- Print Size Presets (shown when artboard selected) -->
                     <div id="print-presets-section" style="display: none;">
@@ -1304,13 +1320,13 @@
                         </div>
 
                         <div class="preset-category">배너</div>
-                        <div class="preset-item" onclick="applyPreset(1000, 3000, '세로 배너')">
+                        <div class="preset-item" onclick="applyPreset(600, 1800, '세로 배너')">
                             <span class="preset-name">세로 배너</span>
-                            <span class="preset-size">1000 × 3000</span>
+                            <span class="preset-size">600 × 1800</span>
                         </div>
-                        <div class="preset-item" onclick="applyPreset(3000, 1000, '가로 배너')">
+                        <div class="preset-item" onclick="applyPreset(5000, 900, '가로 배너')">
                             <span class="preset-name">가로 배너</span>
-                            <span class="preset-size">3000 × 1000</span>
+                            <span class="preset-size">5000 × 900</span>
                         </div>
                     </div>
 
@@ -1332,39 +1348,39 @@
                 <button class="warning-btn" onclick="selectOutsideObjects()">확인 및 선택</button>
             </div>
 
-            <div id="canvas-info-bar"
-                style="position: absolute; top: 8px; left: 8px; background: #1F2937; color: #fff; font-size: 11px; z-index: 100; pointer-events: none; font-weight: 500; padding: 6px 12px; border-radius: 6px;">
-                <span id="canvas-size-label">Size : 90 × 50 mm</span><span id="image-info-label"></span>
-            </div>
-
-
             <div class="canvas-wrapper" id="canvas-container">
                 <canvas id="editor-canvas"></canvas>
-                <!-- Eyedropper magnifier -->
-                <div id="eyedropper-magnifier" style="display: none; position: absolute; width: 140px; height: 140px; border: 4px solid #fff; border-radius: 70px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); pointer-events: none; z-index: 10000;">
-                    <div style="position: relative; width: 100%; height: 100%; border-radius: 70px; overflow: hidden;">
-                        <canvas id="magnifier-canvas" width="140" height="140" style="display: block;"></canvas>
-                        <!-- Crosshairs on top of canvas -->
-                        <div style="position: absolute; left: 50%; top: 0; width: 2px; height: 100%; background: #fff; transform: translateX(-50%); box-shadow: 0 0 2px rgba(0,0,0,0.5);"></div>
-                        <div style="position: absolute; left: 0; top: 50%; width: 100%; height: 2px; background: #fff; transform: translateY(-50%); box-shadow: 0 0 2px rgba(0,0,0,0.5);"></div>
-                        <!-- Center dot -->
-                        <div style="position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; background: #fff; border: 2px solid #000; border-radius: 4px; transform: translate(-50%, -50%); box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>
-                    </div>
-                    <div id="magnifier-color" style="position: absolute; bottom: -35px; left: 50%; transform: translateX(-50%); background: #fff; padding: 6px 10px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); font-size: 12px; font-family: monospace; white-space: nowrap; font-weight: 600;"></div>
-                </div>
-            </div>
 
-            <!-- Bottom Toolbar (Figma Style) -->
-            <div class="bottom-toolbar">
+                <!-- Canvas size info -->
+                <div id="canvas-info-bar"
+                    style="position: absolute; top: 12px; left: calc(var(--workspace-offset-left) + 12px); background: #1F2937; color: #fff; font-size: 11px; z-index: 100; pointer-events: none; font-weight: 500; padding: 6px 12px; border-radius: 6px;">
+                    <span id="canvas-size-label">Size : 90 × 50 mm</span><span id="image-info-label"></span>
+                </div>
+                <!-- Eyedropper magnifier -->
+                <div id="eyedropper-magnifier" style="display: none; position: absolute; width: 96px; height: 96px; border: 2px solid #d1d5db; border-radius: 48px; box-shadow: 0 2px 8px rgba(0,0,0,0.25); pointer-events: none; z-index: 10000; background: #fff;">
+                    <div style="position: relative; width: 100%; height: 100%; border-radius: 48px; overflow: hidden;">
+                        <canvas id="magnifier-canvas" width="96" height="96" style="display: block;"></canvas>
+                        <!-- Crosshairs on top of canvas -->
+                        <div style="position: absolute; left: 50%; top: 0; width: 1.5px; height: 100%; background: #fff; transform: translateX(-50%); box-shadow: 0 0 1px rgba(0,0,0,0.35);"></div>
+                        <div style="position: absolute; left: 0; top: 50%; width: 100%; height: 1.5px; background: #fff; transform: translateY(-50%); box-shadow: 0 0 1px rgba(0,0,0,0.35);"></div>
+                        <!-- Center dot -->
+                        <div style="position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; background: #fff; border: 1.5px solid #000; border-radius: 3px; transform: translate(-50%, -50%); box-shadow: 0 0 2px rgba(0,0,0,0.35);"></div>
+                    </div>
+                </div>
+
+                <!-- Bottom Toolbar (Figma Style) -->
+                <div class="bottom-toolbar">
                 <!-- Undo/Redo -->
                 <button class="figma-tool-btn" onclick="undo()" title="실행 취소 (Ctrl+Z)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 7v6h6M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 7v6h6" />
+                        <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
                     </svg>
                 </button>
                 <button class="figma-tool-btn" onclick="redo()" title="다시 실행 (Ctrl+Shift+Z)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 7v6h-6M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7" />
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 7v6h-6" />
+                        <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7" />
                     </svg>
                 </button>
 
@@ -1397,23 +1413,29 @@
                     <div class="toolbar-divider"></div>
 
                     <button class="figma-tool-btn" onclick="moveLayerAction('up')" title="앞으로">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 15l-6-6-6 6" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 5v14" />
+                            <path d="M8 9l4-4 4 4" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="moveLayerAction('down')" title="뒤로">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M6 9l6 6 6-6" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 19V5" />
+                            <path d="M16 15l-4 4-4-4" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="moveLayerAction('front')" title="맨 앞으로">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M17 11l-5-5-5 5M17 18l-5-5-5 5" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="17" />
+                            <path d="M8 9l4-4 4 4" />
+                            <line x1="6" y1="19" x2="18" y2="19" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="moveLayerAction('back')" title="맨 뒤로">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M7 13l5 5 5-5M7 6l5 5 5-5" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="7" x2="12" y2="19" />
+                            <path d="M16 15l-4 4-4-4" />
+                            <line x1="6" y1="5" x2="18" y2="5" />
                         </svg>
                     </button>
 
@@ -1421,12 +1443,16 @@
 
                     <button class="figma-tool-btn" id="btn-group" onclick="groupSelected()" title="그룹화" style="display:none;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" />
+                            <path d="M3 3h7v7H3z" />
+                            <path d="M14 3h7v7h-7z" />
+                            <path d="M14 14h7v7h-7z" />
+                            <path d="M3 14h7v7H3z" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" id="btn-ungroup" onclick="ungroupSelected()" title="그룹 해제" style="display:none;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 3v18M3 12h18" />
+                            <path d="M12 3v18" />
+                            <path d="M3 12h18" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" id="btn-mask" onclick="maskWithShape()" title="마스크 적용" style="display:none;">
@@ -1445,17 +1471,17 @@
                     <div class="toolbar-divider"></div>
 
                     <button class="figma-tool-btn" onclick="flipHorizontal()" title="가로 뒤집기">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 4v16" />
-                            <rect x="3" y="7" width="6" height="10" />
-                            <rect x="15" y="7" width="6" height="10" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="4.5" x2="12" y2="19.5" stroke-dasharray="2 2" />
+                            <path d="M3.75 6.5 L9.5 9.75 L9.5 14.25 L3.75 17.5 Z" />
+                            <path d="M20.25 6.5 L14.5 9.75 L14.5 14.25 L20.25 17.5 Z" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="flipVertical()" title="세로 뒤집기">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M4 12h16" />
-                            <rect x="7" y="3" width="10" height="6" />
-                            <rect x="7" y="15" width="10" height="6" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="4.5" y1="12" x2="19.5" y2="12" stroke-dasharray="2 2" />
+                            <path d="M6.5 4.75 L9.75 10.5 L14.25 10.5 L17.5 4.75 Z" />
+                            <path d="M6.5 19.25 L9.75 13.5 L14.25 13.5 L17.5 19.25 Z" />
                         </svg>
                     </button>
                     <button class="figma-tool-btn" onclick="rotateCCW()" title="90° 반시계 회전">
@@ -1500,15 +1526,7 @@
                         </svg>
                     </button>
                 </div>
-
-                <div class="toolbar-divider"></div>
-
-                <!-- PDF Export -->
-                <button class="figma-tool-btn" onclick="handleExportRequest()" title="PDF 내보내기" style="color: white; background: var(--primary);">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                    </svg>
-                </button>
+            </div>
             </div>
         </main>
 
@@ -1518,7 +1536,9 @@
             <div class="sidebar-content">
                 <!-- 정렬 -->
                 <div class="panel-section">
-                    <div class="panel-title">정렬</div>
+                    <div class="panel-title" style="display: flex; align-items: center; gap: 8px;">
+                        <span style="display: inline-flex; align-items: center;">정렬</span>
+                    </div>
                     <div class="xd-align-container">
                         <!-- Horizontal Align Group -->
                         <button class="xd-align-btn" onclick="alignObject('left')" title="왼쪽 정렬">
@@ -1614,6 +1634,12 @@
                         <select id="font-family" onchange="updateTypography('fontFamily', this.value)" style="flex: 1;">
                             <option value="Pretendard">Pretendard</option>
                             <option value="Noto Sans KR">Noto Sans KR</option>
+                            <option value="Noto Serif KR">Noto Serif KR</option>
+                            <option value="Nanum Gothic">Nanum Gothic</option>
+                            <option value="Nanum Myeongjo">Nanum Myeongjo</option>
+                            <option value="Black Han Sans">Black Han Sans</option>
+                            <option value="Do Hyeon">Do Hyeon</option>
+                            <option value="Gowun Dodum">Gowun Dodum</option>
                             <option value="Inter">Inter</option>
                             <option value="Roboto">Roboto</option>
                             <option value="Arial">Arial</option>
@@ -1652,7 +1678,7 @@
                     </div>
                     <div class="property-row">
                         <label class="property-label">정렬</label>
-                        <div class="align-grid" style="border: none; padding: 0;">
+                        <div class="align-grid" style="border: none; padding: 0; align-items: center;">
                             <button class="align-btn" onclick="updateTypography('textAlign', 'left')" title="왼쪽">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <line x1="3" y1="7" x2="17" y2="7"/>
@@ -1914,6 +1940,8 @@
         const PRINT_DPI = 300;
         const MM_TO_PX_SCREEN = SCREEN_DPI / 25.4;
         const MM_TO_PX_PRINT = PRINT_DPI / 25.4;
+        const WORKSPACE_OFFSET_LEFT = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--workspace-offset-left')) || 288;
+        const WORKSPACE_PADDING_RIGHT = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--workspace-padding-right')) || 24;
 
         // --- PRINT SAFETY (opentype.js) ---
         const fontCache = new Map();
@@ -2006,58 +2034,81 @@
             canvas.renderAll();
         }
 
+        function getEyedropperCanvasCoords(e) {
+            if (!canvas) return { clientX: 0, clientY: 0, cssXCanvas: 0, cssYCanvas: 0, canvasX: 0, canvasY: 0, canvasRect: { left: 0, top: 0 } };
+            const canvasEl = canvas.lowerCanvasEl;
+            const canvasRect = canvasEl.getBoundingClientRect();
+            const evt = e.e || e;
+            const touch = evt.touches?.[0];
+            const clientX = touch?.clientX ?? evt.clientX;
+            const clientY = touch?.clientY ?? evt.clientY;
+
+            const scaleX = canvasEl.width / canvasRect.width;
+            const scaleY = canvasEl.height / canvasRect.height;
+
+            const screenX = (clientX - canvasRect.left) * scaleX;
+            const screenY = (clientY - canvasRect.top) * scaleY;
+
+            const vpt = canvas.viewportTransform || fabric.iMatrix;
+            const inverted = fabric.util.invertTransform(vpt);
+            const local = fabric.util.transformPoint(new fabric.Point(screenX, screenY), inverted);
+            // Clamp to canvas drawable area
+            const x = Math.min(Math.max(local.x, 0), canvasEl.width);
+            const y = Math.min(Math.max(local.y, 0), canvasEl.height);
+
+            return {
+                clientX,
+                clientY,
+                cssXCanvas: clientX - canvasRect.left,
+                cssYCanvas: clientY - canvasRect.top,
+                canvasX: Math.floor(x),
+                canvasY: Math.floor(y),
+                canvasRect
+            };
+        }
+
         function updateEyedropperMagnifier(e) {
             if (!eyedropperActive) return;
 
             const magnifier = document.getElementById('eyedropper-magnifier');
             const magnifierCanvas = document.getElementById('magnifier-canvas');
             const magnifierCtx = magnifierCanvas.getContext('2d');
-            const colorLabel = document.getElementById('magnifier-color');
 
-            // Use lowerCanvasEl - the actual rendered canvas with all objects
-            const canvasEl = canvas.lowerCanvasEl;
-            const canvasRect = canvasEl.getBoundingClientRect();
-
-            // Calculate mouse position relative to canvas element (CSS pixels)
-            const cssX = e.e.clientX - canvasRect.left;
-            const cssY = e.e.clientY - canvasRect.top;
+            const wrapperRect = document.getElementById('canvas-container').getBoundingClientRect();
+            const { cssXCanvas, canvasX, canvasY, clientX, clientY } = getEyedropperCanvasCoords(e);
+            const cssXWrapper = clientX - wrapperRect.left;
+            const cssYWrapper = clientY - wrapperRect.top;
 
             // Position magnifier near cursor (offset to bottom-right to not block view)
-            const magnifierSize = 140;
-            const offset = 30;
+            const magnifierSize = 96;
+            const offset = 16;
 
-            let left = cssX + offset;
-            let top = cssY + offset;
+            let left = cssXWrapper + offset;
+            let top = cssYWrapper + offset;
 
             // Keep magnifier within canvas bounds
-            if (left + magnifierSize > canvasRect.width) {
-                left = cssX - magnifierSize - offset;
+            if (left + magnifierSize > wrapperRect.width) {
+                left = cssXWrapper - magnifierSize - offset;
             }
-            if (top + magnifierSize + 40 > canvasRect.height) { // +40 for color label
-                top = cssY - magnifierSize - offset;
+            if (top + magnifierSize + 40 > wrapperRect.height) { // +40 for color label
+                top = cssYWrapper - magnifierSize - offset;
             }
 
             magnifier.style.left = left + 'px';
             magnifier.style.top = top + 'px';
 
-            // Get 2D context from the lower canvas (actual rendered content)
-            const ctx = canvasEl.getContext('2d', { willReadFrequently: true });
-
-            // Account for canvas internal scaling (devicePixelRatio and canvas size vs display size)
-            const scaleX = canvasEl.width / canvasRect.width;
-            const scaleY = canvasEl.height / canvasRect.height;
-
-            // Convert CSS coordinates to canvas pixel coordinates
-            const canvasX = Math.floor(cssX * scaleX);
-            const canvasY = Math.floor(cssY * scaleY);
-
+            const ctx = canvas.lowerCanvasEl.getContext('2d', { willReadFrequently: true });
             const size = 14; // Sample size in canvas pixels (14x14 grid)
+            const sampleWidth = canvas.lowerCanvasEl.width;
+            const sampleHeight = canvas.lowerCanvasEl.height;
+            const startX = Math.max(0, Math.min(canvasX - Math.floor(size / 2), sampleWidth - size));
+            const startY = Math.max(0, Math.min(canvasY - Math.floor(size / 2), sampleHeight - size));
 
             try {
                 // Get image data from canvas at the scaled coordinates
                 const imageData = ctx.getImageData(
-                    canvasX - Math.floor(size / 2),
-                    canvasY - Math.floor(size / 2),
+                    startX,
+                    startY,
                     size,
                     size
                 );
@@ -2070,20 +2121,8 @@
                 const tempCtx = tempCanvas.getContext('2d');
                 tempCtx.putImageData(imageData, 0, 0);
 
-                magnifierCtx.clearRect(0, 0, 140, 140);
-                magnifierCtx.drawImage(tempCanvas, 0, 0, size, size, 0, 0, 140, 140);
-
-                // Get center pixel color
-                const centerPixel = ctx.getImageData(canvasX, canvasY, 1, 1).data;
-                const r = centerPixel[0];
-                const g = centerPixel[1];
-                const b = centerPixel[2];
-                const color = `rgb(${r}, ${g}, ${b})`;
-
-                // Update color label
-                colorLabel.textContent = color;
-                colorLabel.style.background = color;
-                colorLabel.style.color = (r + g + b) / 3 > 128 ? '#000' : '#fff';
+            magnifierCtx.clearRect(0, 0, magnifierSize, magnifierSize);
+            magnifierCtx.drawImage(tempCanvas, 0, 0, size, size, 0, 0, magnifierSize, magnifierSize);
             } catch (err) {
                 // Ignore errors from sampling outside canvas
                 console.warn('Eyedropper sampling error:', err);
@@ -2093,26 +2132,15 @@
         function sampleColorFromCanvas(e) {
             if (!eyedropperActive) return;
 
-            // Use lowerCanvasEl for consistent sampling
-            const canvasEl = canvas.lowerCanvasEl;
-            const canvasRect = canvasEl.getBoundingClientRect();
-
-            // Calculate CSS coordinates
-            const cssX = e.e.clientX - canvasRect.left;
-            const cssY = e.e.clientY - canvasRect.top;
-
-            // Account for canvas internal scaling
-            const scaleX = canvasEl.width / canvasRect.width;
-            const scaleY = canvasEl.height / canvasRect.height;
-
-            // Convert to canvas pixel coordinates
-            const canvasX = Math.floor(cssX * scaleX);
-            const canvasY = Math.floor(cssY * scaleY);
-
-            const ctx = canvasEl.getContext('2d', { willReadFrequently: true });
+            const { canvasX, canvasY } = getEyedropperCanvasCoords(e);
+            const ctx = canvas.lowerCanvasEl.getContext('2d', { willReadFrequently: true });
+            const width = canvas.lowerCanvasEl.width;
+            const height = canvas.lowerCanvasEl.height;
 
             // Sample from scaled coordinates
-            const pixelData = ctx.getImageData(canvasX, canvasY, 1, 1).data;
+            const clampedX = Math.min(Math.max(0, canvasX), width - 1);
+            const clampedY = Math.min(Math.max(0, canvasY), height - 1);
+            const pixelData = ctx.getImageData(clampedX, clampedY, 1, 1).data;
             const r = pixelData[0];
             const g = pixelData[1];
             const b = pixelData[2];
@@ -2149,6 +2177,18 @@
         }
 
         function mmToPx(mm) { return mm * MM_TO_PX_SCREEN; }
+        function getWorkspaceCenterX() {
+            return WORKSPACE_OFFSET_LEFT + (workspaceWidth - WORKSPACE_OFFSET_LEFT - WORKSPACE_PADDING_RIGHT) / 2;
+        }
+        function updateWorkspaceUIPositions() {
+            const centerX = getWorkspaceCenterX();
+            const bottomToolbar = document.querySelector('.bottom-toolbar');
+            if (bottomToolbar) bottomToolbar.style.left = `${centerX}px`;
+            const topToolbar = document.querySelector('.top-toolbar');
+            if (topToolbar) topToolbar.style.left = `${centerX}px`;
+            const warning = document.getElementById('boundary-warning');
+            if (warning) warning.style.left = `${centerX}px`;
+        }
 
         // --- INIT ---
         let objectIdCounter = 0;
@@ -2164,6 +2204,7 @@
             const wrapper = document.getElementById('canvas-container');
             workspaceWidth = wrapper.clientWidth;
             workspaceHeight = wrapper.clientHeight;
+            updateWorkspaceUIPositions();
 
             const baseToObject = fabric.Object.prototype.toObject;
             fabric.Object.prototype.toObject = function (propertiesToInclude) {
@@ -2234,9 +2275,10 @@
 
             const w = mmToPx(widthMm);
             const h = mmToPx(heightMm);
+            const centerX = getWorkspaceCenterX();
 
             artboard = new fabric.Rect({
-                left: (workspaceWidth - w) / 2,
+                left: centerX - w / 2,
                 top: (workspaceHeight - h) / 2,
                 width: w,
                 height: h,
@@ -2258,6 +2300,7 @@
             document.getElementById('custom-height-input').value = heightMm;
 
             fitToScreen();
+            updateWorkspaceUIPositions();
         }
 
         // --- EVENTS ---
@@ -2353,13 +2396,30 @@
                 });
             });
 
-            canvas.on('selection:created', () => {
+            const sanitizeSelection = (e) => {
+                const selected = (e && e.selected) || [];
+                const filtered = selected.filter(o => !o.isArtboard && !o.excludeFromExport);
+                if (selected.length && filtered.length !== selected.length) {
+                    if (filtered.length === 0) {
+                        canvas.discardActiveObject();
+                    } else if (filtered.length === 1) {
+                        canvas.setActiveObject(filtered[0]);
+                    } else {
+                        const sel = new fabric.ActiveSelection(filtered, { canvas });
+                        canvas.setActiveObject(sel);
+                    }
+                }
+            };
+
+            canvas.on('selection:created', (e) => {
+                sanitizeSelection(e);
                 updateFloatingToolbar();
                 requestAnimationFrame(updateColorPickers);
                 updateImageInfoLabel();
                 renderLayerList();
             });
-            canvas.on('selection:updated', () => {
+            canvas.on('selection:updated', (e) => {
+                sanitizeSelection(e);
                 updateFloatingToolbar();
                 requestAnimationFrame(updateColorPickers);
                 updateImageInfoLabel();
@@ -2399,6 +2459,11 @@
                 const target = opt.target;
                 if (!target || !target.group || !target.group.isTextStrokeGroup) return;
                 syncTextStrokeGroup(target.group);
+            });
+
+            // Update UI alignment after every render for pixel-perfect centering
+            canvas.on('after:render', () => {
+                updateCanvasSizeLabel();
             });
 
             window.addEventListener('keydown', handleKeydown);
@@ -2472,7 +2537,7 @@
             const ratioY = newH / oldH;
 
             // New artboard position (same logic as createArtboard)
-            const nextArtLeft = (workspaceWidth - newW) / 2;
+            const nextArtLeft = getWorkspaceCenterX() - newW / 2;
             const nextArtTop = (workspaceHeight - newH) / 2;
 
             const objects = canvas.getObjects().filter(o => !o.excludeFromExport);
@@ -2676,17 +2741,19 @@
                 (workspaceWidth - padding) / w,
                 (workspaceHeight - padding) / h
             );
-            canvas.setZoom(scale);
+            const finalScale = Math.min(scale, 2); // Cap zoom to ~200% for small presets
+            canvas.setZoom(finalScale);
             const vpt = canvas.viewportTransform;
-            vpt[4] = workspaceWidth / 2 - (artboard.left + w / 2) * scale;
-            vpt[5] = workspaceHeight / 2 - (artboard.top + h / 2) * scale;
+            const workspaceCenter = getWorkspaceCenterX();
+            vpt[4] = workspaceCenter - (artboard.left + w / 2) * finalScale;
+            vpt[5] = workspaceHeight / 2 - (artboard.top + h / 2) * finalScale;
             canvas.requestRenderAll();
             updateZoomDisplay();
             updateCanvasSizeLabel();
         }
 
         function updateCanvasSizeLabel() {
-            // Fixed position - no update needed
+            // Fixed positions via CSS - no dynamic updates needed
         }
 
         function updateImageInfoLabel() {
@@ -2711,6 +2778,7 @@
         function toggleSection(sectionId) {
             const content = document.getElementById(`content-${sectionId}`);
             const icon = document.getElementById(`icon-${sectionId}`);
+            if (!content || !icon) return;
 
             if (content.classList.contains('collapsed')) {
                 content.classList.remove('collapsed');
@@ -2732,7 +2800,9 @@
         window.addEventListener('load', () => {
             ['presets', 'custom-size', 'layers'].forEach(id => {
                 const content = document.getElementById(`content-${id}`);
-                content.style.maxHeight = content.scrollHeight + 'px';
+                if (content) {
+                    content.style.maxHeight = content.scrollHeight + 'px';
+                }
             });
         });
 
@@ -2796,7 +2866,33 @@
         // Left toolbar tool selection
         let currentTool = 'select';
 
+        function setPanelTitle(text) {
+            const titleEl = document.getElementById('layer-panel-title');
+            if (titleEl) titleEl.innerText = text;
+        }
+
+        function exitArtboardMode() {
+            const presets = document.getElementById('print-presets-section');
+            const layerList = document.getElementById('regular-layer-list');
+            const closeBtn = document.getElementById('panel-close-btn');
+            currentTool = 'select';
+            document.querySelectorAll('.left-toolbar-btn').forEach(btn => btn.classList.remove('active'));
+            if (presets) presets.style.display = 'none';
+            if (layerList) layerList.style.display = 'block';
+            if (closeBtn) closeBtn.style.display = 'none';
+            setPanelTitle('레이어');
+            canvas.defaultCursor = 'default';
+            canvas.selection = true;
+            canvas.discardActiveObject();
+            canvas.requestRenderAll();
+        }
+
         function selectTool(tool) {
+            if (tool === 'artboard' && currentTool === 'artboard') {
+                exitArtboardMode();
+                return;
+            }
+
             // Remove active class from all toolbar buttons
             document.querySelectorAll('.left-toolbar-btn').forEach(btn => {
                 btn.classList.remove('active');
@@ -2817,6 +2913,9 @@
                 // Show regular layer list
                 document.getElementById('print-presets-section').style.display = 'none';
                 document.getElementById('regular-layer-list').style.display = 'block';
+                const closeBtn = document.getElementById('panel-close-btn');
+                if (closeBtn) closeBtn.style.display = 'none';
+                setPanelTitle('레이어');
             } else if (tool === 'artboard') {
                 // Select artboard and show presets
                 if (artboard) {
@@ -2825,6 +2924,9 @@
                 }
                 document.getElementById('print-presets-section').style.display = 'block';
                 document.getElementById('regular-layer-list').style.display = 'none';
+                const closeBtn = document.getElementById('panel-close-btn');
+                if (closeBtn) closeBtn.style.display = 'inline-flex';
+                setPanelTitle('프리셋');
             } else if (tool === 'text') {
                 addText();
                 // Reset to select tool after adding
@@ -2871,12 +2973,15 @@
             if (artboard) {
                 const newWidth = mmToPx(width);
                 const newHeight = mmToPx(height);
+                const centerX = getWorkspaceCenterX();
 
                 artboard.set({
                     width: newWidth,
                     height: newHeight,
                     scaleX: 1,
-                    scaleY: 1
+                    scaleY: 1,
+                    left: centerX - newWidth / 2,
+                    top: (workspaceHeight - newHeight) / 2
                 });
 
                 artboard.setCoords();
@@ -2885,9 +2990,14 @@
 
             // Update canvas label
             document.getElementById('canvas-size-label').innerText = `Size : ${width} × ${height} mm`;
+            const customWidthInput = document.getElementById('custom-width-input');
+            const customHeightInput = document.getElementById('custom-height-input');
+            if (customWidthInput) customWidthInput.value = width;
+            if (customHeightInput) customHeightInput.value = height;
 
             // Fit to screen
             fitToScreen();
+            updateWorkspaceUIPositions();
 
             saveHistory();
         }
@@ -2901,9 +3011,9 @@
             const props = {
                 left: center.x,
                 top: center.y,
-                fill: '#3B82F6',
+                fill: 'transparent',
                 stroke: '#1F2937',
-                strokeWidth: 0,
+                strokeWidth: 1,
                 strokeUniform: true,  // Uniform stroke scaling
                 paintFirst: 'fill',   // Paint fill before stroke
                 originX: 'center',
@@ -2983,27 +3093,105 @@
             canvas.renderAll();
         }
 
-        function handleImageUpload(input) {
+        function placeAtCenterAndSelect(obj, targetWidthFraction = 0.4) {
+            const center = artboard.getCenterPoint();
+            const minDim = Math.min(artboard.width, artboard.height);
+            const targetWidth = minDim * targetWidthFraction;
+            obj.set({ left: center.x, top: center.y, originX: 'center', originY: 'center', opacity: 1 });
+            if (obj.scaleToWidth) obj.scaleToWidth(targetWidth);
+            ensureObjectId(obj);
+            canvas.add(obj);
+            canvas.setActiveObject(obj);
+            canvas.renderAll();
+        }
+
+        async function handleImageUpload(input) {
             const file = input.files[0];
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                fabric.Image.fromURL(e.target.result, (img) => {
-                    const center = artboard.getCenterPoint();
-                    const minDim = Math.min(artboard.width, artboard.height);
-                    const targetWidth = minDim * 0.4; // 40% of artboard
 
-                    img.set({ left: center.x, top: center.y, originX: 'center', originY: 'center', opacity: 1 });
-                    img.src = e.target.result;
-                    ensureObjectId(img);
-                    img.scaleToWidth(targetWidth);
-                    canvas.add(img);
-                    canvas.setActiveObject(img);
-                    canvas.renderAll();
+            const nameLower = file.name.toLowerCase();
+            const type = file.type;
+
+            try {
+                if (nameLower.endsWith('.ai')) {
+                    alert('AI 파일은 현재 직접 불러올 수 없습니다. PDF/SVG/PNG로 변환 후 업로드해주세요.');
+                    return;
+                }
+
+                if (nameLower.endsWith('.pdf') || type === 'application/pdf') {
+                    await importPdf(file);
+                    return;
+                }
+
+                if (nameLower.endsWith('.svg') || type === 'image/svg+xml') {
+                    await importSvg(file);
+                    return;
+                }
+
+                // Fallback to raster image
+                const dataUrl = await fileToDataURL(file);
+                fabric.Image.fromURL(dataUrl, (img) => {
+                    placeAtCenterAndSelect(img);
                 });
-            };
-            reader.readAsDataURL(file);
-            input.value = '';  // Reset input to allow same file selection
+            } catch (err) {
+                console.error('파일 불러오기 실패:', err);
+                alert('파일을 불러오는 중 문제가 발생했습니다: ' + err.message);
+            } finally {
+                input.value = '';
+            }
+        }
+
+        function fileToDataURL(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function fileToText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsText(file);
+            });
+        }
+
+        async function importSvg(file) {
+            const svgText = await fileToText(file);
+            return new Promise((resolve, reject) => {
+                fabric.loadSVGFromString(svgText, (objects, options) => {
+                    if (!objects || !objects.length) {
+                        reject(new Error('SVG를 파싱할 수 없습니다.'));
+                        return;
+                    }
+                    const svgObj = fabric.util.groupSVGElements(objects, options);
+                    placeAtCenterAndSelect(svgObj, 0.6); // 조금 더 크게
+                    resolve();
+                });
+            });
+        }
+
+        async function importPdf(file) {
+            if (!window['pdfjsLib']) throw new Error('PDF.js가 로드되지 않았습니다.');
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            const page = await pdf.getPage(1);
+            const viewport = page.getViewport({ scale: 2 });
+            const canvasEl = document.createElement('canvas');
+            canvasEl.width = viewport.width;
+            canvasEl.height = viewport.height;
+            const ctx = canvasEl.getContext('2d');
+            await page.render({ canvasContext: ctx, viewport }).promise;
+            const dataUrl = canvasEl.toDataURL('image/png');
+            return new Promise((resolve) => {
+                fabric.Image.fromURL(dataUrl, (img) => {
+                    placeAtCenterAndSelect(img, 0.7);
+                    resolve();
+                });
+            });
         }
 
         function isTextObject(obj) {
@@ -3187,15 +3375,24 @@
 
             // Show fill and stroke panels when object is selected
             const isLine = obj.type === 'line';
-            document.getElementById('prop-fill').style.display = isLine ? 'none' : 'block';
-            document.getElementById('prop-stroke').style.display = 'block';
+            const isGroupLike = obj.type === 'group' || obj.isMaskGroup || obj.isFrameGroup;
+            const isImageLike = obj.type === 'image' || obj.isFrameContent || obj.isMaskGroup || obj.isFrameGroup;
+
+            const fillPanel = document.getElementById('prop-fill');
+            const strokePanel = document.getElementById('prop-stroke');
+
+            const allowFillStroke = !isGroupLike && !isImageLike;
+            if (fillPanel) fillPanel.style.display = allowFillStroke && !isLine ? 'block' : 'none';
+            if (strokePanel) strokePanel.style.display = allowFillStroke ? 'block' : 'none';
 
             const textTarget = obj.isTextStrokeGroup ? (getTextStrokeGroupParts(obj)?.fill || obj) : obj;
             if (isTextObject(textTarget)) {
                 document.getElementById('prop-text').style.display = 'block';
-                document.getElementById('font-family').value = textTarget.fontFamily || 'Pretendard';
+                const fontFamily = textTarget.fontFamily || 'Pretendard';
+                const chosenWeight = setFontWeightOptions(fontFamily, textTarget.fontWeight || '400');
+                document.getElementById('font-family').value = fontFamily;
                 document.getElementById('font-size').value = Math.round(textTarget.fontSize || 24);
-                document.getElementById('font-weight').value = textTarget.fontWeight || 'normal';
+                document.getElementById('font-weight').value = chosenWeight;
                 document.getElementById('line-height').value = textTarget.lineHeight || 1.16;
                 document.getElementById('char-spacing').value = textTarget.charSpacing || 0;
             } else {
@@ -3303,10 +3500,14 @@
             document.getElementById('global-opacity-val').innerText = opacity;
 
             // Shadow
-            const hasShadow = obj.shadow !== null && obj.shadow !== undefined;
-            document.getElementById('shadow-enabled').checked = hasShadow;
-            document.getElementById('shadow-settings').style.display = hasShadow ? 'block' : 'none';
-            if (hasShadow) {
+            const shadowAllowed = !(obj.isMaskGroup || obj.isFrameGroup);
+            const hasShadow = shadowAllowed && obj.shadow !== null && obj.shadow !== undefined;
+            const shadowEnabled = document.getElementById('shadow-enabled');
+            const shadowSettings = document.getElementById('shadow-settings');
+            if (shadowEnabled) shadowEnabled.disabled = !shadowAllowed;
+            if (shadowSettings) shadowSettings.style.display = hasShadow ? 'block' : 'none';
+            if (shadowEnabled) shadowEnabled.checked = hasShadow && shadowAllowed;
+            if (hasShadow && shadowAllowed) {
                 const shadow = obj.shadow;
                 const shadowColor = shadow.color || 'rgba(0,0,0,0.5)';
                 document.getElementById('shadow-color-swatch').style.background = shadowColor;
@@ -3316,6 +3517,8 @@
                 document.getElementById('shadow-offset-x-val').innerText = shadow.offsetX || 5;
                 document.getElementById('shadow-offset-y').value = shadow.offsetY || 5;
                 document.getElementById('shadow-offset-y-val').innerText = shadow.offsetY || 5;
+            } else if (shadowSettings) {
+                shadowSettings.style.display = 'none';
             }
 
             const layerTab = document.getElementById('tab-layers');
@@ -3347,16 +3550,25 @@
         function changeFillColor(val) {
             const obj = canvas.getActiveObject();
             if (!obj) return;
-            if (obj.isTextStrokeGroup) {
-                const parts = getTextStrokeGroupParts(obj);
-                if (parts && parts.fill) {
-                    parts.fill.set('fill', val);
-                    syncTextStrokeGroup(obj);
-                    setObjectColorData(parts.fill, 'fill', val);
+
+            const applyFill = (target) => {
+                if (target.isTextStrokeGroup) {
+                    const parts = getTextStrokeGroupParts(target);
+                    if (parts && parts.fill) {
+                        parts.fill.set('fill', val);
+                        syncTextStrokeGroup(target);
+                        setObjectColorData(parts.fill, 'fill', val);
+                    }
+                } else {
+                    target.set('fill', val);
+                    setObjectColorData(target, 'fill', val);
                 }
+            };
+
+            if (obj.type === 'activeSelection') {
+                obj.forEachObject(applyFill);
             } else {
-                obj.set('fill', val);
-                setObjectColorData(obj, 'fill', val);
+                applyFill(obj);
             }
             document.getElementById('fill-swatch').style.background = val;
             canvas.renderAll();
@@ -3368,16 +3580,25 @@
             if (!obj) return;
             const isChecked = document.getElementById('transparent-check').checked;
             const color = isChecked ? 'transparent' : document.getElementById('fill-swatch').style.background;
-            if (obj.isTextStrokeGroup) {
-                const parts = getTextStrokeGroupParts(obj);
-                if (parts && parts.fill) {
-                    parts.fill.set('fill', color);
-                    syncTextStrokeGroup(obj);
-                    if (color !== 'transparent') setObjectColorData(parts.fill, 'fill', color);
+
+            const applyFill = (target) => {
+                if (target.isTextStrokeGroup) {
+                    const parts = getTextStrokeGroupParts(target);
+                    if (parts && parts.fill) {
+                        parts.fill.set('fill', color);
+                        syncTextStrokeGroup(target);
+                        if (color !== 'transparent') setObjectColorData(parts.fill, 'fill', color);
+                    }
+                } else {
+                    target.set('fill', color);
+                    if (color !== 'transparent') setObjectColorData(target, 'fill', color);
                 }
+            };
+
+            if (obj.type === 'activeSelection') {
+                obj.forEachObject(applyFill);
             } else {
-                obj.set('fill', color);
-                if (color !== 'transparent') setObjectColorData(obj, 'fill', color);
+                applyFill(obj);
             }
             canvas.renderAll();
             saveHistory();
@@ -3390,29 +3611,45 @@
             const isEnabled = document.getElementById('fill-enabled').checked;
             const fillSettings = document.getElementById('fill-settings');
 
-            if (isEnabled) {
-                const color = document.getElementById('fill-swatch').style.background || '#3B82F6';
-                if (obj.isTextStrokeGroup) {
-                    const parts = getTextStrokeGroupParts(obj);
+            const enableFill = (target, color) => {
+                if (target.isTextStrokeGroup) {
+                    const parts = getTextStrokeGroupParts(target);
                     if (parts && parts.fill) {
                         parts.fill.set('fill', color);
-                        syncTextStrokeGroup(obj);
+                        syncTextStrokeGroup(target);
                         setObjectColorData(parts.fill, 'fill', color);
                     }
                 } else {
-                    obj.set('fill', color);
-                    setObjectColorData(obj, 'fill', color);
+                    target.set('fill', color);
+                    setObjectColorData(target, 'fill', color);
+                }
+            };
+
+            const disableFill = (target) => {
+                if (target.isTextStrokeGroup) {
+                    const parts = getTextStrokeGroupParts(target);
+                    if (parts && parts.fill) {
+                        parts.fill.set('fill', 'transparent');
+                        syncTextStrokeGroup(target);
+                    }
+                } else {
+                    target.set('fill', 'transparent');
+                }
+            };
+
+            if (isEnabled) {
+                const color = document.getElementById('fill-swatch').style.background || '#3B82F6';
+                if (obj.type === 'activeSelection') {
+                    obj.forEachObject(o => enableFill(o, color));
+                } else {
+                    enableFill(obj, color);
                 }
                 fillSettings.style.display = 'block';
             } else {
-                if (obj.isTextStrokeGroup) {
-                    const parts = getTextStrokeGroupParts(obj);
-                    if (parts && parts.fill) {
-                        parts.fill.set('fill', 'transparent');
-                        syncTextStrokeGroup(obj);
-                    }
+                if (obj.type === 'activeSelection') {
+                    obj.forEachObject(disableFill);
                 } else {
-                    obj.set('fill', 'transparent');
+                    disableFill(obj);
                 }
                 fillSettings.style.display = 'none';
             }
@@ -3427,14 +3664,22 @@
             const isEnabled = document.getElementById('stroke-enabled').checked;
             const strokeSettings = document.getElementById('stroke-settings');
 
-            if (isEnabled) {
-                const strokeWidth = parseInt(document.getElementById('stroke-width-input').value) || 1;
-                applyStrokeWidth(obj, strokeWidth);
-                strokeSettings.style.display = 'block';
+            const applyToggle = (target) => {
+                if (isEnabled) {
+                    const strokeWidth = parseInt(document.getElementById('stroke-width-input').value) || 1;
+                    applyStrokeWidth(target, strokeWidth);
+                } else {
+                    applyStrokeWidth(target, 0);
+                }
+            };
+
+            if (obj.type === 'activeSelection') {
+                obj.forEachObject(applyToggle);
             } else {
-                applyStrokeWidth(obj, 0);
-                strokeSettings.style.display = 'none';
+                applyToggle(obj);
             }
+
+            strokeSettings.style.display = isEnabled ? 'block' : 'none';
             canvas.renderAll();
             saveHistory();
         }
@@ -3443,26 +3688,35 @@
             const obj = canvas.getActiveObject();
             if (!obj) return;
 
-            const dashLen = parseInt(document.getElementById('dash-length').value) || 0;
-            const dashGap = parseInt(document.getElementById('dash-gap').value) || 0;
+            const rawLen = parseInt(document.getElementById('dash-length').value) || 0;
+            const rawGap = parseInt(document.getElementById('dash-gap').value) || 0;
 
-            const target = obj.isTextStrokeGroup ? getTextStrokeGroupParts(obj)?.stroke : obj;
-            if (!target) return;
+            const applyDash = (target) => {
+                const strokeTarget = target.isTextStrokeGroup ? getTextStrokeGroupParts(target)?.stroke : target;
+                if (!strokeTarget) return;
 
-            if (dashLen > 0 && dashGap > 0) {
-                target.set('strokeDashArray', [dashLen, dashGap]);
-                target._userStrokeDashed = true;
-                target._dashLength = dashLen;
-                target._dashGap = dashGap;
+                if (rawLen > 0 || rawGap > 0) {
+                    const dashLen = Math.max(1, rawLen || rawGap || 4);
+                    const dashGap = Math.max(1, rawGap || rawLen || 4);
+                    strokeTarget.set('strokeDashArray', [dashLen, dashGap]);
+                    strokeTarget._userStrokeDashed = true;
+                    strokeTarget._dashLength = dashLen;
+                    strokeTarget._dashGap = dashGap;
+                } else {
+                    strokeTarget.set('strokeDashArray', null);
+                    strokeTarget._userStrokeDashed = false;
+                }
+
+                if (target.isTextStrokeGroup) {
+                    strokeTarget.dirty = true;
+                    target.dirty = true;
+                }
+            };
+
+            if (obj.type === 'activeSelection') {
+                obj.forEachObject(applyDash);
             } else {
-                target.set('strokeDashArray', null);
-                target._userStrokeDashed = false;
-            }
-
-            // Mark as dirty to force re-render for text stroke groups
-            if (obj.isTextStrokeGroup) {
-                target.dirty = true;
-                obj.dirty = true;
+                applyDash(obj);
             }
 
             canvas.renderAll();
@@ -3471,38 +3725,49 @@
 
         function changeStrokeColor(val) {
             const obj = canvas.getActiveObject();
-            if (obj) {
-                if (obj.isTextStrokeGroup) {
-                    const parts = getTextStrokeGroupParts(obj);
+            if (!obj) return;
+
+            const applyStroke = (target) => {
+                if (target.isTextStrokeGroup) {
+                    const parts = getTextStrokeGroupParts(target);
                     if (parts && parts.stroke) {
                         parts.stroke.set('stroke', val);
-                        obj.textStrokeColor = val;
+                        target.textStrokeColor = val;
                         setObjectColorData(parts.stroke, 'stroke', val);
-                        // Mark as dirty to force re-render
                         parts.stroke.dirty = true;
-                        obj.dirty = true;
+                        target.dirty = true;
                     }
                 } else {
-                    obj.set('stroke', val);
-                    setObjectColorData(obj, 'stroke', val);
+                    target.set('stroke', val);
+                    setObjectColorData(target, 'stroke', val);
                 }
-                document.getElementById('stroke-swatch').style.background = val;
-                canvas.renderAll();
-                saveHistory();
+            };
+
+            if (obj.type === 'activeSelection') {
+                obj.forEachObject(applyStroke);
+            } else {
+                applyStroke(obj);
             }
+
+            document.getElementById('stroke-swatch').style.background = val;
+            canvas.renderAll();
+            saveHistory();
         }
 
         function changeStrokeWidth(valPx) {
             const obj = canvas.getActiveObject();
-            if (obj) {
-                const px = parseFloat(valPx);
+            if (!obj) return;
+
+            const px = parseFloat(valPx);
+            if (obj.type === 'activeSelection') {
+                obj.forEachObject(o => applyStrokeWidth(o, px));
+            } else {
                 applyStrokeWidth(obj, px);
-                // Update the input value
-                const widthInput = document.getElementById('stroke-width-input');
-                if (widthInput) widthInput.value = Math.max(1, px);
-                canvas.renderAll();
-                saveHistory();
             }
+            const widthInput = document.getElementById('stroke-width-input');
+            if (widthInput) widthInput.value = Math.max(1, px);
+            canvas.renderAll();
+            saveHistory();
         }
 
         function changeStrokeDashed() {
@@ -3516,8 +3781,10 @@
             if (!target) return;
 
             if (checked) {
-                const dashLen = parseInt(document.getElementById('dash-length').value) || 8;
-                const dashGap = parseInt(document.getElementById('dash-gap').value) || 4;
+                const rawLen = parseInt(document.getElementById('dash-length').value) || 0;
+                const rawGap = parseInt(document.getElementById('dash-gap').value) || 0;
+                const dashLen = Math.max(1, rawLen || rawGap || 8);
+                const dashGap = Math.max(1, rawGap || rawLen || 4);
                 target.set('strokeDashArray', [dashLen, dashGap]);
                 target._userStrokeDashed = true;
                 target._dashLength = dashLen;
@@ -3750,9 +4017,60 @@
             canvas.renderAll();
         }
 
+        const FONT_WEIGHT_MAP = {
+            'Pretendard': ['400', '500', '700', '900'],
+            'Noto Sans KR': ['400', '700'],
+            'Noto Serif KR': ['400', '700'],
+            'Nanum Gothic': ['400', '700'],
+            'Nanum Myeongjo': ['400', '700'],
+            'Black Han Sans': ['400'],
+            'Do Hyeon': ['400'],
+            'Gowun Dodum': ['400'],
+            'Inter': ['400', '700'],
+            'Roboto': ['400', '700'],
+            'Arial': ['400', '700'],
+            'Georgia': ['400', '700'],
+            '__default': ['400', '700']
+        };
+
+        function ensureFontWeight(family, weight) {
+            const list = FONT_WEIGHT_MAP[family] || FONT_WEIGHT_MAP['__default'];
+            const normalized = (weight || '400').toString();
+            return list.includes(normalized) ? normalized : list[0];
+        }
+
+        function setFontWeightOptions(family, currentWeight) {
+            const select = document.getElementById('font-weight');
+            const labels = {
+                '100': 'Thin (100)',
+                '300': 'Light (300)',
+                '400': 'Regular (400)',
+                '500': 'Medium (500)',
+                '700': 'Bold (700)',
+                '900': 'Black (900)'
+            };
+            const weights = FONT_WEIGHT_MAP[family] || FONT_WEIGHT_MAP['__default'];
+            const chosen = ensureFontWeight(family, currentWeight);
+            if (!select) return chosen;
+            select.innerHTML = '';
+            weights.forEach(w => {
+                const opt = document.createElement('option');
+                opt.value = w;
+                opt.innerText = labels[w] || w;
+                select.appendChild(opt);
+            });
+            select.value = chosen;
+            return chosen;
+        }
+
         function updateTypography(prop, val) {
             const active = canvas.getActiveObject();
             if (!active) return;
+
+            let normalizedWeight = null;
+            if (prop === 'fontFamily') {
+                normalizedWeight = setFontWeightOptions(val, active.fontWeight || '400');
+            }
 
             const applyTypography = (o) => {
                 if (!isTextObject(o)) return;
@@ -3760,9 +4078,18 @@
                     o.set(prop, parseFloat(val));
                 } else if (prop === 'lineHeight') {
                     o.set(prop, parseFloat(val));
+                } else if (prop === 'fontFamily') {
+                    o.set(prop, val);
+                    if (normalizedWeight) o.set('fontWeight', normalizedWeight);
+                } else if (prop === 'fontWeight') {
+                    const safeWeight = ensureFontWeight(o.fontFamily || active.fontFamily || 'Pretendard', val);
+                    o.set('fontWeight', safeWeight);
                 } else {
                     o.set(prop, val);
                 }
+                o.dirty = true;
+                if (o.initDimensions) o.initDimensions();
+                if (o.setCoords) o.setCoords();
             };
 
             const update = (o) => {
@@ -3771,9 +4098,9 @@
                     if (!parts) return;
                     applyTypography(parts.fill);
                     applyTypography(parts.stroke);
-                    o._calcBounds();
-                    o._updateObjectsCoords();
-                    o.setCoords();
+                    if (o._calcBounds) o._calcBounds();
+                    if (o._updateObjectsCoords) o._updateObjectsCoords();
+                    if (o.setCoords) o.setCoords();
                     return;
                 }
                 applyTypography(o);
@@ -3794,6 +4121,13 @@
         function handleFontUpload(input) {
             const file = input.files[0];
             if (!file) return;
+            const allowed = ['ttf', 'otf'];
+            const ext = (file.name.split('.').pop() || '').toLowerCase();
+            if (!allowed.includes(ext)) {
+                alert('지원되지 않는 글꼴 형식입니다. .ttf 또는 .otf 파일을 사용해주세요.');
+                input.value = '';
+                return;
+            }
 
             const reader = new FileReader();
             reader.onload = async function (e) {
@@ -3801,7 +4135,7 @@
                 const fontData = e.target.result;
 
                 try {
-                    const fontFace = new FontFace(fontName, fontData);
+                    const fontFace = new FontFace(fontName, `url(${fontData}) format("${ext === 'otf' ? 'opentype' : 'truetype'}")`);
                     await fontFace.load();
                     document.fonts.add(fontFace);
 
@@ -3812,6 +4146,10 @@
                     opt.innerText = `Custom: ${file.name}`;
                     sel.add(opt);
                     sel.value = fontName;
+                    const chosenWeight = setFontWeightOptions(fontName, '400');
+                    document.getElementById('font-weight').value = chosenWeight;
+                    await document.fonts.load(`1em "${fontName}"`);
+                    canvas.requestRenderAll();
 
                     // Store for PDF export (jsPDF needs base64)
                     const base64 = fontData.split(',')[1];
@@ -3821,7 +4159,7 @@
                     alert(`글꼴 '${file.name}'이 업로드되었습니다.`);
                 } catch (err) {
                     console.error('Font Load Error:', err);
-                    alert('글꼴을 불러오는 중 오류가 발생했습니다.');
+                    alert('글꼴을 불러오는 중 오류가 발생했습니다. 지원되는 .ttf / .otf 파일인지 확인해주세요.');
                 }
             };
             reader.readAsDataURL(file);
@@ -4053,18 +4391,23 @@
                         '_strokeOutsideWidth',
                         '_strokeBaseWidth',
                         '_strokeBaseHeight',
-                        '_strokeBaseRadius',
-                        'isTextStrokeGroup',
-                        'textStrokeWidth',
-                        'textStrokeColor',
-                        'isTextStrokeOutline',
-                        'isTextFill',
-                        'isFrameGroup',
-                        'frameTargetId',
-                        'isFrameShape',
-                        'isFrameContent',
-                        'objectCaching'
-                    ]))
+                    '_strokeBaseRadius',
+                    'isTextStrokeGroup',
+                    'textStrokeWidth',
+                    'textStrokeColor',
+                    'isTextStrokeOutline',
+                    'isTextFill',
+                    'isFrameGroup',
+                    'frameTargetId',
+                    'isFrameShape',
+                    'isFrameContent',
+                    'objectCaching',
+                    'isMaskGroup',
+                    'isMask',
+                    'maskTargetId',
+                    '_maskBoundsNormalized',
+                    '_frameBoundsNormalized'
+                ]))
             };
             history = history.slice(0, historyStep + 1);
             history.push(JSON.stringify(json));
@@ -4519,8 +4862,9 @@
 
             // Toggle Group/Ungroup buttons
             document.getElementById('btn-group').style.display = (obj.type === 'activeSelection') ? 'flex' : 'none';
-            // Hide ungroup button for text stroke groups
-            document.getElementById('btn-ungroup').style.display = (obj.type === 'group' && !obj.isTextStrokeGroup) ? 'flex' : 'none';
+            // Hide ungroup button for text stroke groups and mask groups
+            const canUngroup = obj.type === 'group' && !obj.isTextStrokeGroup && !obj.isMaskGroup && !obj.isFrameGroup;
+            document.getElementById('btn-ungroup').style.display = canUngroup ? 'flex' : 'none';
 
             // Mask buttons
             const isMulti = obj.type === 'activeSelection' && obj._objects && obj._objects.length === 2;
@@ -4629,6 +4973,11 @@
             // Prevent ungrouping text stroke groups
             if (active.isTextStrokeGroup) {
                 console.warn('Text stroke groups cannot be ungrouped');
+                return;
+            }
+            // Prevent ungrouping mask/frame groups; use mask release instead
+            if (active.isMaskGroup || active.isFrameGroup) {
+                console.warn('Mask or frame groups must be released with the mask action');
                 return;
             }
 
@@ -5114,32 +5463,24 @@
             if (!group || (!group.isMaskGroup && !group.isFrameGroup)) return;
 
             const objects = group._objects || [];
-
-            // Calculate absolute positions before destroying group
             const objectsWithPositions = objects.map(obj => {
-                // Get object's center point in canvas coordinates
-                const matrix = group.calcTransformMatrix();
-                const point = fabric.util.transformPoint(
-                    { x: obj.left, y: obj.top },
-                    matrix
-                );
-
+                const worldCenter = fabric.util.transformPoint(new fabric.Point(0, 0), obj.calcTransformMatrix());
                 return {
-                    obj: obj,
-                    left: point.x,
-                    top: point.y,
+                    obj,
+                    center: worldCenter,
                     angle: obj.angle + group.angle,
                     scaleX: obj.scaleX * group.scaleX,
-                    scaleY: obj.scaleY * group.scaleY
+                    scaleY: obj.scaleY * group.scaleY,
+                    originX: obj.originX || 'center',
+                    originY: obj.originY || 'center'
                 };
             });
 
-            // Clear group and remove it
             group._objects = [];
             canvas.remove(group);
 
-            // Add objects back with restored positions
-            objectsWithPositions.forEach(({ obj, left, top, angle, scaleX, scaleY }) => {
+            const restored = [];
+            objectsWithPositions.forEach(({ obj, center, angle, scaleX, scaleY, originX, originY }) => {
                 if (obj.isFrameShape) {
                     obj.set({ selectable: true, evented: true });
                     obj.isFrameShape = false;
@@ -5158,21 +5499,27 @@
                     obj.maskTargetId = null;
                 }
 
-                // Restore absolute position and transforms
+                obj.group = null;
                 obj.set({
-                    left: left,
-                    top: top,
-                    angle: angle,
-                    scaleX: scaleX,
-                    scaleY: scaleY
+                    angle,
+                    scaleX,
+                    scaleY
                 });
+                obj.setPositionByOrigin(center, originX, originY);
 
                 obj.setCoords();
                 ensureObjectId(obj);
                 canvas.add(obj);
+                restored.push(obj);
             });
 
             canvas.discardActiveObject();
+            if (restored.length > 1) {
+                const sel = new fabric.ActiveSelection(restored, { canvas });
+                canvas.setActiveObject(sel);
+            } else if (restored.length === 1) {
+                canvas.setActiveObject(restored[0]);
+            }
             canvas.requestRenderAll();
             renderLayerList();
             saveHistory();
