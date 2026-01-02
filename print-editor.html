@@ -1968,6 +1968,7 @@
         let historyStep = -1;
         let isUndoing = false;
         let isUnmasking = false;
+        const MAX_HISTORY_SIZE = 50; // Limit history to prevent memory issues
 
         // Color Picker State
         let pickerTarget = null;
@@ -2173,7 +2174,9 @@
                 selectionBorderColor: '#3B82F6',
                 selectionLineWidth: 1.5,
                 enableRetinaScaling: true,
-                renderOnAddRemove: true
+                renderOnAddRemove: true,
+                // Memory optimization: disable object caching to reduce memory usage
+                objectCaching: false
             });
 
             // Set Professional Selection Styles
@@ -3038,6 +3041,7 @@
                 fontFamily: 'Pretendard',
                 fontSize: dynamicFontSize,
                 fill: '#1F2937',
+                objectCaching: false,
                 stroke: null,
                 strokeWidth: 0,
                 originX: 'center',
@@ -3088,6 +3092,13 @@
                 // Fallback to raster image
                 const dataUrl = await fileToDataURL(file);
                 fabric.Image.fromURL(dataUrl, (img) => {
+                    // Memory optimization: limit image size to prevent memory issues
+                    const MAX_IMAGE_SIZE = 4096; // Max 4096px on either dimension
+                    if (img.width > MAX_IMAGE_SIZE || img.height > MAX_IMAGE_SIZE) {
+                        const scale = Math.min(MAX_IMAGE_SIZE / img.width, MAX_IMAGE_SIZE / img.height);
+                        img.scale(scale);
+                    }
+                    img.set({ objectCaching: false }); // Disable caching for images
                     placeAtCenterAndSelect(img);
                 });
             } catch (err) {
@@ -3125,6 +3136,7 @@
                         return;
                     }
                     const svgObj = fabric.util.groupSVGElements(objects, options);
+                    svgObj.set({ objectCaching: false }); // Disable caching for SVG objects
                     placeAtCenterAndSelect(svgObj, 0.6); // 조금 더 크게
                     resolve();
                 });
@@ -3145,6 +3157,7 @@
             const dataUrl = canvasEl.toDataURL('image/png');
             return new Promise((resolve) => {
                 fabric.Image.fromURL(dataUrl, (img) => {
+                    img.set({ objectCaching: false }); // Disable caching for PDF images
                     placeAtCenterAndSelect(img, 0.7);
                     resolve();
                 });
@@ -4386,6 +4399,13 @@
             history = history.slice(0, historyStep + 1);
             history.push(JSON.stringify(json));
             historyStep++;
+
+            // Limit history size to prevent memory issues
+            if (history.length > MAX_HISTORY_SIZE) {
+                const removeCount = history.length - MAX_HISTORY_SIZE;
+                history.splice(0, removeCount);
+                historyStep -= removeCount;
+            }
         }
 
         function restoreHistory(step) {
