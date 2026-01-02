@@ -5463,11 +5463,8 @@
             if (!group || (!group.isMaskGroup && !group.isFrameGroup)) return;
 
             const objects = group._objects || [];
-            const matrix = group.calcTransformMatrix();
-
             const objectsWithPositions = objects.map(obj => {
-                const relCenter = obj.getRelativeCenterPoint();
-                const worldCenter = fabric.util.transformPoint(relCenter, matrix);
+                const worldCenter = fabric.util.transformPoint(new fabric.Point(0, 0), obj.calcTransformMatrix());
                 return {
                     obj,
                     center: worldCenter,
@@ -5482,6 +5479,7 @@
             group._objects = [];
             canvas.remove(group);
 
+            const restored = [];
             objectsWithPositions.forEach(({ obj, center, angle, scaleX, scaleY, originX, originY }) => {
                 if (obj.isFrameShape) {
                     obj.set({ selectable: true, evented: true });
@@ -5512,9 +5510,16 @@
                 obj.setCoords();
                 ensureObjectId(obj);
                 canvas.add(obj);
+                restored.push(obj);
             });
 
             canvas.discardActiveObject();
+            if (restored.length > 1) {
+                const sel = new fabric.ActiveSelection(restored, { canvas });
+                canvas.setActiveObject(sel);
+            } else if (restored.length === 1) {
+                canvas.setActiveObject(restored[0]);
+            }
             canvas.requestRenderAll();
             renderLayerList();
             saveHistory();
