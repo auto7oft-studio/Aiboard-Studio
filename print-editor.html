@@ -4059,6 +4059,8 @@
                     if (!parts) return;
                     applyTypography(parts.fill);
                     applyTypography(parts.stroke);
+                    o.dirty = true;
+                    o.addWithUpdate();
                     if (o._calcBounds) o._calcBounds();
                     if (o._updateObjectsCoords) o._updateObjectsCoords();
                     if (o.setCoords) o.setCoords();
@@ -4073,7 +4075,9 @@
                 update(active);
             }
 
-            canvas.renderAll();
+            canvas.requestRenderAll();
+            // Force another render after a short delay to ensure font changes are visible
+            setTimeout(() => canvas.requestRenderAll(), 10);
             saveHistory();
         }
 
