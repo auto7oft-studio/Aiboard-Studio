@@ -2070,49 +2070,47 @@
             const clientX = touch?.clientX ?? evt.clientX;
             const clientY = touch?.clientY ?? evt.clientY;
 
-            // Step 1: Get CSS coordinates relative to canvas element
-            const cssX = clientX - canvasRect.left;
-            const cssY = clientY - canvasRect.top;
+            // Use offsetX/offsetY which are relative to the canvas element
+            // This is more reliable than manual calculation
+            let offsetX = evt.offsetX;
+            let offsetY = evt.offsetY;
 
-            // Step 2: Convert CSS pixels to canvas physical pixels
-            // This accounts for devicePixelRatio and canvas element scaling
-            const scaleX = canvasEl.width / canvasRect.width;
-            const scaleY = canvasEl.height / canvasRect.height;
+            // Fallback if offset is not available
+            if (offsetX === undefined || offsetY === undefined) {
+                offsetX = clientX - canvasRect.left;
+                offsetY = clientY - canvasRect.top;
+            }
 
-            const pixelX = cssX * scaleX;
-            const pixelY = cssY * scaleY;
+            // Convert CSS pixels to physical canvas pixels
+            const scaleX = canvasEl.width / canvasEl.offsetWidth;
+            const scaleY = canvasEl.height / canvasEl.offsetHeight;
 
-            // Step 3: Clamp to canvas bounds
-            const canvasX = Math.floor(Math.min(Math.max(pixelX, 0), canvasEl.width - 1));
-            const canvasY = Math.floor(Math.min(Math.max(pixelY, 0), canvasEl.height - 1));
+            const canvasX = Math.floor(offsetX * scaleX);
+            const canvasY = Math.floor(offsetY * scaleY);
 
-            // DEBUG: Log coordinates every 10 calls to avoid spam
+            // Clamp to valid range
+            const x = Math.min(Math.max(canvasX, 0), canvasEl.width - 1);
+            const y = Math.min(Math.max(canvasY, 0), canvasEl.height - 1);
+
+            // DEBUG
             if (!window._eyedropperCallCount) window._eyedropperCallCount = 0;
             if (window._eyedropperCallCount++ % 10 === 0) {
-                const vpt = canvas.viewportTransform;
-                const zoom = canvas.getZoom();
-                const fabricWidth = canvas.getWidth();
-                const fabricHeight = canvas.getHeight();
-
                 console.log('[EYEDROPPER DEBUG]');
-                console.log('  Mouse:', clientX, clientY);
-                console.log('  Canvas Rect:', canvasRect.left.toFixed(0), canvasRect.top.toFixed(0), canvasRect.width, canvasRect.height);
-                console.log('  Canvas Element (physical):', canvasEl.width, canvasEl.height);
-                console.log('  Fabric Canvas (logical):', fabricWidth, fabricHeight);
-                console.log('  CSS coords:', cssX.toFixed(0), cssY.toFixed(0));
-                console.log('  Scale (element/rect):', scaleX.toFixed(4), scaleY.toFixed(4));
-                console.log('  Zoom:', zoom.toFixed(4));
-                console.log('  Viewport Transform:', vpt);
-                console.log('  Final pixel coords:', canvasX, canvasY);
+                console.log('  Mouse client:', clientX, clientY);
+                console.log('  Mouse offset:', offsetX, offsetY);
+                console.log('  Canvas offsetWidth/Height:', canvasEl.offsetWidth, canvasEl.offsetHeight);
+                console.log('  Canvas width/height (physical):', canvasEl.width, canvasEl.height);
+                console.log('  Scale:', scaleX.toFixed(4), scaleY.toFixed(4));
+                console.log('  Final pixel:', x, y);
             }
 
             return {
                 clientX,
                 clientY,
-                cssXCanvas: cssX,
-                cssYCanvas: cssY,
-                canvasX,
-                canvasY,
+                cssXCanvas: offsetX,
+                cssYCanvas: offsetY,
+                canvasX: x,
+                canvasY: y,
                 canvasRect
             };
         }
