@@ -2050,10 +2050,15 @@
             const screenX = (clientX - canvasRect.left) * scaleX;
             const screenY = (clientY - canvasRect.top) * scaleY;
 
-            // For getImageData, we need physical canvas pixel coordinates (not viewport-transformed)
-            // screenX and screenY are already correct for sampling the rendered canvas
-            const x = Math.min(Math.max(screenX, 0), canvasEl.width - 1);
-            const y = Math.min(Math.max(screenY, 0), canvasEl.height - 1);
+            // getImageData reads from the logical canvas, so we need to transform screen coords
+            // to account for viewport zoom/pan by inverting the viewport transform
+            const vpt = canvas.viewportTransform || fabric.iMatrix;
+            const inverted = fabric.util.invertTransform(vpt);
+            const localPoint = fabric.util.transformPoint(new fabric.Point(screenX, screenY), inverted);
+
+            // Clamp to canvas logical bounds
+            const x = Math.min(Math.max(localPoint.x, 0), canvasEl.width - 1);
+            const y = Math.min(Math.max(localPoint.y, 0), canvasEl.height - 1);
 
             return {
                 clientX,
@@ -2617,6 +2622,9 @@
                     o.getObjects().forEach(process);
                     return;
                 }
+
+                // Skip artboard clipping for mask groups - they already have their own clipping
+                if (o.isMaskGroup) return;
 
                 const objRect = getEffectiveBounds(o);
                 const isPartiallyInside = rectsIntersect(objRect, artRect);
@@ -5032,9 +5040,10 @@
             if (obj.isFrameGroup) {
                 return getObjectBounds(obj);
             }
+            // For mask groups, use the full group bounds (not just mask bounds)
+            // This ensures proper boundary detection when moving masked objects
             if (obj.isMaskGroup) {
-                const mask = getMaskObjectFromGroup(obj);
-                if (mask) return getObjectBounds(mask);
+                return getObjectBounds(obj);
             }
             return getObjectBounds(obj);
         }
