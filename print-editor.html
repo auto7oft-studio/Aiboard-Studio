@@ -1967,6 +1967,7 @@
         let history = [];
         let historyStep = -1;
         let isUndoing = false;
+        let isUnmasking = false;
 
         // Color Picker State
         let pickerTarget = null;
@@ -1998,8 +1999,8 @@
 
             eyedropperActive = true;
             eyedropperTarget = target;
-            canvas.defaultCursor = 'none'; // Hide cursor, we'll show magnifier instead
-            canvas.hoverCursor = 'none';
+            canvas.defaultCursor = 'crosshair';
+            canvas.hoverCursor = 'crosshair';
             canvas.selection = false;
 
             // DON'T discard active object - keep panels visible!
@@ -2008,9 +2009,6 @@
                 obj.selectable = false;
                 obj.evented = false;
             });
-
-            // Show magnifier
-            document.getElementById('eyedropper-magnifier').style.display = 'block';
 
             // Highlight the active button
             const fillBtn = document.getElementById('eyedropper-btn-fill');
@@ -2036,9 +2034,6 @@
                 }
             });
 
-            // Hide magnifier
-            document.getElementById('eyedropper-magnifier').style.display = 'none';
-
             // Remove button highlights
             const fillBtn = document.getElementById('eyedropper-btn-fill');
             const strokeBtn = document.getElementById('eyedropper-btn-stroke');
@@ -2061,116 +2056,26 @@
         }
 
         function getEyedropperCanvasCoords(e) {
-            if (!canvas) return { clientX: 0, clientY: 0, cssXCanvas: 0, cssYCanvas: 0, canvasX: 0, canvasY: 0, canvasRect: { left: 0, top: 0 } };
+            if (!canvas) return { canvasX: 0, canvasY: 0 };
 
             const canvasEl = canvas.lowerCanvasEl;
-            const canvasRect = canvasEl.getBoundingClientRect();
             const evt = e.e || e;
             const touch = evt.touches?.[0];
             const clientX = touch?.clientX ?? evt.clientX;
             const clientY = touch?.clientY ?? evt.clientY;
 
-            // ALWAYS calculate relative to lowerCanvasEl, don't trust offsetX/Y
-            // offsetX/Y might be relative to a different element in Fabric.js
+            const canvasRect = canvasEl.getBoundingClientRect();
             const relX = clientX - canvasRect.left;
             const relY = clientY - canvasRect.top;
 
-            // Canvas is rendered at physical pixel resolution
-            // If canvas CSS size != physical size, we need to scale
+            // Scale to physical canvas pixels
             const scaleX = canvasEl.width / canvasRect.width;
             const scaleY = canvasEl.height / canvasRect.height;
 
-            const pixelX = relX * scaleX;
-            const pixelY = relY * scaleY;
+            const x = Math.floor(Math.max(0, Math.min(relX * scaleX, canvasEl.width - 1)));
+            const y = Math.floor(Math.max(0, Math.min(relY * scaleY, canvasEl.height - 1)));
 
-            // Clamp to valid range
-            const x = Math.floor(Math.min(Math.max(pixelX, 0), canvasEl.width - 1));
-            const y = Math.floor(Math.min(Math.max(pixelY, 0), canvasEl.height - 1));
-
-            // DEBUG
-            if (!window._eyedropperCallCount) window._eyedropperCallCount = 0;
-            if (window._eyedropperCallCount++ % 10 === 0) {
-                console.log('[EYEDROPPER DEBUG]');
-                console.log('  clientX/Y:', clientX, clientY);
-                console.log('  canvasRect.left/top:', canvasRect.left.toFixed(0), canvasRect.top.toFixed(0));
-                console.log('  relX/Y (CSS):', relX.toFixed(1), relY.toFixed(1));
-                console.log('  canvasRect size:', canvasRect.width, canvasRect.height);
-                console.log('  canvas physical:', canvasEl.width, canvasEl.height);
-                console.log('  scale:', scaleX.toFixed(4), scaleY.toFixed(4));
-                console.log('  FINAL PIXEL:', x, y);
-            }
-
-            return {
-                clientX,
-                clientY,
-                cssXCanvas: relX,
-                cssYCanvas: relY,
-                canvasX: x,
-                canvasY: y,
-                canvasRect
-            };
-        }
-
-        function updateEyedropperMagnifier(e) {
-            if (!eyedropperActive) return;
-
-            const magnifier = document.getElementById('eyedropper-magnifier');
-            const magnifierCanvas = document.getElementById('magnifier-canvas');
-            const magnifierCtx = magnifierCanvas.getContext('2d');
-
-            const wrapperRect = document.getElementById('canvas-container').getBoundingClientRect();
-            const { cssXCanvas, canvasX, canvasY, clientX, clientY } = getEyedropperCanvasCoords(e);
-            const cssXWrapper = clientX - wrapperRect.left;
-            const cssYWrapper = clientY - wrapperRect.top;
-
-            // Position magnifier near cursor (offset to bottom-right to not block view)
-            const magnifierSize = 96;
-            const offset = 16;
-
-            let left = cssXWrapper + offset;
-            let top = cssYWrapper + offset;
-
-            // Keep magnifier within canvas bounds
-            if (left + magnifierSize > wrapperRect.width) {
-                left = cssXWrapper - magnifierSize - offset;
-            }
-            if (top + magnifierSize + 40 > wrapperRect.height) { // +40 for color label
-                top = cssYWrapper - magnifierSize - offset;
-            }
-
-            magnifier.style.left = left + 'px';
-            magnifier.style.top = top + 'px';
-
-            const ctx = canvas.lowerCanvasEl.getContext('2d', { willReadFrequently: true });
-            const size = 14; // Sample size in canvas pixels (14x14 grid)
-            const sampleWidth = canvas.lowerCanvasEl.width;
-            const sampleHeight = canvas.lowerCanvasEl.height;
-            const startX = Math.max(0, Math.min(canvasX - Math.floor(size / 2), sampleWidth - size));
-            const startY = Math.max(0, Math.min(canvasY - Math.floor(size / 2), sampleHeight - size));
-
-            try {
-                // Get image data from canvas at the scaled coordinates
-                const imageData = ctx.getImageData(
-                    startX,
-                    startY,
-                    size,
-                    size
-                );
-
-                // Draw zoomed image on magnifier canvas
-                magnifierCtx.imageSmoothingEnabled = false; // Pixelated zoom
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = size;
-                tempCanvas.height = size;
-                const tempCtx = tempCanvas.getContext('2d');
-                tempCtx.putImageData(imageData, 0, 0);
-
-            magnifierCtx.clearRect(0, 0, magnifierSize, magnifierSize);
-            magnifierCtx.drawImage(tempCanvas, 0, 0, size, size, 0, 0, magnifierSize, magnifierSize);
-            } catch (err) {
-                // Ignore errors from sampling outside canvas
-                console.warn('Eyedropper sampling error:', err);
-            }
+            return { canvasX: x, canvasY: y };
         }
 
         function sampleColorFromCanvas(e) {
@@ -2412,12 +2317,6 @@
             });
 
             canvas.on('mouse:move', function (opt) {
-                // Update eyedropper magnifier if active
-                if (eyedropperActive) {
-                    updateEyedropperMagnifier(opt);
-                    return;
-                }
-
                 if (this.isDragging) {
                     const e = opt.e;
                     const vpt = this.viewportTransform;
@@ -2649,7 +2548,7 @@
         }
 
         function checkCanvasBoundaries() {
-            if (!artboard) return;
+            if (!artboard || isUnmasking) return;
             const objects = canvas.getObjects().filter(o => !o.excludeFromExport && o.visible);
             const artRect = getObjectBounds(artboard);
 
@@ -5548,6 +5447,7 @@
             const group = maskGroup || canvas.getActiveObject();
             if (!group || (!group.isMaskGroup && !group.isFrameGroup)) return;
 
+            isUnmasking = true;
             const objects = group._objects || [];
 
             // All objects in mask group are normalized to left:0, top:0, originX/Y:'center'
@@ -5614,6 +5514,9 @@
             renderLayerList();
             saveHistory();
             updateFloatingToolbar();
+
+            isUnmasking = false;
+            checkCanvasBoundaries();
         }
 
         function lockSelectedAction() {
