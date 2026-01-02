@@ -2099,12 +2099,16 @@
 
             const ctx = canvas.lowerCanvasEl.getContext('2d', { willReadFrequently: true });
             const size = 14; // Sample size in canvas pixels (14x14 grid)
+            const sampleWidth = canvas.lowerCanvasEl.width;
+            const sampleHeight = canvas.lowerCanvasEl.height;
+            const startX = Math.max(0, Math.min(canvasX - Math.floor(size / 2), sampleWidth - size));
+            const startY = Math.max(0, Math.min(canvasY - Math.floor(size / 2), sampleHeight - size));
 
             try {
                 // Get image data from canvas at the scaled coordinates
                 const imageData = ctx.getImageData(
-                    canvasX - Math.floor(size / 2),
-                    canvasY - Math.floor(size / 2),
+                    startX,
+                    startY,
                     size,
                     size
                 );
@@ -2130,10 +2134,12 @@
 
             const { canvasX, canvasY } = getEyedropperCanvasCoords(e);
             const ctx = canvas.lowerCanvasEl.getContext('2d', { willReadFrequently: true });
+            const width = canvas.lowerCanvasEl.width;
+            const height = canvas.lowerCanvasEl.height;
 
             // Sample from scaled coordinates
-            const clampedX = Math.min(Math.max(0, canvasX), canvas.width - 1);
-            const clampedY = Math.min(Math.max(0, canvasY), canvas.height - 1);
+            const clampedX = Math.min(Math.max(0, canvasX), width - 1);
+            const clampedY = Math.min(Math.max(0, canvasY), height - 1);
             const pixelData = ctx.getImageData(clampedX, clampedY, 1, 1).data;
             const r = pixelData[0];
             const g = pixelData[1];
@@ -5452,21 +5458,23 @@
             const matrix = group.calcTransformMatrix();
 
             const objectsWithPositions = objects.map(obj => {
-                const point = fabric.util.transformPoint(new fabric.Point(obj.left, obj.top), matrix);
+                const center = obj.getCenterPoint();
+                const worldCenter = fabric.util.transformPoint(center, matrix);
                 return {
                     obj,
-                    left: point.x,
-                    top: point.y,
+                    center: worldCenter,
                     angle: obj.angle + group.angle,
                     scaleX: obj.scaleX * group.scaleX,
-                    scaleY: obj.scaleY * group.scaleY
+                    scaleY: obj.scaleY * group.scaleY,
+                    originX: obj.originX || 'center',
+                    originY: obj.originY || 'center'
                 };
             });
 
             group._objects = [];
             canvas.remove(group);
 
-            objectsWithPositions.forEach(({ obj, left, top, angle, scaleX, scaleY }) => {
+            objectsWithPositions.forEach(({ obj, center, angle, scaleX, scaleY, originX, originY }) => {
                 if (obj.isFrameShape) {
                     obj.set({ selectable: true, evented: true });
                     obj.isFrameShape = false;
@@ -5487,12 +5495,11 @@
 
                 obj.group = null;
                 obj.set({
-                    left,
-                    top,
                     angle,
                     scaleX,
                     scaleY
                 });
+                obj.setPositionByOrigin(center, originX, originY);
 
                 obj.setCoords();
                 ensureObjectId(obj);
