@@ -2628,15 +2628,14 @@
 
         function updateObjectClipping(obj) {
             if (!artboard || !obj || obj.isArtboard || obj.excludeFromExport) return;
+
+            // Skip clipping updates for activeSelection during movement
+            // Individual objects will be updated after movement completes
+            if (obj.type === 'activeSelection') return;
+
             const artRect = getObjectBounds(artboard);
 
             const process = (o) => {
-                // For activeSelection during movement, don't process individual objects
-                // This prevents individual boundary checks that can cause objects to separate visually
-                if (o.type === 'activeSelection') {
-                    return;
-                }
-
                 // Skip artboard clipping for mask groups - they already have their own clipping
                 if (o.isMaskGroup) return;
 
