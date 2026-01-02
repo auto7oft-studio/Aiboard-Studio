@@ -5466,15 +5466,15 @@
             if (!group || (!group.isMaskGroup && !group.isFrameGroup)) return;
 
             const objects = group._objects || [];
-            const groupMatrix = group.calcTransformMatrix();
+
+            // All objects in mask group are normalized to left:0, top:0, originX/Y:'center'
+            // So the group's center point is the world position for all objects
+            const groupCenter = new fabric.Point(group.left, group.top);
+
             const objectsWithPositions = objects.map(obj => {
-                // Combine group transform with object transform to get world coordinates
-                const objMatrix = obj.calcTransformMatrix();
-                const combinedMatrix = fabric.util.multiplyTransformMatrices(groupMatrix, objMatrix);
-                const worldCenter = fabric.util.transformPoint(new fabric.Point(0, 0), combinedMatrix);
                 return {
                     obj,
-                    center: worldCenter,
+                    center: groupCenter,
                     angle: obj.angle + group.angle,
                     scaleX: obj.scaleX * group.scaleX,
                     scaleY: obj.scaleY * group.scaleY,
